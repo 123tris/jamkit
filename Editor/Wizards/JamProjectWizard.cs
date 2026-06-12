@@ -34,6 +34,30 @@ namespace Metz.JamKit.Editor
                 "Create", "Cancel"))
                 return;
 
+            const string bootstrapPath = ProjectRoot + "/Scenes/Bootstrap.unity";
+            const string gamePath = ProjectRoot + "/Scenes/Game.unity";
+            const string gameOverPath = ProjectRoot + "/Scenes/GameOver.unity";
+
+            // Never silently stomp scenes the user may have built their jam in. Asset creation is
+            // create-or-load (safe); scene creation is the destructive part, so it gets a choice.
+            bool overwriteScenes = true;
+            var existingScenes = new List<string>();
+            foreach (var p in new[] { bootstrapPath, gamePath, gameOverPath })
+                if (File.Exists(p)) existingScenes.Add(p);
+            if (existingScenes.Count > 0)
+            {
+                int choice = EditorUtility.DisplayDialogComplex(
+                    "JamKit: Scenes Already Exist",
+                    "These scenes already exist:\n\n" + string.Join("\n", existingScenes) +
+                    "\n\nKeep them (only missing scenes are created), or overwrite all three with fresh copies?",
+                    "Keep Existing", "Cancel", "Overwrite All");
+                if (choice == 1) return;
+                overwriteScenes = choice == 2;
+            }
+
+            // The scene builds below open new scenes, which discards unsaved work without this prompt.
+            if (!EditorSceneManager.SaveCurrentModifiedScenesIfUserWantsTo()) return;
+
             EnsureFolders();
 
             var mixerPath = $"{ProjectRoot}/Audio/Resources/JamKitMixer.mixer";
@@ -75,14 +99,13 @@ namespace Metz.JamKit.Editor
 
             AssetDatabase.SaveAssets();
 
-            var bootstrapPath = $"{ProjectRoot}/Scenes/Bootstrap.unity";
-            var gamePath = $"{ProjectRoot}/Scenes/Game.unity";
-            var gameOverPath = $"{ProjectRoot}/Scenes/GameOver.unity";
-
             // Bootstrap is built last so it's the scene left open for the user.
-            CreateGameScene(gamePath, audio, time, scene, pool, timer, input, panelSettings);
-            CreateGameOverScene(gameOverPath, audio, time, scene, pool, timer, score, panelSettings);
-            CreateBootstrapScene(bootstrapPath, audio, time, scene, pool, timer, input, panelSettings);
+            if (overwriteScenes || !File.Exists(gamePath))
+                CreateGameScene(gamePath, audio, time, scene, pool, timer, input, panelSettings);
+            if (overwriteScenes || !File.Exists(gameOverPath))
+                CreateGameOverScene(gameOverPath, audio, time, scene, pool, timer, score, panelSettings);
+            if (overwriteScenes || !File.Exists(bootstrapPath))
+                CreateBootstrapScene(bootstrapPath, audio, time, scene, pool, timer, input, panelSettings);
 
             AddScenesToBuildSettings(new[] { bootstrapPath, gamePath, gameOverPath });
             AssetDatabase.SaveAssets();

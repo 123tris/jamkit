@@ -18,7 +18,8 @@ namespace Metz.JamKit
         public SceneServiceSO SceneService;
 
         [Header("Toggle")]
-        public Key ToggleKey = Key.F1;
+        [Tooltip("Backquote (`) by default — browsers swallow F-keys, so avoid those for WebGL jam builds.")]
+        public Key ToggleKey = Key.Backquote;
         public bool VisibleAtStart = false;
 
         [Header("Scene quick-jump")]
@@ -34,12 +35,9 @@ namespace Metz.JamKit
         {
             _doc = GetComponent<UIDocument>();
             if (_doc.panelSettings == null)
-            {
-                var ps = ScriptableObject.CreateInstance<PanelSettings>();
-                ps.scaleMode = PanelScaleMode.ConstantPixelSize;
-                ps.sortingOrder = 30000; // above menus, below the fade overlay
-                _doc.panelSettings = ps;
-            }
+                _doc.panelSettings = JamKitUI.CreatePanelSettings(PanelScaleMode.ConstantPixelSize, 30000); // above menus, below the fade overlay
+            else
+                JamKitUI.ApplyDefaultTheme(_doc.panelSettings);
         }
 
         void OnEnable()

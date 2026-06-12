@@ -7,8 +7,10 @@ namespace Metz.JamKit.Editor
 {
     /// <summary>
     /// Creates a saved PanelSettings asset (Resources/JamKitPanelSettings) so the menu
-    /// canvas renders with predictable scale + sort order across all scenes. If you skip this,
-    /// <see cref="MenuController"/> falls back to a runtime-only PanelSettings with the same defaults.
+    /// canvas renders with predictable scale + sort order across all scenes, with JamKit's
+    /// default theme assigned (no theme = unstyled controls). Re-running on an existing asset
+    /// repairs a missing theme. If you skip this, <see cref="MenuController"/> falls back to a
+    /// runtime-only PanelSettings with the same defaults.
     /// </summary>
     public static class PanelSettingsCreator
     {
@@ -23,16 +25,26 @@ namespace Metz.JamKit.Editor
             Directory.CreateDirectory(Path.GetDirectoryName(assetPath));
             if (File.Exists(assetPath))
             {
-                Debug.Log($"[JamKit] PanelSettings already exists at {assetPath}.");
-                return AssetDatabase.LoadAssetAtPath<PanelSettings>(assetPath);
+                var existing = AssetDatabase.LoadAssetAtPath<PanelSettings>(assetPath);
+                if (existing != null && existing.themeStyleSheet == null && JamKitUI.DefaultTheme != null)
+                {
+                    existing.themeStyleSheet = JamKitUI.DefaultTheme;
+                    EditorUtility.SetDirty(existing);
+                    AssetDatabase.SaveAssets();
+                    Debug.Log($"[JamKit] Repaired PanelSettings at {assetPath} — assigned the default theme.");
+                }
+                else
+                {
+                    Debug.Log($"[JamKit] PanelSettings already exists at {assetPath}.");
+                }
+                return existing;
             }
 
-            var ps = ScriptableObject.CreateInstance<PanelSettings>();
-            ps.scaleMode = PanelScaleMode.ScaleWithScreenSize;
-            ps.referenceResolution = new Vector2Int(1920, 1080);
+            var ps = JamKitUI.CreatePanelSettings(PanelScaleMode.ScaleWithScreenSize, sortingOrder: 100);
             ps.match = 0.5f;
-            ps.sortingOrder = 100;
             ps.clearColor = false;
+            if (ps.themeStyleSheet == null)
+                Debug.LogWarning("[JamKit] JamKitDefaultTheme.tss not found — assign a Theme Style Sheet to the PanelSettings manually or UI controls will render unstyled.");
 
             AssetDatabase.CreateAsset(ps, assetPath);
             AssetDatabase.SaveAssets();

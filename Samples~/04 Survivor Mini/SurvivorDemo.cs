@@ -102,6 +102,7 @@ namespace Metz.JamKit.Samples
         {
             var player = GameObject.CreatePrimitive(PrimitiveType.Cube);
             player.name = "Player";
+            player.tag = "Player";   // Pickup.RequiredTag defaults to the built-in Player tag
             player.layer = PlayerLayer;
             player.transform.position = new Vector3(0f, 0.5f, 0f);
             Tint(player, new Color(0.3f, 0.7f, 1f));
@@ -154,10 +155,7 @@ namespace Metz.JamKit.Samples
         {
             var go = new GameObject("SurvivorHUD");
             var doc = go.AddComponent<UIDocument>();
-            var ps = ScriptableObject.CreateInstance<PanelSettings>();
-            ps.scaleMode = PanelScaleMode.ScaleWithScreenSize;
-            ps.referenceResolution = new Vector2Int(1920, 1080);
-            doc.panelSettings = ps;
+            doc.panelSettings = JamKitUI.CreatePanelSettings(PanelScaleMode.ScaleWithScreenSize, sortingOrder: 0);
 
             var root = doc.rootVisualElement;
             var bar = new VisualElement();

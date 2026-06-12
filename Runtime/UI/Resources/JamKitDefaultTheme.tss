@@ -1,0 +1,4 @@
+/* JamKit's default runtime theme: just Unity's built-in default theme, packaged so that
+   runtime-created PanelSettings always have a ThemeStyleSheet (otherwise controls like
+   Button/Slider/Dropdown render unstyled and Unity warns "UI will not render properly"). */
+@import url("unity-theme://default");

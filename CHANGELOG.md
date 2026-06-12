@@ -2,6 +2,21 @@
 
 All notable changes to JamKit are documented here. Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the package uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.4.1] - 2026-06-12
+
+### Fixed
+- **Volume sliders actually drive the mixer.** `AudioMixerCreator` exposed no parameters (it probed for a nonexistent `AddExposedParameter` method and swallowed the failure) — the Editor log showed `Exposed name does not exist: MasterVol/MusicVol/SfxVol`. Exposure now goes through the controller's `exposedParameters` array, the whole routine is idempotent (re-running `JamKit > Setup > Create Audio Mixer` repairs an existing broken mixer), and the result is verified with `AudioMixer.GetFloat` — failures log manual-setup steps instead of silence.
+- **PanelSettings always get a theme.** Every runtime-created PanelSettings lacked a `ThemeStyleSheet` ("UI will not render properly" warning; unstyled controls). JamKit now ships `JamKitDefaultTheme.tss` (imports `unity-theme://default`) and the new `JamKitUI` helper assigns it everywhere — including patching theme-less saved assets at load, and a repair branch in `JamKit > Setup > Create Panel Settings`.
+- Persisted volumes now apply in `Start` instead of `OnEnable` (`AudioMixer.SetFloat` is unreliable during Awake/OnEnable).
+- `FadeOverlay` reuses one cached PanelSettings instead of leaking a new one per scene load.
+
+### Changed
+- **Wizard no longer stomps scenes.** If Bootstrap/Game/GameOver already exist, `New Jam Project` asks Keep Existing (default) / Overwrite All / Cancel, and prompts to save open scenes first. Asset creation was already create-or-load.
+- **`Pickup` is tag-filtered.** New `RequiredTag` (defaults to Unity's built-in `Player` tag) alongside the layer mask, so enemies/projectiles on the same layer can't hoover up pickups. Set it empty to allow anything.
+- **WebGL-aware UI.** On WebGL the Settings menu hides the Resolution/VSync rows and the Start menu hides Quit (the browser owns all three). `SaveServiceSO` flushes IndexedDB via a bundled jslib so saves survive the tab closing. `DebugPanel` toggle default moved F1 → Backquote (browsers swallow F-keys).
+- `MenuController` internals: Settings-view logic extracted into `MenuSettingsBinder` (plain class — no serialized fields changed, existing scenes unaffected).
+- The package is now a git repository.
+
 ## [0.4.0] - 2026-06-07
 
 ### Added
