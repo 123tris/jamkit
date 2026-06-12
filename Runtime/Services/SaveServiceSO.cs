@@ -17,6 +17,19 @@ namespace Metz.JamKit
         string Root => Path.Combine(Application.persistentDataPath, Folder);
         string PathFor(string key) => Path.Combine(Root, key + ".json");
 
+#if UNITY_WEBGL && !UNITY_EDITOR
+        [System.Runtime.InteropServices.DllImport("__Internal")]
+        static extern void JamKitSyncFiles();
+#endif
+
+        /// <summary>On WebGL, flush the in-memory FS to IndexedDB so saves survive the tab closing. No-op elsewhere.</summary>
+        static void FlushToDisk()
+        {
+#if UNITY_WEBGL && !UNITY_EDITOR
+            JamKitSyncFiles();
+#endif
+        }
+
         public void Write<T>(string key, T data)
         {
             try
@@ -24,6 +37,7 @@ namespace Metz.JamKit
                 Directory.CreateDirectory(Root);
                 var wrap = new Wrapper<T> { Value = data };
                 File.WriteAllText(PathFor(key), JsonUtility.ToJson(wrap, prettyPrint: true));
+                FlushToDisk();
             }
             catch (Exception e)
             {
@@ -52,13 +66,14 @@ namespace Metz.JamKit
         public void Delete(string key)
         {
             var path = PathFor(key);
-            if (File.Exists(path)) File.Delete(path);
+            if (File.Exists(path)) { File.Delete(path); FlushToDisk(); }
         }
 
         public void DeleteAll()
         {
             if (!Directory.Exists(Root)) return;
             foreach (var f in Directory.GetFiles(Root, "*.json")) File.Delete(f);
+            FlushToDisk();
         }
 
         [Serializable] class Wrapper<T> { public T Value; }

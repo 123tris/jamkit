@@ -16,6 +16,8 @@ namespace Metz.JamKit
         public PoolServiceSO PoolService;
 
         [Header("Collect")]
+        [Tooltip("Only objects with this tag can collect. Empty = any tag. Defaults to Unity's built-in 'Player' tag so enemies/projectiles on the same layer don't hoover up pickups.")]
+        public string RequiredTag = "Player";
         public LayerMask CollectorLayers = ~0;
 
         [Header("Score (optional)")]
@@ -37,6 +39,7 @@ namespace Metz.JamKit
         {
             if (_collected) return;
             if (((1 << other.layer) & CollectorLayers) == 0) return;
+            if (!string.IsNullOrEmpty(RequiredTag) && !other.CompareTag(RequiredTag)) return;
 
             _collected = true;
             if (ScoreService != null && ScoreValue != 0) ScoreService.Add(ScoreValue);

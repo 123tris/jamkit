@@ -28,12 +28,7 @@ namespace Metz.JamKit.Samples
         {
             _doc = GetComponent<UIDocument>();
             if (_doc.panelSettings == null)
-            {
-                var ps = ScriptableObject.CreateInstance<PanelSettings>();
-                ps.scaleMode = PanelScaleMode.ScaleWithScreenSize;
-                ps.referenceResolution = new Vector2Int(1920, 1080);
-                _doc.panelSettings = ps;
-            }
+                _doc.panelSettings = JamKitUI.CreatePanelSettings(PanelScaleMode.ScaleWithScreenSize, sortingOrder: 0);
         }
 
         void OnEnable()

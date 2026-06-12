@@ -34,7 +34,13 @@ namespace Metz.JamKit
             Service.RegisterRunner(this);
             BuildPool();
             SubscribeVolumes();
-            ApplyPersistedVolumes();
+        }
+
+        void Start()
+        {
+            // AudioMixer.SetFloat is unreliable during Awake/OnEnable (Unity applies the mixer's own
+            // snapshot after enable, stomping early writes), so persisted volumes are applied here.
+            if (Service != null) ApplyPersistedVolumes();
         }
 
         void OnDisable()

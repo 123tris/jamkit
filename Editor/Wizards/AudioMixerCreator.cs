@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Reflection;
 using UnityEditor;
@@ -8,16 +9,19 @@ using UnityEngine.Audio;
 namespace Metz.JamKit.Editor
 {
     /// <summary>
-    /// Creates a JamKitMixer asset with Master / Music / SFX groups and the
+    /// Creates (or repairs) a JamKitMixer asset with Master / Music / SFX groups and the
     /// MasterVol / MusicVol / SfxVol exposed parameters that <see cref="AudioServiceRunner"/> expects.
     ///
-    /// Unity's AudioMixer create API is internal, so we call
-    /// <c>UnityEditor.Audio.AudioMixerController.CreateMixerControllerAtPath</c> via reflection.
-    /// If reflection fails (API moved/renamed in a future Unity), we log instructions for manual setup.
+    /// Unity's AudioMixer authoring API is internal (UnityEditor.Audio.AudioMixerController), so
+    /// groups and exposure are set up via reflection. The whole routine is idempotent: re-running
+    /// it on an existing mixer fills in whatever is missing, and the result is verified with
+    /// <see cref="AudioMixer.GetFloat(string, out float)"/> — if any parameter is still missing we
+    /// say so loudly with manual-setup instructions instead of failing silently.
     /// </summary>
     public static class AudioMixerCreator
     {
         const string DefaultPath = "Assets/_Project/Audio/Resources/JamKitMixer.mixer";
+        static readonly string[] ExposedNames = { "MasterVol", "MusicVol", "SfxVol" };
 
         [MenuItem("JamKit/Setup/Create Audio Mixer")]
         public static void CreateMenu() => CreateAt(DefaultPath);
@@ -25,100 +29,189 @@ namespace Metz.JamKit.Editor
         public static string CreateAt(string assetPath)
         {
             Directory.CreateDirectory(Path.GetDirectoryName(assetPath));
-            if (File.Exists(assetPath))
+
+            var mixer = AssetDatabase.LoadAssetAtPath<AudioMixer>(assetPath);
+            if (mixer == null)
             {
-                Debug.Log($"[JamKit] AudioMixer already exists at {assetPath}.");
-                return assetPath;
+                try
+                {
+                    TryCreateMixerViaReflection(assetPath, out mixer);
+                }
+                catch (Exception e)
+                {
+                    Debug.LogWarning($"[JamKit] AudioMixer creation via reflection failed: {e.Message}");
+                }
+                if (mixer == null) { LogManualInstructions(); return null; }
             }
 
             try
             {
-                if (TryCreateMixerViaReflection(assetPath, out var mixer))
-                {
-                    AddGroupsAndExpose(mixer);
-                    AssetDatabase.SaveAssets();
-                    AssetDatabase.ImportAsset(assetPath, ImportAssetOptions.ForceSynchronousImport);
-                    Debug.Log($"[JamKit] Created AudioMixer at {assetPath}.");
-                    return assetPath;
-                }
+                EnsureGroupsAndExposure(mixer);
             }
             catch (Exception e)
             {
-                Debug.LogWarning($"[JamKit] AudioMixer creation via reflection failed: {e.Message}");
+                Debug.LogWarning($"[JamKit] AudioMixer group/exposure setup failed: {e.Message}");
             }
 
-            Debug.LogWarning(
-                "[JamKit] Could not auto-create JamKitMixer. " +
-                "Please create one manually:\n" +
-                "  1. Right-click in Project: Create > Audio Mixer, name it 'JamKitMixer'.\n" +
-                "  2. Move it into a 'Resources' folder.\n" +
-                "  3. Add child groups named 'Music' and 'SFX'.\n" +
-                "  4. Expose Master/Music/SFX volume parameters as MasterVol, MusicVol, SfxVol.");
-            return null;
+            EditorUtility.SetDirty(mixer);
+            AssetDatabase.SaveAssets();
+            AssetDatabase.ImportAsset(assetPath, ImportAssetOptions.ForceSynchronousImport);
+
+            // Reload after import so verification runs against the saved state.
+            mixer = AssetDatabase.LoadAssetAtPath<AudioMixer>(assetPath);
+            if (Verify(mixer))
+                Debug.Log($"[JamKit] AudioMixer ready at {assetPath} — MasterVol / MusicVol / SfxVol exposed.");
+            else
+                LogManualInstructions();
+            return assetPath;
         }
+
+        // -------------------- creation --------------------
 
         static bool TryCreateMixerViaReflection(string path, out AudioMixer mixer)
         {
             mixer = null;
-            // Find UnityEditor.Audio.AudioMixerController in the UnityEditor.dll assembly.
-            var asmEditor = typeof(EditorApplication).Assembly;
-            var ctrlType = asmEditor.GetType("UnityEditor.Audio.AudioMixerController");
-            if (ctrlType == null) return false;
-
-            var method = ctrlType.GetMethod(
+            var ctrlType = typeof(EditorApplication).Assembly.GetType("UnityEditor.Audio.AudioMixerController");
+            var method = ctrlType?.GetMethod(
                 "CreateMixerControllerAtPath",
                 BindingFlags.Public | BindingFlags.Static,
-                null,
-                new[] { typeof(string) },
-                null);
+                null, new[] { typeof(string) }, null);
             if (method == null) return false;
 
             mixer = method.Invoke(null, new object[] { path }) as AudioMixer;
             return mixer != null;
         }
 
-        static void AddGroupsAndExpose(AudioMixer mixer)
+        // -------------------- groups + exposure (idempotent) --------------------
+
+        static void EnsureGroupsAndExposure(AudioMixer mixer)
         {
-            // Mixer is already created with a Master group. Add Music and SFX as children of Master.
-            var asmEditor = typeof(EditorApplication).Assembly;
-            var ctrlType = asmEditor.GetType("UnityEditor.Audio.AudioMixerController");
-            if (ctrlType == null) return;
+            // The loaded asset is an AudioMixerController; reflect on its real type.
+            var ctrlType = mixer.GetType();
 
-            // Cast mixer to AudioMixerController (it's actually that type at runtime).
-            var addGroup = ctrlType.GetMethod("CreateNewGroup", BindingFlags.Public | BindingFlags.Instance, null, new[] { typeof(string), typeof(bool) }, null);
-            var addChild = ctrlType.GetMethod("AddChildToParent", BindingFlags.Public | BindingFlags.Instance);
-            var addToView = ctrlType.GetMethod("AddGroupToCurrentView", BindingFlags.Public | BindingFlags.Instance);
             var masterGroupProp = ctrlType.GetProperty("masterGroup", BindingFlags.Public | BindingFlags.Instance);
+            object master = masterGroupProp?.GetValue(mixer);
+            if (master == null)
+            {
+                Debug.LogWarning("[JamKit] Could not read the mixer's master group via reflection.");
+                return;
+            }
 
-            if (addGroup == null || addChild == null || masterGroupProp == null) return;
+            object music = FindGroup(mixer, "Music") ?? CreateChildGroup(ctrlType, mixer, master, "Music");
+            object sfx   = FindGroup(mixer, "SFX")   ?? CreateChildGroup(ctrlType, mixer, master, "SFX");
 
-            var masterGroup = masterGroupProp.GetValue(mixer);
-
-            var music = addGroup.Invoke(mixer, new object[] { "Music", false });
-            addChild.Invoke(mixer, new[] { music, masterGroup });
-            addToView?.Invoke(mixer, new[] { music });
-
-            var sfx = addGroup.Invoke(mixer, new object[] { "SFX", false });
-            addChild.Invoke(mixer, new[] { sfx, masterGroup });
-            addToView?.Invoke(mixer, new[] { sfx });
-
-            // Expose the volume parameters on each group.
-            ExposeVolume(ctrlType, mixer, masterGroup, "MasterVol");
-            ExposeVolume(ctrlType, mixer, music, "MusicVol");
-            ExposeVolume(ctrlType, mixer, sfx, "SfxVol");
+            ExposeVolumes(ctrlType, mixer, new[]
+            {
+                (group: master, name: "MasterVol"),
+                (group: music,  name: "MusicVol"),
+                (group: sfx,    name: "SfxVol"),
+            });
         }
 
-        static void ExposeVolume(Type ctrlType, AudioMixer mixer, object group, string name)
+        static object FindGroup(AudioMixer mixer, string name)
         {
-            // group.GetGUIDForVolume() returns the parameter GUID; mixer.AddExposedParameter(guid, name).
-            var groupType = group.GetType();
-            var getGuid = groupType.GetMethod("GetGUIDForVolume", BindingFlags.Public | BindingFlags.Instance);
-            if (getGuid == null) return;
-            var guid = getGuid.Invoke(group, null);
+            var matches = mixer.FindMatchingGroups(name);
+            if (matches == null) return null;
+            foreach (var g in matches)
+                if (g != null && g.name == name) return g;
+            return null;
+        }
 
-            var addExposed = ctrlType.GetMethod("AddExposedParameter", BindingFlags.Public | BindingFlags.Instance);
-            if (addExposed == null) return;
-            addExposed.Invoke(mixer, new[] { guid, name });
+        static object CreateChildGroup(Type ctrlType, AudioMixer mixer, object parent, string name)
+        {
+            var addGroup = ctrlType.GetMethod("CreateNewGroup", BindingFlags.Public | BindingFlags.Instance, null, new[] { typeof(string), typeof(bool) }, null);
+            var addChild = ctrlType.GetMethod("AddChildToParent", BindingFlags.Public | BindingFlags.Instance);
+            if (addGroup == null || addChild == null)
+            {
+                Debug.LogWarning($"[JamKit] Could not create mixer group '{name}' via reflection.");
+                return null;
+            }
+
+            var group = addGroup.Invoke(mixer, new object[] { name, false });
+            addChild.Invoke(mixer, new[] { group, parent });
+            ctrlType.GetMethod("AddGroupToCurrentView", BindingFlags.Public | BindingFlags.Instance)
+                ?.Invoke(mixer, new[] { group });
+            return group;
+        }
+
+        /// <summary>
+        /// Expose each group's volume under the given name by appending to the controller's
+        /// exposedParameters array. (Earlier versions probed for an AddExposedParameter method,
+        /// which doesn't exist — the array property is the path the mixer inspector itself uses.)
+        /// </summary>
+        static void ExposeVolumes(Type ctrlType, AudioMixer mixer, (object group, string name)[] wanted)
+        {
+            var exposedProp = ctrlType.GetProperty("exposedParameters", BindingFlags.Public | BindingFlags.Instance);
+            if (exposedProp == null)
+            {
+                Debug.LogWarning("[JamKit] AudioMixerController.exposedParameters not found via reflection.");
+                return;
+            }
+
+            var paramType = exposedProp.PropertyType.GetElementType(); // ExposedAudioParameter
+            var existing = exposedProp.GetValue(mixer) as Array ?? Array.CreateInstance(paramType, 0);
+
+            var have = new HashSet<string>();
+            foreach (var p in existing)
+            {
+                if (GetMember(paramType, p, "name") is string n) have.Add(n);
+            }
+
+            var toAdd = new List<object>();
+            foreach (var (group, name) in wanted)
+            {
+                if (group == null || have.Contains(name)) continue;
+                var getGuid = group.GetType().GetMethod("GetGUIDForVolume", BindingFlags.Public | BindingFlags.Instance);
+                if (getGuid == null) continue;
+
+                var param = Activator.CreateInstance(paramType);
+                SetMember(paramType, param, "guid", getGuid.Invoke(group, null));
+                SetMember(paramType, param, "name", name);
+                toAdd.Add(param);
+            }
+            if (toAdd.Count == 0) return;
+
+            var merged = Array.CreateInstance(paramType, existing.Length + toAdd.Count);
+            existing.CopyTo(merged, 0);
+            for (int i = 0; i < toAdd.Count; i++) merged.SetValue(toAdd[i], existing.Length + i);
+            exposedProp.SetValue(mixer, merged);
+        }
+
+        static object GetMember(Type type, object instance, string member)
+        {
+            var f = type.GetField(member, BindingFlags.Public | BindingFlags.Instance);
+            if (f != null) return f.GetValue(instance);
+            var p = type.GetProperty(member, BindingFlags.Public | BindingFlags.Instance);
+            return p?.GetValue(instance);
+        }
+
+        static void SetMember(Type type, object instance, string member, object value)
+        {
+            var f = type.GetField(member, BindingFlags.Public | BindingFlags.Instance);
+            if (f != null) { f.SetValue(instance, value); return; }
+            var p = type.GetProperty(member, BindingFlags.Public | BindingFlags.Instance);
+            p?.SetValue(instance, value);
+        }
+
+        // -------------------- verification --------------------
+
+        static bool Verify(AudioMixer mixer)
+        {
+            if (mixer == null) return false;
+            foreach (var name in ExposedNames)
+                if (!mixer.GetFloat(name, out _)) return false;
+            return true;
+        }
+
+        static void LogManualInstructions()
+        {
+            Debug.LogWarning(
+                "[JamKit] Could not fully auto-configure JamKitMixer (volume parameters are not exposed, " +
+                "so volume sliders will not work). Finish it manually:\n" +
+                "  1. If missing, create it: right-click in Project > Create > Audio Mixer, name it 'JamKitMixer', put it in a 'Resources' folder.\n" +
+                "  2. Add child groups named 'Music' and 'SFX' under Master.\n" +
+                "  3. Select each group, right-click its Volume in the Inspector > 'Expose ... to script'.\n" +
+                "  4. In the mixer's 'Exposed Parameters' dropdown, rename them to MasterVol, MusicVol, SfxVol.");
         }
     }
 }

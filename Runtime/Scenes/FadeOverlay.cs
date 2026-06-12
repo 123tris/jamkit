@@ -18,16 +18,22 @@ namespace Metz.JamKit
         UIDocument _doc;
         VisualElement _layer;
 
+        // Shared across instances/scene loads — one fade panel config is enough, and recreating a
+        // PanelSettings per scene load both leaks SOs and triggers the no-theme warning.
+        static PanelSettings _panelSettings;
+
         void Awake()
         {
             _doc = gameObject.GetComponent<UIDocument>();
             if (_doc == null) _doc = gameObject.AddComponent<UIDocument>();
 
-            var ps = ScriptableObject.CreateInstance<PanelSettings>();
-            ps.name = "JamKitFadePanelSettings";
-            ps.scaleMode = PanelScaleMode.ConstantPixelSize;
-            ps.sortingOrder = SortingOrder;
-            _doc.panelSettings = ps;
+            if (_panelSettings == null)
+            {
+                _panelSettings = JamKitUI.CreatePanelSettings(PanelScaleMode.ConstantPixelSize, SortingOrder);
+                _panelSettings.name = "JamKitFadePanelSettings";
+            }
+            _panelSettings.sortingOrder = SortingOrder;
+            _doc.panelSettings = _panelSettings;
 
             var root = _doc.rootVisualElement;
             root.pickingMode = PickingMode.Ignore;

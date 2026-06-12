@@ -26,7 +26,8 @@ namespace Metz.JamKit
         void Awake()
         {
             _doc = GetComponent<UIDocument>();
-            if (_doc.panelSettings == null) _doc.panelSettings = MakeRuntimePanelSettings();
+            if (_doc.panelSettings == null) _doc.panelSettings = JamKitUI.LoadOrCreateMenuPanelSettings();
+            else JamKitUI.ApplyDefaultTheme(_doc.panelSettings);
         }
 
         void OnEnable()
@@ -74,17 +75,6 @@ namespace Metz.JamKit
             column.Add(menu);
 
             retry.schedule.Execute(() => retry.Focus());
-        }
-
-        static PanelSettings MakeRuntimePanelSettings()
-        {
-            var loaded = Resources.Load<PanelSettings>("JamKitPanelSettings");
-            if (loaded != null) return loaded;
-            var ps = ScriptableObject.CreateInstance<PanelSettings>();
-            ps.scaleMode = PanelScaleMode.ScaleWithScreenSize;
-            ps.referenceResolution = new Vector2Int(1920, 1080);
-            ps.sortingOrder = 100;
-            return ps;
         }
     }
 }

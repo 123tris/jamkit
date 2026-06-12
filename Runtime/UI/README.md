@@ -74,6 +74,10 @@ The MenuController is `sealed` on purpose. To extend:
 1. Add new elements to your own UXML override (point `MenuUxml` at it).
 2. Add a sibling MonoBehaviour on the same GameObject that takes a reference to `MenuController`, queries `MenuController.Root` for the new elements, and wires `RegisterValueChangedCallback` / `clicked` callbacks.
 
+## Theme
+
+Every PanelSettings needs a **Theme Style Sheet** or default controls (Button/Slider/Dropdown) render unstyled and Unity warns "UI will not render properly". JamKit ships `Resources/JamKitDefaultTheme.tss` (an import of Unity's built-in default theme); the `JamKitUI` helper assigns it to every PanelSettings JamKit creates, and patches theme-less ones it loads. If you author your own PanelSettings asset, assign a theme yourself (Unity's default runtime theme is fine).
+
 ## Gamepad / keyboard navigation
 
 Runtime UI Toolkit needs an `EventSystem` (with the Input System UI module) for stick/keyboard navigation, and a focused element to start from. The wizard adds an `EventSystem` to every scene, and `MenuController` focuses the active view's primary control (Play / Resume / first setting) whenever a view opens — so a controller can drive the menu immediately. If you build menus by hand, add an `EventSystem` yourself.
