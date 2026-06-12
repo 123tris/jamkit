@@ -1,0 +1,62 @@
+{
+  "name": "com.metz.jamkit",
+  "version": "0.4.0",
+  "displayName": "JamKit",
+  "description": "Rapid game-jam toolkit for Unity 6. ScriptableObject service architecture (no singletons), Ripple-native event/variable wiring, UI Toolkit menus, and a recommended integration path with the Feel feedback asset.",
+  "unity": "6000.0",
+  "author": {
+    "name": "Metz"
+  },
+  "license": "MIT",
+  "keywords": [
+    "gamejam",
+    "toolkit",
+    "framework",
+    "rapid-prototyping",
+    "ripple",
+    "feel",
+    "urp",
+    "ui-toolkit",
+    "scriptable-objects",
+    "no-singletons"
+  ],
+  "dependencies": {
+    "com.unity.cinemachine": "3.1.1",
+    "com.unity.inputsystem": "1.11.2",
+    "com.unity.render-pipelines.universal": "17.0.3",
+    "com.unity.ugui": "2.0.0",
+    "com.unity.modules.audio": "1.0.0",
+    "com.unity.modules.physics": "1.0.0",
+    "com.unity.modules.physics2d": "1.0.0",
+    "com.unity.modules.particlesystem": "1.0.0",
+    "com.unity.modules.jsonserialize": "1.0.0",
+    "com.unity.modules.uielements": "1.0.0"
+  },
+  "samples": [
+    {
+      "displayName": "00 Bootstrap",
+      "description": "Service injection, Pool spawning, Ripple event firing.",
+      "path": "Samples~/00 Bootstrap"
+    },
+    {
+      "displayName": "01 2D Platformer Mini",
+      "description": "Mover2D + Cinemachine 2D + Health with Ripple events.",
+      "path": "Samples~/01 2D Platformer Mini"
+    },
+    {
+      "displayName": "02 3D Walker Mini",
+      "description": "Mover3D + AudioServiceSO + pickup AudioClipEvent.",
+      "path": "Samples~/02 3D Walker Mini"
+    },
+    {
+      "displayName": "03 UI Card Flip Mini",
+      "description": "UI Toolkit demo with SaveServiceSO-backed high score.",
+      "path": "Samples~/03 UI Card Flip Mini"
+    },
+    {
+      "displayName": "04 Survivor Mini",
+      "description": "Full mini loop: Mover3D + Spawner/Pool + Pickup + Score/Timer services + HUD + GameOver.",
+      "path": "Samples~/04 Survivor Mini"
+    }
+  ]
+}

@@ -1,0 +1,28 @@
+{
+    "name": "Metz.JamKit.Runtime",
+    "rootNamespace": "Metz.JamKit",
+    "references": [
+        "Unity.Cinemachine",
+        "Unity.InputSystem",
+        "Unity.RenderPipelines.Universal.Runtime",
+        "Metz.Ripple.Runtime",
+        "Kybernetik.UltEvents"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [
+        "ULTEVENTS"
+    ],
+    "versionDefines": [
+        {
+            "name": "com.kybernetik.ultevents",
+            "expression": "0",
+            "define": "ULTEVENTS"
+        }
+    ],
+    "noEngineReferences": false
+}
