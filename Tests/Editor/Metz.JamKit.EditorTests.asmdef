@@ -1,0 +1,25 @@
+{
+    "name": "Metz.JamKit.EditorTests",
+    "rootNamespace": "Metz.JamKit.Tests.Editor",
+    "references": [
+        "Metz.JamKit.Runtime",
+        "Metz.JamKit.Editor",
+        "UnityEngine.TestRunner",
+        "UnityEditor.TestRunner"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": true,
+    "precompiledReferences": [
+        "nunit.framework.dll"
+    ],
+    "autoReferenced": false,
+    "defineConstraints": [
+        "UNITY_INCLUDE_TESTS"
+    ],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

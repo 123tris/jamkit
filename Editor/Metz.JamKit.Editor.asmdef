@@ -1,0 +1,33 @@
+{
+    "name": "Metz.JamKit.Editor",
+    "rootNamespace": "Metz.JamKit.Editor",
+    "references": [
+        "Metz.JamKit.Runtime",
+        "Metz.Ripple.Runtime",
+        "Kybernetik.UltEvents",
+        "Unity.Cinemachine",
+        "Unity.InputSystem",
+        "Unity.RenderPipelines.Universal.Runtime",
+        "Unity.RenderPipelines.Universal.Editor",
+        "UnityEngine.UI"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [
+        "ULTEVENTS"
+    ],
+    "versionDefines": [
+        {
+            "name": "com.kybernetik.ultevents",
+            "expression": "0",
+            "define": "ULTEVENTS"
+        }
+    ],
+    "noEngineReferences": false
+}

@@ -1,0 +1,9 @@
+# Normalize line endings; Unity-generated text assets stay LF.
+* text=auto
+*.meta text eol=lf
+*.asset text eol=lf
+*.unity text eol=lf
+*.asmdef text eol=lf
+*.uxml text eol=lf
+*.uss text eol=lf
+*.tss text eol=lf
