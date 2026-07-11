@@ -1,0 +1,63 @@
+# JamKit CI — compile + edit-mode tests on every push, via game-ci.
+#
+# STATUS: scaffold. Three prerequisites before this goes green (see ROADMAP M5):
+#   1. RIPPLE_GIT_URL — publish C:/Repos/Ripple to a git remote and put its URL below.
+#   2. UltEvents — asset-store package; either commit it to a private registry/git mirror
+#      and reference it below, or vendor it into the test project step.
+#   3. Repo secret UNITY_LICENSE — activate a personal license for CI:
+#      https://game.ci/docs/github/activation
+#
+# The package repo has no Unity project, so the workflow assembles a minimal one around
+# the package before running the test runner.
+
+name: CI
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+
+env:
+  UNITY_VERSION: 6000.0.26f1
+  # TODO(1): replace with the published Ripple URL, e.g. https://github.com/<you>/Ripple.git
+  RIPPLE_GIT_URL: ""
+
+jobs:
+  test:
+    name: Edit-mode tests (Unity ${{ env.UNITY_VERSION }})
+    runs-on: ubuntu-latest
+    # Remove this line once the three prerequisites above are met:
+    if: ${{ false }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          path: package
+
+      - name: Assemble test project
+        run: |
+          mkdir -p project/Packages project/Assets project/ProjectSettings
+          cp -r package project/Packages/com.metz.jamkit
+          cat > project/Packages/manifest.json <<EOF
+          {
+            "dependencies": {
+              "com.metz.jamkit": "file:com.metz.jamkit",
+              "com.metz.ripple": "git+${RIPPLE_GIT_URL}",
+              "com.unity.test-framework": "1.4.5"
+            }
+          }
+          EOF
+          # TODO(2): provide UltEvents here (git dependency or vendored copy).
+
+      - uses: game-ci/unity-test-runner@v4
+        env:
+          UNITY_LICENSE: ${{ secrets.UNITY_LICENSE }}
+        with:
+          projectPath: project
+          unityVersion: ${{ env.UNITY_VERSION }}
+          testMode: EditMode
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: test-results
+          path: artifacts

@@ -2,6 +2,50 @@
 
 All notable changes to JamKit are documented here. Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the package uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.6.0] - 2026-07-08
+
+Theme: everything left on the roadmap that doesn't require a human with a GitHub account — samples that prove the kit, docs that double as test scripts, tests for the new math, prefab-first scaffolding, sound polish, two-player input, and a WebGL button. Plus three re-evaluations from the open-questions list.
+
+### Added
+- **Sample 05 "Juice Toggle"** — turret vs target; press J to flip every `JuiceBehaviour` on/off at once. SFX are synthesized in code, so the before/after needs zero assets.
+- **Sample 06 "Arcade Playground"** — frogger crossing (GridMover, conveyor PatrolMover cars, TriggerZone kill-water + goal, Respawner), an Interactable lever, and a self-playing breakout pit (Bouncer2D + angled Paddle + brick rows with per-brick juice) in one runtime-built scene.
+- **Sample compile harness** — `Tools~/compile-check.sh` now compiles all of `Samples~` against the fresh Runtime dll; sample code can never silently rot again (it immediately caught the impulse-listener bug below).
+- **`Documentation~`** — Hour Zero Checklist, Pong in 60 Seconds, Frogger in 5 Minutes, Graduating to Feel. Written as manual test scripts: if a step fails, that's a bug.
+- **Tests** — ScoreServiceSO (accumulate/clamp/high-score/reset), TimerServiceSO (both modes, cap, pause, reset; driven via the internal Tick — new `InternalsVisibleTo`), `Bouncer2D.ClampAwayFromAxes`, `GridMover.SnapToGrid`.
+- **Two-player keyboard input** — `JamKitInput` gains `Gameplay1` (WASD) and `Gameplay2` (arrows) maps; `InputServiceSO.AutoEnableGameplay` lets a secondary service activate its own map (menus only drive the default service's). Two paddles = two SO assets.
+- **Menu sounds** — optional hover/click clips on `MenuController`; hover fires on gamepad focus too.
+- **Music ducking** — `AudioServiceSO.DuckMusic()` and `PlayStinger(clip)` (duck through the mixer param, restore to the Ripple value so the settings slider always wins); `SfxOnEvent.DuckMusic` toggle turns any event sound into a stinger.
+- **`JamKit > Build > WebGL (itch.io)`** — gzip + decompression fallback (the two settings that black-screen itch uploads), builds enabled scenes, reveals the folder with zip instructions.
+- **CI scaffold** — `.github/workflows/ci.yml` (game-ci edit-mode tests on an assembled temp project), gated off with documented TODOs: publish Ripple to a git URL, provide UltEvents, add the UNITY_LICENSE secret.
+
+### Changed
+- **Prefab-first wizard.** `JamKitCore` (now also carrying `FloatingTextLayer` + `Toast` children) and `JamKitMenu` are prefab assets instanced into each scene — a fix propagates everywhere; scenes override only `InitialView`/`PauseController`. The wizard also offers fast enter-play-mode (domain reload off) after setup.
+- **`Paddle` marker replaces `Bouncer2D.PaddleLayers`** (open question resolved): layers are project-global state the kit shouldn't own; a component auto-wires, carries a per-paddle `EnglishMultiplier`, and reads clearer in the hierarchy.
+- **Player presets ship CameraShake + HitStop** (open question resolved) — player damage is the hit that matters; enemies keep flash/pop only.
+- Testability: min-angle clamp and grid snap are public statics (`ClampAwayFromAxes`, `SnapToGrid`).
+
+### Fixed
+- **Camera shake never worked in wizard scenes**: the wizard put `CinemachineImpulseListener` (a vcam *extension*) on a plain camera with only a Brain, where it never runs. Replaced with `CinemachineExternalImpulseListener`, the standalone listener for regular cameras.
+- **`Bouncer2D` min-angle clamp under-delivered**: nudging the flat component to `sin(minAngle)` and re-normalizing shrank it back below the threshold, so near-flat rallies stayed slightly flatter than configured. The clamp now rebuilds the direction exactly at the limit angle (unit length by construction). Caught by the new play-mode tests on their first run.
+
+## [0.5.0] - 2026-07-08
+
+Theme: the three roadmap milestones landed together — Juice Lite (M2), the any-genre primitives (M3), and the editor friction killers (M1). A pong, frogger, asteroids, breakout, or survivor core is now a handful of `GameObject > JamKit` clicks.
+
+### Added
+- **Juice Lite** (`Runtime/Juice/`) — zero-new-dependency feedback, all ≤ ~100 lines each: `CameraShake` (Cinemachine impulse), `HitStop` (TimeService freeze), `SpriteFlash` (vertex-color tint, no shader tricks), `MaterialFlash` (MaterialPropertyBlock), `PunchScale` (squash & stretch, allocation-free), `ParticleBurst`, `SfxOnEvent` (random clip + pitch variation via AudioService), `FloatingText` + `FloatingTextLayer` (pooled UI Toolkit damage numbers, world→panel projection, no TMP), and `Toast` (event → banner text, Void and Int flavors).
+- **`JuiceBehaviour` base + per-instance Health events.** Every juice component triggers three ways: sibling `Health` C# events (`Damaged`/`Healed`/`Died` — new; per-instance, zero wiring), optional global Ripple event slots, and a public `Play(strength)` for UltEvents/Feel/code. This fixes the granularity gap where shared Ripple assets would flash *every* enemy when one was hit.
+- **Genre primitives:** `Bouncer2D` (constant-speed reflection, per-bounce speed-up, paddle english, min-angle anti-deadlock, OnBounce event), `GridMover` (4-way stepped movement, XY/XZ, block layers, hold-to-repeat), `ThrustMover2D` (rotate+thrust, drift or damped), `ChaseMover` (2D/3D pursuit, nearest-by-tag with rescan), `PatrolMover` (offsets-from-start waypoints; PingPong/Loop/Stop/TeleportToStart conveyor mode; pool-aware), `ScreenWrap2D`, `Aimer` (mouse cursor or right stick, XY/XZ), `TriggerZone` (tag/layer-filtered damage/kill/score/remove/scene-load/events — kill pit, goal, and score gate in one component), `SpawnBurst` (N pooled prefabs with scatter + outward launch — death explosions, asteroid splits, loot), `Respawner` (checkpoint teleport + health refill on death or on demand), and `Interactor` + `Interactable` ("press E" with a zero-plumbing prompt visual; 2D+3D probing, allocation-free).
+- **Editor: auto-assign.** Adding a JamKit component fills its null JamKit-typed references automatically when exactly one candidate exists (service SOs from assets, scene components from the open scenes). Menu: `JamKit > Auto-Assign References In Open Scenes`.
+- **Editor: `GameObject > JamKit` presets.** 16 pre-wired archetypes (players ×3 flavors, ship, enemies ×2, ball, paddle, patrol hazard, kill zones ×2, cameras ×2, spawner, pickup, floating-text layer, toast) using built-in sprites / primitives, auto-assigned on creation.
+- **Editor: `JamKit > Validate Setup` window.** Checks mixer exposed params, PanelSettings themes, wizard scenes in Build Settings, EventSystem presence, unassigned JamKit references (with ambiguity listing), HitStop-without-TimeServiceRunner, FloatingText-without-Layer — Fix buttons where the fix is unambiguous.
+
+### Changed
+- `Health`: pool-aware (refills on `IPoolable.OnSpawn`) and can despawn to a `DespawnPool` instead of destroying.
+- `Damager` / `Damager2D`: optional `PoolService` so `DestroyOnHit` despawns pooled projectiles instead of destroying them.
+- `Mover2D`: new `AxisScale` locks top-down movement to one axis (paddles, invaders-style players).
+- README rewritten around the three-trigger juice model and an archetype-coverage table.
+
 ## [0.4.1] - 2026-06-12
 
 ### Fixed

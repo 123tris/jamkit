@@ -8,72 +8,68 @@ Three goals, in tension with each other:
 
 ## Design principles (the contract every feature must pass)
 
-- **Explicit wiring, zero-friction defaults.** Components keep serialized SO references (no runtime lookup, no singletons) — but the *editor* may auto-fill them when the answer is unambiguous. Convenience at edit time, transparency at runtime.
-- **Juice = event receivers.** Gameplay broadcasts Ripple events (it already does); juice components *subscribe*. JamKit ships the lightweight 80% with **zero new dependencies**; Feel remains the deluxe path on the exact same events. Every juice component also exposes a plain public `Play()` so non-Ripple users can call it from any event system.
-- **Small orthogonal components, not frameworks.** Flexibility comes from composition. Hard cap on juice components: ~100 lines each, no sequencers, no curve editors — if you need that, that's Feel's job.
-- **Nothing ships unverified.** Every milestone ends with the Validate window green and the samples compiling.
+- **Explicit wiring, zero-friction defaults.** Components keep serialized SO references (no runtime lookup, no singletons) — the *editor* auto-fills them when the answer is unambiguous (exactly one candidate; never a guess). Convenience at edit time, transparency at runtime. *(Shipped in 0.5.0 — keep every new component compatible: public fields, JamKit-typed references.)*
+- **Two event granularities — pick deliberately.** Ripple SO events are global (HUD, stingers, any-X-died). Per-instance reactions go through plain C# events on the component (`Health.Damaged`) that siblings subscribe to automatically. A feature that wires per-instance feedback through a shared SO event is a bug (every enemy flashes when one is hit).
+- **Juice = receivers with three triggers.** Sibling Health (zero wiring), Ripple slots (global), public `Play(strength)` (UltEvents/Feel/code). JamKit ships the lightweight 80% with zero new dependencies; Feel is the deluxe path on the same triggers. Hard cap: ~100 lines per juice component, no sequencers, no curve editors.
+- **Small orthogonal components, not frameworks.** Flexibility comes from composition. The measure of a new primitive is how many archetype rows it unlocks (see matrix below), not how complete it is.
+- **Nothing ships unverified.** Every milestone ends with a clean compile (Roslyn script or Unity), the Validate window green, and the samples compiling.
 
----
+## The archetype matrix (the evaluation tool)
 
-## M1 — Friction Zero (efficiency) · ~1–2 sessions
+When considering a new primitive, check it against the classics. A primitive that appears in 3+ columns is kit material; 1 column = game code, leave it out.
 
-The compounding milestone: everything built later benefits from it. Kills the remaining per-object drag work without touching the architecture.
+| Primitive | Pong | Breakout | Frogger | Invaders | Asteroids | Flappy | Platformer | Survivor | Status |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| Input mover | ✓ | ✓ | | ✓ | | ✓ | ✓ | ✓ | ✅ Mover2D/3D |
+| Ball bounce | ✓ | ✓ | | | | | | | ✅ Bouncer2D |
+| Grid step | | | ✓ | | | | | | ✅ GridMover |
+| Rotate+thrust | | | | | ✓ | | | | ✅ ThrustMover2D |
+| Chase target | | | | | | | ✓ | ✓ | ✅ ChaseMover |
+| Patrol/conveyor | | | ✓ | ~ | | ✓ | ✓ | | ✅ PatrolMover |
+| Screen wrap | | | | | ✓ | | | | ✅ ScreenWrap2D |
+| Zones (kill/goal/score) | ✓ | ✓ | ✓ | ✓ | | ✓ | ✓ | | ✅ TriggerZone |
+| Aim cursor/stick | | | | | | | | ✓ | ✅ Aimer |
+| Spawn on death | | ✓ | | ✓ | ✓ | | | ✓ | ✅ SpawnBurst |
+| Respawn/checkpoint | ✓ | ✓ | ✓ | | ✓ | | ✓ | | ✅ Respawner |
+| Press-E interact | | | | | | | ✓ | ✓ | ✅ Interactor/-able |
+| Shoot | | | | ✓ | ✓ | | ✓ | ✓ | ✅ ProjectileShooter |
+| HP/damage/waves/pickups/score/menus | — | — | — | — | — | — | — | — | ✅ since 0.4 |
+| Juice (shake/stop/flash/pop/burst/sfx/text/toast) | all | all | all | all | all | all | all | all | ✅ Juice Lite 0.5 |
 
-- **Editor-time auto-assign.** `Reset()` hook (editor-only helper) on JamKit components: when added, search the project for the needed service SO — exactly one match → assign it; zero or many → leave null and log. (Same philosophy as the AutoAssign package already in this project.)
-- **`GameObject > JamKit > …` creation menu.** Pre-wired presets: Player 2D, Player 3D, Enemy, Pickup, Projectile, Spawner, Camera 2D/3D, HUD, Debug Panel. Each lands fully assigned via the auto-assigner.
-- **`JamKit > Validate Setup` window.** Checks: mixer params exposed, PanelSettings themed, scenes in Build Settings, EventSystem per scene, services assigned, input asset present — each issue with a Fix button. Jam-day insurance; would have caught both 0.4.1 bugs.
-- **Prefab-first wizard output.** JamKitCore + Menu become prefabs instanced into each scene, so a fix or addition propagates to all scenes at once.
-- **Wizard offers fast enter-play-mode** (domain-reload off — the reset guards already make this safe).
+Genres still thin: **card/board** (drag-drop, hand layout), **puzzle-match** (grid queries beyond movement), **rhythm** (beat clock). Add rows when a jam demands them.
 
-## M2 — Juice Lite (juice) · ~2–3 sessions
+## Done (0.5.0) — was M1/M2/M3
 
-Fills the gap left when the Feel module was removed: today a jammer without Feel has *no* juice path. These use only existing dependencies (Cinemachine impulse, TimeService, AudioService, UI Toolkit).
+- M1: editor auto-assign, `GameObject > JamKit` presets (16), `JamKit > Validate Setup` with Fix buttons.
+- M2: Juice Lite — CameraShake, HitStop, SpriteFlash, MaterialFlash, PunchScale, ParticleBurst, SfxOnEvent, FloatingText(+Layer), Toast; `JuiceBehaviour` triple-trigger base; per-instance Health events.
+- M3: Bouncer2D, GridMover, ThrustMover2D, ChaseMover, PatrolMover, ScreenWrap2D, TriggerZone, Aimer, SpawnBurst, Respawner, Interactor/Interactable.
 
-- **`CameraShake`** — Cinemachine impulse source with a `Shake(strength)` method + Ripple event slot. The listeners are already on every JamKit camera; nothing currently fires them.
-- **`HitStop`** — event → `TimeService.FreezeForSeconds(0.05)`. The service exists; nothing in the package uses it yet.
-- **`SpriteFlash` / `MaterialFlash`** — white-flash on damage via MaterialPropertyBlock.
-- **`PunchScale`** — squash-and-stretch pop on event (struct tween, no allocations, not a tween library).
-- **`ParticleBurst`** — play an assigned ParticleSystem on event.
-- **`FloatingTextLayer`** — pooled damage/score numbers on a UI Toolkit overlay, projecting world→panel space. No TMP, no world-space canvas.
-- **Menu sounds** — optional hover/click AudioClips on MenuController through AudioService.
-- **Stretch: music ducking** — mixer-snapshot duck for stingers ("wave complete!") via AudioService.
-- **Sample 05 "Juice Toggle"** — same scene, juice on/off button. The before/after sells the kit.
-- **Docs: "Graduating to Feel"** — same events, swap receivers; delete nothing.
+## Done (0.6.0) — was M1.5 + M4 + most of M5
 
-## M3 — Any-Genre Kit (flexibility) · as-needed, per jam
+- M1.5: prefab-first wizard (JamKitCore carries FloatingTextLayer + Toast; JamKitMenu instanced with per-scene overrides), fast enter-play-mode offer, menu hover/click sounds, music ducking (`DuckMusic`/`PlayStinger`/`SfxOnEvent.DuckMusic`), two-player keyboard input (`Gameplay1`/`Gameplay2` maps + `AutoEnableGameplay`).
+- M4: Sample 05 Juice Toggle, Sample 06 Arcade Playground, `Documentation~` (hour-zero, pong-60s, frogger-5min, graduating-to-feel), tests for ScoreService/TimerService/Bouncer math/GridMover snap.
+- M5 (the parts a tool can do): sample compile harness in `Tools~/compile-check.sh` (caught the wizard's dead impulse listener on day one), `JamKit > Build > WebGL (itch.io)`, CI workflow scaffold.
 
-Fill genre gaps with small movers/interactions, prioritized by what the next jam actually needs (top jam genres: platformer ✅, survivor ✅, arcade, puzzle, card).
+### Open questions — resolved
 
-- **`AimAtCursor2D/3D`** — mouse/stick aiming (pairs with ProjectileShooter for twin-stick).
-- **`ThrustMover`** — rotate + thrust (Asteroids-likes).
-- **`GridMover`** — tile-stepped movement (puzzle/sokoban).
-- **`Interactable` + `Interactor`** — "press E" prompts, the most-requested missing primitive.
-- **`Toast`** — UI Toolkit banner ("Wave 2!", "New High Score!") bound to Ripple events. Half flexibility, half juice.
-- **Drag-and-drop helper** (UI Toolkit) — card/inventory jams.
-- **One "playground" sample** exercising all of these in one scene, instead of a mini-sample each.
+- Players get CameraShake + HitStop in presets: **yes** (enemy→player damage is the hit that matters).
+- Toast/FloatingTextLayer: **in the JamKitCore prefab** (every scene gets them for free).
+- Paddle english: **marker component**, not a layer mask (layers are project-global state; the marker auto-wires and carries per-paddle `EnglishMultiplier`).
 
-## M4 — Ship It (meta) · before sharing with teammates
+## M5 remainder — needs a human (cannot be done from inside the repo)
 
-- **Push to GitHub + CI** (game-ci): compile + edit-mode tests on every push. The Editor-asmdef and mixer bugs were exactly the class CI catches.
-- **Resolve the Ripple path dependency** — `file:C:/Repos/Ripple` blocks anyone else from installing JamKit. Publish Ripple to a git URL and document both installs.
-- **Sample compile harness** — `Samples~` is invisible to Unity, so sample code never compiles during development (SurvivorDemo has never been compiled). A dev-only import or CI step closes that hole.
-- **One-click itch.io WebGL build** — `JamKit > Build > WebGL (itch.io)` with correct compression/template; builds burn jam hours.
-- **Tests for ScoreService / TimerService**, `Documentation~` with a 10-step "hour zero" checklist.
+1. **Publish Ripple** to a git URL; update `RIPPLE_GIT_URL` in `.github/workflows/ci.yml` and the README install block. This is THE blocker for teammates and CI.
+2. **Push JamKit to GitHub**, add the `UNITY_LICENSE` secret ([game.ci activation](https://game.ci/docs/github/activation)), decide how CI gets UltEvents (git mirror or vendored), then delete the `if: false` gate in ci.yml.
+3. **Editor playtest pass** — 0.5.0/0.6.0 are compile-verified and logic-tested, but the wizard flow, presets, and both new samples deserve one live run in the editor (the Documentation~ walkthroughs are the scripts for exactly this).
 
-## Later / undecided
+## M6 — candidates (pull when a jam demands, per the matrix)
 
-- World-space UI Toolkit HUD (once 6.2-class support lands), input-rebinding screen, save-slot UI, JamKit Hub dockable window.
+- **Card/board genre row**: UI Toolkit drag-and-drop helper, hand/fan layout.
+- **Match/puzzle row**: grid *queries* (neighbors, flood fill) on top of GridMover's grid.
+- **Log-riding / moving-platform carry** — parent-on-contact helper; came up in both frogger and platformer recipes.
+- **`SynthSfx` placeholder audio** — Sample 05 synthesizes its blips in ~15 lines; promoting that to a tiny runtime util would give every jam hour-zero hit/pickup/death sounds with zero assets. (Samples stay self-contained on purpose — each is a copy-paste reference — so shared helpers only graduate by moving into Runtime, never into a shared samples folder.)
+- Input-rebinding screen, save-slot UI, world-space UI Toolkit HUD (6.2), JamKit Hub window.
 
 ## Non-goals (the identity fence)
 
 No tween library, no node graphs, no netcode, no ECS, no Feel clone. JamKit is the wiring and the 80% defaults — depth lives in dedicated assets.
-
-## Sequencing rationale
-
-M1 before M2: auto-assign + presets make every juice component cheaper to ship and test. M2 before M3: juice is visible in *every* genre, new movers only in some. M4 gates sharing — do it before the first team jam, not after.
-
-## Open questions
-
-- Auto-assign ambiguity rule (two InputServices for local co-op?): assign only on exact-single-match, surface the rest in Validate — acceptable?
-- Juice Lite naming: `Runtime/Juice/` folder, components prefixed plainly (`CameraShake`, not `JamKitCameraShake`)?
-- Should the wizard adopt Juice Lite by default (CameraShake + HitStop pre-wired to Health.OnDamaged in presets), or stay neutral?
