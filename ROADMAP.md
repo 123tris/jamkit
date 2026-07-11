@@ -58,8 +58,8 @@ Genres still thin: **card/board** (drag-drop, hand layout), **puzzle-match** (gr
 
 ## M5 remainder — needs a human (cannot be done from inside the repo)
 
-1. **Publish Ripple** to a git URL; update `RIPPLE_GIT_URL` in `.github/workflows/ci.yml` and the README install block. This is THE blocker for teammates and CI.
-2. **Push JamKit to GitHub**, add the `UNITY_LICENSE` secret ([game.ci activation](https://game.ci/docs/github/activation)), decide how CI gets UltEvents (git mirror or vendored), then delete the `if: false` gate in ci.yml.
+1. ~~Publish Ripple to a git URL~~ **Done** — `https://github.com/123tris/Ripple.git#feature/abstraction+runtime-registry` (the branch pin matters: Ripple's `main` is an older API; when Ripple work merges to main, update the pin in the dev manifest, README, and ci.yml).
+2. ~~Push JamKit to GitHub~~ **Done** (github.com/123tris/jamkit). Still open: add the `UNITY_LICENSE` secret ([game.ci activation](https://game.ci/docs/github/activation)), decide how CI gets UltEvents (git mirror or vendored), then delete the `if: false` gate in ci.yml.
 3. **Editor playtest pass** — 0.5.0/0.6.0 are compile-verified and logic-tested, but the wizard flow, presets, and both new samples deserve one live run in the editor (the Documentation~ walkthroughs are the scripts for exactly this).
 
 ## M6 — candidates (pull when a jam demands, per the matrix)

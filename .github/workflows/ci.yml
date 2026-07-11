@@ -1,10 +1,9 @@
 # JamKit CI — compile + edit-mode tests on every push, via game-ci.
 #
-# STATUS: scaffold. Three prerequisites before this goes green (see ROADMAP M5):
-#   1. RIPPLE_GIT_URL — publish C:/Repos/Ripple to a git remote and put its URL below.
-#   2. UltEvents — asset-store package; either commit it to a private registry/git mirror
+# STATUS: scaffold. Two prerequisites before this goes green (see ROADMAP M5):
+#   1. UltEvents — asset-store package; either commit it to a private registry/git mirror
 #      and reference it below, or vendor it into the test project step.
-#   3. Repo secret UNITY_LICENSE — activate a personal license for CI:
+#   2. Repo secret UNITY_LICENSE — activate a personal license for CI:
 #      https://game.ci/docs/github/activation
 #
 # The package repo has no Unity project, so the workflow assembles a minimal one around
@@ -19,8 +18,8 @@ on:
 
 env:
   UNITY_VERSION: 6000.0.26f1
-  # TODO(1): replace with the published Ripple URL, e.g. https://github.com/<you>/Ripple.git
-  RIPPLE_GIT_URL: ""
+  # Branch pin matters: Ripple's main is an older API than what JamKit builds against.
+  RIPPLE_GIT_URL: "https://github.com/123tris/Ripple.git#feature/abstraction+runtime-registry"
 
 jobs:
   test:
@@ -41,12 +40,12 @@ jobs:
           {
             "dependencies": {
               "com.metz.jamkit": "file:com.metz.jamkit",
-              "com.metz.ripple": "git+${RIPPLE_GIT_URL}",
+              "com.metz.ripple": "${RIPPLE_GIT_URL}",
               "com.unity.test-framework": "1.4.5"
             }
           }
           EOF
-          # TODO(2): provide UltEvents here (git dependency or vendored copy).
+          # TODO: provide UltEvents here (git dependency or vendored copy).
 
       - uses: game-ci/unity-test-runner@v4
         env:
