@@ -30,10 +30,10 @@ Order matters: UltEvents and Ripple first, then JamKit.
 1. **UltEvents** — Asset Store (or UPM if you have a source copy).
 2. **Ripple** — one of:
    ```jsonc
-   // local checkout (current team setup):
+   // git URL (default — note the branch pin; Ripple's main is an older API):
+   "com.metz.ripple": "https://github.com/123tris/Ripple.git#feature/abstraction+runtime-registry"
+   // local checkout (for developing Ripple itself):
    "com.metz.ripple": "file:C:/Repos/Ripple"
-   // git URL (once published — see ROADMAP M5; this is what unblocks teammates + CI):
-   "com.metz.ripple": "git+https://github.com/<you>/Ripple.git"
    ```
 3. **JamKit**:
    ```jsonc
