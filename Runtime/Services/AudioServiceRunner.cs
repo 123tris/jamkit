@@ -83,6 +83,40 @@ namespace Metz.JamKit
             if (_musicB != null && _musicB.isPlaying) StartCoroutine(FadeOut(_musicB, fadeSeconds));
         }
 
+        Coroutine _duckRoutine;
+
+        internal void DuckMusicImpl(float duckTo, float holdSeconds, float fadeSeconds)
+        {
+            if (_duckRoutine != null) StopCoroutine(_duckRoutine);
+            _duckRoutine = StartCoroutine(DuckRoutine(Mathf.Clamp01(duckTo), holdSeconds, Mathf.Max(0.01f, fadeSeconds)));
+        }
+
+        // Ducks the mixer's music param directly (not the sources — those belong to the crossfade)
+        // and restores to the user's Ripple value, so the settings slider always wins in the end.
+        IEnumerator DuckRoutine(float duckTo, float hold, float fade)
+        {
+            float userLinear = Service.MusicVolume != null ? Service.MusicVolume.CurrentValue : 1f;
+            float ducked = userLinear * duckTo;
+
+            for (float t = 0f; t < fade; t += Time.unscaledDeltaTime)
+            {
+                ApplyToMixer(Service.MusicParam, Mathf.Lerp(userLinear, ducked, t / fade));
+                yield return null;
+            }
+            ApplyToMixer(Service.MusicParam, ducked);
+
+            for (float t = 0f; t < hold; t += Time.unscaledDeltaTime) yield return null;
+
+            for (float t = 0f; t < fade; t += Time.unscaledDeltaTime)
+            {
+                userLinear = Service.MusicVolume != null ? Service.MusicVolume.CurrentValue : 1f;
+                ApplyToMixer(Service.MusicParam, Mathf.Lerp(userLinear * duckTo, userLinear, t / fade));
+                yield return null;
+            }
+            ApplyToMixer(Service.MusicParam, Service.MusicVolume != null ? Service.MusicVolume.CurrentValue : 1f);
+            _duckRoutine = null;
+        }
+
         // -------------------- pool + groups --------------------
 
         void BuildPool()

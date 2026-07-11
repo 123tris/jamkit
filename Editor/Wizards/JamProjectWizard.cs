@@ -22,6 +22,7 @@ namespace Metz.JamKit.Editor
         const string ProjectRoot = "Assets/_Project";
         const string ServicesDir = "Assets/_Project/Services";
         const string VariablesDir = "Assets/_Project/Variables";
+        const string PrefabsDir = "Assets/_Project/Prefabs";
 
         [MenuItem("JamKit/New Jam Project", priority = 0)]
         public static void Run()
@@ -99,23 +100,51 @@ namespace Metz.JamKit.Editor
 
             AssetDatabase.SaveAssets();
 
+            // Prefab-first: JamKitCore + Menu are prefab assets instanced into each scene, so a
+            // later fix or addition propagates everywhere at once. Built in a throwaway empty
+            // scene so the user's scene never gets temp objects; we open Bootstrap at the end.
+            EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
+            var corePrefab = CreateOrLoadCorePrefab(audio, time, scene, pool, timer);
+            var menuPrefab = CreateOrLoadMenuPrefab(audio, time, scene, input);
+
             // Bootstrap is built last so it's the scene left open for the user.
             if (overwriteScenes || !File.Exists(gamePath))
-                CreateGameScene(gamePath, audio, time, scene, pool, timer, input, panelSettings);
+                CreateGameScene(gamePath, corePrefab, menuPrefab, input);
             if (overwriteScenes || !File.Exists(gameOverPath))
-                CreateGameOverScene(gameOverPath, audio, time, scene, pool, timer, score, panelSettings);
+                CreateGameOverScene(gameOverPath, corePrefab, scene, score, panelSettings);
             if (overwriteScenes || !File.Exists(bootstrapPath))
-                CreateBootstrapScene(bootstrapPath, audio, time, scene, pool, timer, input, panelSettings);
+                CreateBootstrapScene(bootstrapPath, corePrefab, menuPrefab);
 
             AddScenesToBuildSettings(new[] { bootstrapPath, gamePath, gameOverPath });
             AssetDatabase.SaveAssets();
             AssetDatabase.Refresh();
             EditorSceneManager.OpenScene(bootstrapPath);
 
+            OfferFastPlayMode();
+
             EditorUtility.DisplayDialog("JamKit",
                 "Setup complete.\n\n" +
-                "Service SOs live in Assets/_Project/Services.\n" +
+                "Service SOs live in Assets/_Project/Services; JamKitCore + JamKitMenu prefabs in Assets/_Project/Prefabs\n" +
+                "(edit the prefab once, every scene updates).\n\n" +
                 "Press Play: Start → Settings → Game (pause with Esc) → GameOver all work end-to-end.", "OK");
+        }
+
+        /// <summary>
+        /// Domain reload off = near-instant Play. Safe because every JamKit SO resets its mutable
+        /// state per session (the 0.4.0 reset guards exist exactly for this).
+        /// </summary>
+        static void OfferFastPlayMode()
+        {
+            if (EditorSettings.enterPlayModeOptionsEnabled) return;
+            if (!EditorUtility.DisplayDialog("JamKit: Fast Play Mode",
+                "Enable fast enter-play-mode (disables domain reload)?\n\n" +
+                "Play starts near-instantly. JamKit's services are built for it; your own statics " +
+                "must reset themselves (or use [RuntimeInitializeOnLoadMethod]).\n\n" +
+                "You can change this any time in Project Settings > Editor > Enter Play Mode Settings.",
+                "Enable", "Skip"))
+                return;
+            EditorSettings.enterPlayModeOptionsEnabled = true;
+            EditorSettings.enterPlayModeOptions = EnterPlayModeOptions.DisableDomainReload;
         }
 
         // -------------------- asset helpers --------------------
@@ -184,9 +213,17 @@ namespace Metz.JamKit.Editor
 
         // -------------------- shared scene pieces --------------------
 
-        /// <summary>Create a JamKitCore with every service runner + the fade overlay, wired to the shared SOs.</summary>
-        static GameObject BuildCore(AudioServiceSO audio, TimeServiceSO time, SceneServiceSO scene, PoolServiceSO pool, TimerServiceSO timer)
+        /// <summary>
+        /// The JamKitCore prefab: every service runner + fade overlay, plus the juice/UI scene
+        /// counterparts (FloatingTextLayer, Toast — each on its own child because each hosts its
+        /// own UIDocument at runtime). Load-or-create so user customizations survive re-running.
+        /// </summary>
+        static GameObject CreateOrLoadCorePrefab(AudioServiceSO audio, TimeServiceSO time, SceneServiceSO scene, PoolServiceSO pool, TimerServiceSO timer)
         {
+            string path = PrefabsDir + "/JamKitCore.prefab";
+            var existing = AssetDatabase.LoadAssetAtPath<GameObject>(path);
+            if (existing != null) return existing;
+
             var core = new GameObject("JamKitCore");
             core.AddComponent<AudioServiceRunner>().Service = audio;
             core.AddComponent<TimeServiceRunner>().Service = time;
@@ -196,7 +233,46 @@ namespace Metz.JamKit.Editor
             var sceneRunner = core.AddComponent<SceneServiceRunner>();
             sceneRunner.Service = scene;
             sceneRunner.Fade = fade;
-            return core;
+
+            var textLayer = new GameObject("FloatingTextLayer");
+            textLayer.transform.SetParent(core.transform, false);
+            textLayer.AddComponent<FloatingTextLayer>();
+
+            var toast = new GameObject("Toast");
+            toast.transform.SetParent(core.transform, false);
+            toast.AddComponent<Toast>();
+
+            Directory.CreateDirectory(PrefabsDir);
+            var prefab = PrefabUtility.SaveAsPrefabAsset(core, path);
+            Object.DestroyImmediate(core);
+            return prefab;
+        }
+
+        /// <summary>Menu prefab wired to the services; scenes instance it and override InitialView.</summary>
+        static GameObject CreateOrLoadMenuPrefab(AudioServiceSO audio, TimeServiceSO time, SceneServiceSO scene, InputServiceSO input)
+        {
+            string path = PrefabsDir + "/JamKitMenu.prefab";
+            var existing = AssetDatabase.LoadAssetAtPath<GameObject>(path);
+            if (existing != null) return existing;
+
+            var refs = MenuCanvasBuilder.Build();
+            refs.Controller.AudioService = audio;
+            refs.Controller.TimeService = time;
+            refs.Controller.SceneService = scene;
+            refs.Controller.InputService = input;
+            refs.Controller.InitialView = MenuController.View.Start;
+
+            Directory.CreateDirectory(PrefabsDir);
+            var prefab = PrefabUtility.SaveAsPrefabAsset(refs.Root, path);
+            Object.DestroyImmediate(refs.Root);
+            return prefab;
+        }
+
+        static GameObject Instance(GameObject prefab, string name = null)
+        {
+            var go = (GameObject)PrefabUtility.InstantiatePrefab(prefab);
+            if (!string.IsNullOrEmpty(name)) go.name = name;
+            return go;
         }
 
         static void CreateEventSystem()
@@ -217,49 +293,29 @@ namespace Metz.JamKit.Editor
             if (cinemachine)
             {
                 camGo.AddComponent<CinemachineBrain>();
-                camGo.AddComponent<CinemachineImpulseListener>();
+                // NOT CinemachineImpulseListener: that's a vcam extension and never runs on a
+                // plain camera — shake would silently do nothing until a CinemachineCamera exists.
+                camGo.AddComponent<CinemachineExternalImpulseListener>();
             }
             camGo.AddComponent<AudioListener>();
         }
 
-        static MenuController AddMenu(string goName, PanelSettings panelSettings, MenuController.View initial,
-            AudioServiceSO audio, TimeServiceSO time, SceneServiceSO scene, InputServiceSO input)
-        {
-            var menuGo = new GameObject(goName);
-            var doc = menuGo.AddComponent<UIDocument>();
-            doc.panelSettings = panelSettings;
-            var uxml = Resources.Load<VisualTreeAsset>("JamKitMenu");
-            if (uxml != null) doc.visualTreeAsset = uxml;
-            var menu = menuGo.AddComponent<MenuController>();
-            menu.MenuUxml = uxml;
-            menu.AudioService = audio;
-            menu.TimeService = time;
-            menu.SceneService = scene;
-            menu.InputService = input;
-            menu.InitialView = initial;
-            return menu;
-        }
-
         // -------------------- scenes --------------------
 
-        static void CreateBootstrapScene(string path,
-            AudioServiceSO audio, TimeServiceSO time, SceneServiceSO scene, PoolServiceSO pool,
-            TimerServiceSO timer, InputServiceSO input, PanelSettings panelSettings)
+        static void CreateBootstrapScene(string path, GameObject corePrefab, GameObject menuPrefab)
         {
             var s = EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
 
             CreateCamera(cinemachine: true);
-            BuildCore(audio, time, scene, pool, timer);
-            AddMenu("JamKitMenu", panelSettings, MenuController.View.Start, audio, time, scene, input);
+            Instance(corePrefab);
+            Instance(menuPrefab); // prefab default InitialView = Start
             CreateEventSystem();
 
             EditorSceneManager.MarkSceneDirty(s);
             EditorSceneManager.SaveScene(s, path);
         }
 
-        static void CreateGameScene(string path,
-            AudioServiceSO audio, TimeServiceSO time, SceneServiceSO scene, PoolServiceSO pool,
-            TimerServiceSO timer, InputServiceSO input, PanelSettings panelSettings)
+        static void CreateGameScene(string path, GameObject corePrefab, GameObject menuPrefab, InputServiceSO input)
         {
             var s = EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
 
@@ -270,11 +326,14 @@ namespace Metz.JamKit.Editor
             light.type = LightType.Directional;
             lightGo.transform.rotation = Quaternion.Euler(50f, -30f, 0f);
 
-            BuildCore(audio, time, scene, pool, timer);
+            Instance(corePrefab);
 
-            // Hidden pause layer: Esc opens pause, gameplay input goes live (InitialView = None).
-            var menu = AddMenu("JamKitGameplayUI", panelSettings, MenuController.View.None, audio, time, scene, input);
-            var pause = menu.gameObject.AddComponent<PauseController>();
+            // Hidden pause layer: Esc opens pause, gameplay input goes live (InitialView = None
+            // as an instance override; PauseController is an added component on the instance).
+            var menuGo = Instance(menuPrefab, "JamKitGameplayUI");
+            var menu = menuGo.GetComponent<MenuController>();
+            menu.InitialView = MenuController.View.None;
+            var pause = menuGo.AddComponent<PauseController>();
             pause.Menu = menu;
             pause.InputService = input;
 
@@ -284,14 +343,13 @@ namespace Metz.JamKit.Editor
             EditorSceneManager.SaveScene(s, path);
         }
 
-        static void CreateGameOverScene(string path,
-            AudioServiceSO audio, TimeServiceSO time, SceneServiceSO scene, PoolServiceSO pool,
-            TimerServiceSO timer, ScoreServiceSO score, PanelSettings panelSettings)
+        static void CreateGameOverScene(string path, GameObject corePrefab,
+            SceneServiceSO scene, ScoreServiceSO score, PanelSettings panelSettings)
         {
             var s = EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
 
             CreateCamera(cinemachine: false);
-            BuildCore(audio, time, scene, pool, timer);
+            Instance(corePrefab);
 
             var uiGo = new GameObject("GameOverUI");
             var doc = uiGo.AddComponent<UIDocument>();

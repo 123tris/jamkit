@@ -19,6 +19,11 @@ namespace Metz.JamKit
         public string UIMapName = "UI";
         public string GameplayMapName = "Gameplay";
 
+        [Tooltip("Enable the Gameplay map on first access instead of waiting for a menu to call SwitchToGameplay(). " +
+                 "Tick this on secondary player services (GameplayMapName = Gameplay1/Gameplay2 for keyboard co-op) — " +
+                 "menus only drive the default service's map.")]
+        public bool AutoEnableGameplay = false;
+
         // ---- cache (rebuilt when the asset or a map name changes) ----
         InputActionAsset _cachedAsset;
         string _cachedUIName, _cachedGameplayName;
@@ -45,6 +50,9 @@ namespace Metz.JamKit
             _uiSubmit   = _uiMap?.FindAction("Submit");
             _uiCancel   = _uiMap?.FindAction("Cancel");
             _uiNavigate = _uiMap?.FindAction("Navigate");
+
+            if (AutoEnableGameplay && _gameplayMap != null && _current == null && Application.isPlaying)
+                SwitchTo(_gameplayMap);
         }
 
         public InputActionMap UI       { get { EnsureCache(); return _uiMap; } }

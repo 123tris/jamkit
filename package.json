@@ -1,8 +1,8 @@
 {
   "name": "com.metz.jamkit",
-  "version": "0.4.1",
+  "version": "0.6.0",
   "displayName": "JamKit",
-  "description": "Rapid game-jam toolkit for Unity 6. ScriptableObject service architecture (no singletons), Ripple-native event/variable wiring, UI Toolkit menus, and a recommended integration path with the Feel feedback asset.",
+  "description": "Rapid game-jam toolkit for Unity 6. ScriptableObject service architecture (no singletons), Ripple-native event/variable wiring, UI Toolkit menus, built-in Juice Lite feedback layer, genre primitives for the classic jam archetypes, and a graduation path to the Feel asset.",
   "unity": "6000.0",
   "author": {
     "name": "Metz"
@@ -57,6 +57,16 @@
       "displayName": "04 Survivor Mini",
       "description": "Full mini loop: Mover3D + Spawner/Pool + Pickup + Score/Timer services + HUD + GameOver.",
       "path": "Samples~/04 Survivor Mini"
+    },
+    {
+      "displayName": "05 Juice Toggle",
+      "description": "The Juice Lite before/after: turret vs target, press J to flip every juice receiver on/off.",
+      "path": "Samples~/05 Juice Toggle"
+    },
+    {
+      "displayName": "06 Arcade Playground",
+      "description": "Frogger crossing + interactable lever + self-playing breakout in one scene — the any-genre kit composed.",
+      "path": "Samples~/06 Arcade Playground"
     }
   ]
 }

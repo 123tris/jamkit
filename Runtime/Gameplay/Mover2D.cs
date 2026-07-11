@@ -16,6 +16,8 @@ namespace Metz.JamKit
         public float MoveSpeed = 6f;
         public float JumpSpeed = 12f;
         public bool TopDown = false;
+        [Tooltip("Per-axis input multiplier in TopDown mode. (1,0) = horizontal-only paddle, (0,1) = vertical-only paddle.")]
+        public Vector2 AxisScale = Vector2.one;
         public LayerMask GroundLayers = ~0;
         public float GroundCheckDistance = 0.1f;
 
@@ -43,7 +45,7 @@ namespace Metz.JamKit
             Vector2 input = (InputService == null || InputService.Move == null) ? Vector2.zero : InputService.Move.ReadValue<Vector2>();
             if (TopDown)
             {
-                _rb.linearVelocity = input * MoveSpeed;
+                _rb.linearVelocity = Vector2.Scale(input, AxisScale) * MoveSpeed;
             }
             else
             {

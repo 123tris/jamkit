@@ -5,12 +5,15 @@ namespace Metz.JamKit
     /// <summary>
     /// Deals damage to any <see cref="Health"/> on objects that collide or trigger with this one.
     /// Works for 3D physics (default). For 2D, use <see cref="Damager2D"/>.
+    /// For pooled projectiles, assign <see cref="PoolService"/> so DestroyOnHit despawns instead.
     /// </summary>
     public sealed class Damager : MonoBehaviour
     {
         public float Damage = 1f;
         public LayerMask TargetLayers = ~0;
         public bool DestroyOnHit = false;
+        [Tooltip("Optional. When assigned, DestroyOnHit returns this object to the pool instead of destroying it.")]
+        public PoolServiceSO PoolService;
 
         void OnCollisionEnter(Collision c) => TryHit(c.collider.gameObject);
         void OnTriggerEnter(Collider c) => TryHit(c.gameObject);
@@ -22,7 +25,9 @@ namespace Metz.JamKit
             if (h == null) h = other.GetComponentInParent<Health>();
             if (h == null) return;
             h.Damage(Damage);
-            if (DestroyOnHit) Destroy(gameObject);
+            if (!DestroyOnHit) return;
+            if (PoolService != null) PoolService.Despawn(gameObject);
+            else Destroy(gameObject);
         }
     }
 
@@ -32,6 +37,8 @@ namespace Metz.JamKit
         public float Damage = 1f;
         public LayerMask TargetLayers = ~0;
         public bool DestroyOnHit = false;
+        [Tooltip("Optional. When assigned, DestroyOnHit returns this object to the pool instead of destroying it.")]
+        public PoolServiceSO PoolService;
 
         void OnCollisionEnter2D(Collision2D c) => TryHit(c.collider.gameObject);
         void OnTriggerEnter2D(Collider2D c) => TryHit(c.gameObject);
@@ -43,7 +50,9 @@ namespace Metz.JamKit
             if (h == null) h = other.GetComponentInParent<Health>();
             if (h == null) return;
             h.Damage(Damage);
-            if (DestroyOnHit) Destroy(gameObject);
+            if (!DestroyOnHit) return;
+            if (PoolService != null) PoolService.Despawn(gameObject);
+            else Destroy(gameObject);
         }
     }
 }

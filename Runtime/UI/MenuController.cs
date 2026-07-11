@@ -49,6 +49,13 @@ namespace Metz.JamKit
         [Tooltip("Which view is shown on Enable. None hides the canvas until you call ShowStart().")]
         public View InitialView = View.Start;
 
+        [Header("Sounds (optional)")]
+        [Tooltip("Played when a button gains hover or keyboard/gamepad focus. Needs AudioService + a runner in the scene.")]
+        public AudioClip HoverSound;
+        [Tooltip("Played on button click/submit.")]
+        public AudioClip ClickSound;
+        [Range(0f, 1f)] public float SoundVolume = 0.8f;
+
         UIDocument _doc;
         VisualElement _root;
         VisualElement _startView, _settingsView, _pauseView;
@@ -83,6 +90,7 @@ namespace Metz.JamKit
             EnsureStylesheet();
             CacheViews();
             WireButtons();
+            WireSounds();
             _settings = new MenuSettingsBinder(_root, MasterVar, MusicVar, SfxVar);
 
             switch (InitialView)
@@ -236,6 +244,26 @@ namespace Metz.JamKit
             var btn = _root.Q<Button>(elementName);
             if (btn == null) return;
             btn.clicked += action;
+        }
+
+        /// <summary>
+        /// Hover/click sounds on every button in the document. FocusIn covers gamepad/keyboard
+        /// navigation (the controller equivalent of hover). Safe to re-run: the UIDocument
+        /// rebuilds its tree on enable, so callbacks never stack.
+        /// </summary>
+        void WireSounds()
+        {
+            if (AudioService == null || (HoverSound == null && ClickSound == null)) return;
+            _root.Query<Button>().ForEach(b =>
+            {
+                if (HoverSound != null)
+                {
+                    b.RegisterCallback<PointerEnterEvent>(_ => AudioService.PlaySfx(HoverSound, SoundVolume, 0.03f));
+                    b.RegisterCallback<FocusInEvent>(_ => AudioService.PlaySfx(HoverSound, SoundVolume, 0.03f));
+                }
+                if (ClickSound != null)
+                    b.RegisterCallback<ClickEvent>(_ => AudioService.PlaySfx(ClickSound, SoundVolume, 0.03f));
+            });
         }
 
         static void QuitGame()

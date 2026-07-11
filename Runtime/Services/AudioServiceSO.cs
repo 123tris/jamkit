@@ -43,5 +43,21 @@ namespace Metz.JamKit
             => _runner?.PlayMusicImpl(clip, fadeSeconds, volume);
 
         public void StopMusic(float fadeSeconds = 0.5f) => _runner?.StopMusicImpl(fadeSeconds);
+
+        /// <summary>
+        /// Temporarily lower the music channel (through the mixer's music param), then restore to
+        /// the Ripple-variable value. Makes stingers and voice pops read clearly.
+        /// </summary>
+        public void DuckMusic(float duckTo = 0.25f, float holdSeconds = 0.6f, float fadeSeconds = 0.15f)
+            => _runner?.DuckMusicImpl(duckTo, holdSeconds, fadeSeconds);
+
+        /// <summary>Play a one-shot and duck the music underneath it ("Wave complete!", "New high score!").</summary>
+        public AudioSource PlayStinger(AudioClip clip, float volume = 1f, float duckTo = 0.25f, float holdSeconds = -1f)
+        {
+            if (_runner == null || clip == null) return null;
+            var src = _runner.PlaySfxImpl(clip, volume, 0f);
+            _runner.DuckMusicImpl(duckTo, holdSeconds < 0f ? clip.length : holdSeconds, 0.15f);
+            return src;
+        }
     }
 }
