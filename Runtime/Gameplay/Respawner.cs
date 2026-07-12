@@ -1,14 +1,17 @@
 using Ripple;
+using Sirenix.OdinInspector;
+using UltEvents;
 using UnityEngine;
 
 namespace Metz.JamKit
 {
     /// <summary>
-    /// Teleports this object back to a checkpoint after death (or on demand) — frogger serves,
-    /// platformer pits, pong ball resets. Hooks the sibling <see cref="Health"/>'s death by
-    /// default and refills it on respawn; keep that Health's DestroyOnDeath off. Move the
-    /// checkpoint from a <see cref="TriggerZone"/> by wiring <see cref="SetCheckpoint"/> via
-    /// UltEvents, or from code.
+    /// Teleports this object back to a checkpoint after a delay (or immediately) — frogger
+    /// serves, platformer pits, pong ball resets. A pure teleporter with no Health knowledge:
+    /// wire <c>Health.OnDied → RespawnAfterDelay()</c> to trigger it, and wire
+    /// <c>OnRespawned → Health.ResetFull()</c> to refill — both visible in the inspector
+    /// (presets pre-wire them). Move the checkpoint from a <see cref="TriggerZone"/> by wiring
+    /// <see cref="SetCheckpoint"/>.
     /// </summary>
     [DisallowMultipleComponent]
     public sealed class Respawner : MonoBehaviour
@@ -18,17 +21,17 @@ namespace Metz.JamKit
         public Transform Checkpoint;
 
         [Header("When")]
-        [Tooltip("Respawn automatically when a Health on this object dies.")]
-        public bool OnSiblingDeath = true;
+        [Tooltip("Seconds between RespawnAfterDelay() and the teleport.")]
         [Min(0f)] public float Delay = 0.6f;
-        public bool RefillHealth = true;
 
-        [Header("Events")]
-        [Tooltip("Raised after the teleport — invulnerability windows, camera snaps, serve SFX.")]
-        public VoidEventSO OnRespawned;
-        public event System.Action Respawned;
+        [FoldoutGroup("Events (this instance)")]
+        [Tooltip("After the teleport — wire Health.ResetFull() here, plus invulnerability windows, camera snaps, serve SFX.")]
+        public UltEvent OnRespawned;
 
-        Health _health;
+        [FoldoutGroup("Broadcast (Ripple, global)")]
+        [Tooltip("Optional — any respawn sharing this event (global cues, analytics).")]
+        public VoidEventSO BroadcastRespawned;
+
         Rigidbody2D _rb2d;
         Rigidbody _rb;
         Vector3 _startPos;
@@ -37,31 +40,19 @@ namespace Metz.JamKit
 
         void Awake()
         {
-            _health = GetComponent<Health>();
             _rb2d = GetComponent<Rigidbody2D>();
             _rb = GetComponent<Rigidbody>();
             _startPos = transform.position;
             _startRot = transform.rotation;
         }
 
-        void OnEnable()
-        {
-            _due = -1f;
-            if (OnSiblingDeath && _health != null) _health.Died += Schedule;
-        }
+        void OnEnable() => _due = -1f;
 
-        void OnDisable()
-        {
-            if (_health != null) _health.Died -= Schedule;
-        }
-
-        void Schedule()
+        /// <summary>Respawn after <see cref="Delay"/> — wire Health.OnDied here.</summary>
+        public void RespawnAfterDelay()
         {
             if (_due < 0f) _due = Time.unscaledTime + Delay;
         }
-
-        /// <summary>Respawn after the configured delay (what death triggers).</summary>
-        public void RespawnAfterDelay() => Schedule();
 
         void Update()
         {
@@ -70,7 +61,8 @@ namespace Metz.JamKit
             Respawn();
         }
 
-        /// <summary>Teleport to the checkpoint immediately, refill health, raise events.</summary>
+        /// <summary>Teleport to the checkpoint immediately and fire the events.</summary>
+        [Button, DisableInEditorMode, FoldoutGroup("Debug")]
         public void Respawn()
         {
             Vector3 pos = Checkpoint != null ? Checkpoint.position : _startPos;
@@ -90,10 +82,8 @@ namespace Metz.JamKit
             }
             transform.SetPositionAndRotation(pos, rot);
 
-            if (RefillHealth && _health != null) _health.ResetFull();
-
-            Respawned?.Invoke();
-            if (OnRespawned != null) OnRespawned.Invoke();
+            OnRespawned?.Invoke();
+            if (BroadcastRespawned != null) BroadcastRespawned.Invoke();
         }
 
         /// <summary>Update the checkpoint — wire from a TriggerZone flag via UltEvents.</summary>

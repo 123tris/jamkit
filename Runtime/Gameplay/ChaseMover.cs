@@ -1,21 +1,26 @@
+using Ripple;
 using UnityEngine;
 
 namespace Metz.JamKit
 {
     /// <summary>
     /// Moves straight toward a target — survivor hordes, zombies, homing pickups. Give it a
-    /// <see cref="Target"/> or leave it null and it finds the nearest object with
-    /// <see cref="TargetTag"/>, re-scanning on an interval (so it survives player respawns and
-    /// pooled reuse). Drives a Rigidbody2D or Rigidbody when present, else the transform.
+    /// <see cref="Target"/>, a <see cref="Targets"/> runtime set (preferred — data-driven, no
+    /// scene scans), or leave both empty and it falls back to finding the nearest object with
+    /// <see cref="TargetTag"/>. Re-scans on an interval so it survives player respawns and
+    /// pooled reuse. Drives a Rigidbody2D or Rigidbody when present, else the transform.
     /// </summary>
     [DisallowMultipleComponent]
     public sealed class ChaseMover : MonoBehaviour
     {
         [Header("Target")]
-        [Tooltip("Explicit target. Null = find nearest by tag below.")]
+        [Tooltip("Explicit target. Null = use the runtime set / tag scan below.")]
         public Transform Target;
+        [Tooltip("Preferred: a Ripple runtime set of candidates (objects join via RuntimeSetMember). Beats tag strings — designers retarget by swapping the asset.")]
+        public GameObjectListSO Targets;
+        [Tooltip("Fallback when no runtime set is assigned.")]
         public string TargetTag = "Player";
-        [Tooltip("Seconds between find-by-tag scans while untargeted.")]
+        [Tooltip("Seconds between retarget scans while untargeted.")]
         [Min(0.05f)] public float RetargetInterval = 0.5f;
 
         [Header("Move")]
@@ -45,7 +50,7 @@ namespace Metz.JamKit
             {
                 if (Time.time >= _nextScan)
                 {
-                    Target = FindNearestByTag();
+                    Target = Targets != null ? FindNearestInSet() : FindNearestByTag();
                     _nextScan = Time.time + RetargetInterval;
                 }
                 if (Target == null) { Halt(); return; }
@@ -90,6 +95,20 @@ namespace Metz.JamKit
                 var v = _rb.linearVelocity;
                 _rb.linearVelocity = LockY ? new Vector3(0f, v.y, 0f) : Vector3.zero;
             }
+        }
+
+        Transform FindNearestInSet()
+        {
+            Transform best = null;
+            float bestSqr = float.MaxValue;
+            for (int i = 0; i < Targets.Count; i++)
+            {
+                var go = Targets[i];
+                if (go == null || !go.activeInHierarchy) continue;
+                float sqr = (go.transform.position - transform.position).sqrMagnitude;
+                if (sqr < bestSqr) { bestSqr = sqr; best = go.transform; }
+            }
+            return best;
         }
 
         Transform FindNearestByTag()

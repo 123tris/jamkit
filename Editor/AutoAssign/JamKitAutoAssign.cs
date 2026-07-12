@@ -12,7 +12,7 @@ namespace Metz.JamKit.Editor
     /// <summary>
     /// Kills the per-component drag work: whenever a JamKit component is added in the editor,
     /// its null JamKit-typed references are filled automatically — service SOs from the project
-    /// (InputService, PoolService, …) and scene components (FloatingTextLayer, MenuController, …)
+    /// (InputService, PoolService, …) and scene components (MenuController, Toast, …)
     /// — but only when there is exactly one candidate. Zero or many = left null, so the
     /// assignment is never a guess; the Validate window surfaces what remains.
     /// Runtime stays fully explicit: this writes ordinary serialized references you can see

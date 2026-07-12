@@ -1,4 +1,6 @@
 using Ripple;
+using Sirenix.OdinInspector;
+using UltEvents;
 using UnityEngine;
 
 namespace Metz.JamKit
@@ -7,7 +9,8 @@ namespace Metz.JamKit
     /// Something the player can "press E" on — doors, chests, NPCs, levers. Pair with an
     /// <see cref="Interactor"/> on the player. Focus feedback needs zero UI plumbing: assign
     /// <see cref="PromptVisual"/> (a child sprite/text object, kept inactive) and the interactor
-    /// toggles it. Reactions wire to <see cref="OnInteracted"/> (Ripple/UltEvents) or the C# event.
+    /// toggles it. Reactions wire to <see cref="OnInteracted"/> (this lever opens THIS gate) or
+    /// the global Ripple broadcast.
     /// </summary>
     public sealed class Interactable : MonoBehaviour
     {
@@ -16,9 +19,13 @@ namespace Metz.JamKit
         [Tooltip("Disable after the first interaction (chests, one-time levers).")]
         public bool SingleUse = false;
 
-        [Header("Events (Ripple)")]
-        public VoidEventSO OnInteracted;
-        public event System.Action<Interactor> Interacted;
+        [FoldoutGroup("Events (this instance)")]
+        [Tooltip("This exact object was used, with the user — wire doors, loot, dialogue here.")]
+        public UltEvent<Interactor> OnInteracted;
+
+        [FoldoutGroup("Broadcast (Ripple, global)")]
+        [Tooltip("Optional — any interaction sharing this event (global SFX, tutorial counters).")]
+        public VoidEventSO BroadcastInteracted;
 
         public bool Used { get; private set; }
 
@@ -39,8 +46,8 @@ namespace Metz.JamKit
         {
             if (!CanInteract) return;
             Used = true;
-            Interacted?.Invoke(by);
-            if (OnInteracted != null) OnInteracted.Invoke();
+            OnInteracted?.Invoke(by);
+            if (BroadcastInteracted != null) BroadcastInteracted.Invoke();
             if (SingleUse) SetFocused(false);
         }
     }
