@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using Ripple;
+using Sirenix.OdinInspector;
 using UnityEngine;
 using UnityEngine.UIElements;
 
@@ -31,8 +32,8 @@ namespace Metz.JamKit
         }
 
         [Header("Messages")]
-        public VoidMessage[] Messages;
-        public IntMessage[] IntMessages;
+        [TableList] public VoidMessage[] Messages;
+        [TableList] public IntMessage[] IntMessages;
 
         [Header("Style")]
         [Min(0.1f)] public float Duration = 1.6f;
@@ -106,6 +107,9 @@ namespace Metz.JamKit
             _voidSubs.Clear();
             _intSubs.Clear();
         }
+
+        [Button("Test Toast"), DisableInEditorMode, FoldoutGroup("Debug")]
+        void DebugShow() => Show("Toast!");
 
         public void Show(string message)
         {

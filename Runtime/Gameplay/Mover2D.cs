@@ -1,3 +1,4 @@
+using Sirenix.OdinInspector;
 using UnityEngine;
 
 namespace Metz.JamKit
@@ -10,7 +11,7 @@ namespace Metz.JamKit
     public sealed class Mover2D : MonoBehaviour
     {
         [Header("Service")]
-        public InputServiceSO InputService;
+        [Required] public InputServiceSO InputService;
 
         [Header("Tuning")]
         public float MoveSpeed = 6f;

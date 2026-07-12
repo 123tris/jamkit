@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using Ripple;
+using Sirenix.OdinInspector;
 using UnityEngine;
 using UnityEngine.UIElements;
 
@@ -32,9 +33,10 @@ namespace Metz.JamKit
         public StyleSheet ExtraStyles;
 
         [Header("Services")]
+        [Tooltip("Optional — Unity-audio hover/click sounds. Under the FMOD backend leave this null and use FmodMenuSounds instead.")]
         public AudioServiceSO AudioService;
         public TimeServiceSO TimeService;
-        public SceneServiceSO SceneService;
+        [Required] public SceneServiceSO SceneService;
         public InputServiceSO InputService;
 
         [Header("Volume (Ripple Variables)")]
@@ -117,6 +119,7 @@ namespace Metz.JamKit
 
         // -------------------- public API --------------------
 
+        [Button, DisableInEditorMode, FoldoutGroup("Debug"), HorizontalGroup("Debug/Row")]
         public void ShowStart() => ResetStack(View.Start);
         public void ShowSettings() => Push(View.Settings);
         public void ShowPause() => Push(View.Pause);
@@ -124,6 +127,7 @@ namespace Metz.JamKit
 
         public bool IsPauseOpen => Current == View.Pause;
 
+        [Button, DisableInEditorMode, HorizontalGroup("Debug/Row")]
         public void TogglePause()
         {
             if (IsPauseOpen) { Pop(); ResumeIfPaused(); InputService?.SwitchToGameplay(); }

@@ -1,4 +1,5 @@
 using Ripple;
+using Sirenix.OdinInspector;
 using UnityEngine;
 
 namespace Metz.JamKit
@@ -17,7 +18,7 @@ namespace Metz.JamKit
         public InputServiceSO InputService;
 
         [Header("Projectile")]
-        public GameObject ProjectilePrefab;
+        [Required] public GameObject ProjectilePrefab;
         [Tooltip("Spawn point + direction. Defaults to this transform. 3D fires along +forward, 2D along +right.")]
         public Transform Muzzle;
         public float Speed = 12f;
@@ -29,8 +30,9 @@ namespace Metz.JamKit
         [Tooltip("Drive a Rigidbody2D (true) or a 3D Rigidbody (false).")]
         public bool Is2D = false;
 
-        [Header("Events (Ripple)")]
-        public VoidEventSO OnFired;
+        [FoldoutGroup("Broadcast (Ripple, global)")]
+        [Tooltip("Optional — any shot sharing this event (muzzle SFX, ammo counters).")]
+        public VoidEventSO BroadcastFired;
 
         float _next;
 
@@ -65,7 +67,7 @@ namespace Metz.JamKit
                 }
             }
 
-            if (OnFired != null) OnFired.Invoke();
+            if (BroadcastFired != null) BroadcastFired.Invoke();
             return go;
         }
     }

@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using Sirenix.OdinInspector;
 using UnityEngine;
 
 namespace Metz.JamKit
@@ -13,7 +14,7 @@ namespace Metz.JamKit
         public PoolServiceSO PoolService;
 
         [Header("Spawn")]
-        public GameObject Prefab;
+        [Required] public GameObject Prefab;
         [Min(0.01f)] public float Interval = 1f;
         public bool AutoStart = true;
         [Tooltip("Max instances alive at once. -1 = unlimited. Counts active spawned instances; despawned/destroyed ones free a slot.")]
@@ -38,6 +39,7 @@ namespace Metz.JamKit
             _next = Time.time + Interval;
         }
 
+        [Button, DisableInEditorMode, FoldoutGroup("Debug")]
         public GameObject SpawnOne()
         {
             var pos = transform.position + new Vector3(Random.Range(-Jitter.x, Jitter.x), 0f, Random.Range(-Jitter.y, Jitter.y));

@@ -1,3 +1,4 @@
+using Sirenix.OdinInspector;
 using UnityEngine;
 
 namespace Metz.JamKit
@@ -9,8 +10,8 @@ namespace Metz.JamKit
     /// </summary>
     public sealed class PauseController : MonoBehaviour
     {
-        public MenuController Menu;
-        public InputServiceSO InputService;
+        [Required] public MenuController Menu;
+        [Required] public InputServiceSO InputService;
 
         void Update()
         {
