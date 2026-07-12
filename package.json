@@ -1,8 +1,8 @@
 {
   "name": "com.metz.jamkit",
-  "version": "0.8.0",
+  "version": "0.9.0",
   "displayName": "JamKit",
-  "description": "Rapid game-jam toolkit for Unity 6. ScriptableObject service architecture (no singletons), Ripple-native event/variable wiring, UI Toolkit menus, built-in Juice Lite feedback layer, genre primitives for the classic jam archetypes, an auto-detected FMOD Studio audio backend, and a graduation path to the Feel asset.",
+  "description": "Rapid game-jam toolkit for Unity 6 — the glue layer of a four-part stack: Ripple owns state/events, Feel owns feedback, FMOD owns audio, JamKit owns services-for-behavior (no singletons), gameplay primitives, UI Toolkit menus, and prefab-first editor tooling. Requires Odin Inspector, UltEvents, and Ripple; Feel and FMOD are the recommended feedback/audio paths.",
   "unity": "6000.0",
   "author": {
     "name": "Metz"

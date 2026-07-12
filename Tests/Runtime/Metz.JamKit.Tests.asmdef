@@ -3,6 +3,8 @@
     "rootNamespace": "Metz.JamKit.Tests",
     "references": [
         "Metz.JamKit.Runtime",
+        "Metz.Ripple.Runtime",
+        "Kybernetik.UltEvents",
         "UnityEngine.TestRunner",
         "UnityEditor.TestRunner"
     ],
@@ -15,7 +17,9 @@
     ],
     "autoReferenced": false,
     "defineConstraints": [
-        "UNITY_INCLUDE_TESTS"
+        "UNITY_INCLUDE_TESTS",
+        "ULTEVENTS",
+        "ODIN_INSPECTOR"
     ],
     "versionDefines": [],
     "noEngineReferences": false
