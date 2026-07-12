@@ -18,6 +18,7 @@
     "autoReferenced": true,
     "defineConstraints": [
         "ULTEVENTS",
+        "ODIN_INSPECTOR",
         "JAMKIT_FMOD"
     ],
     "versionDefines": [],

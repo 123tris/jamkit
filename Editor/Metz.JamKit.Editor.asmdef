@@ -20,7 +20,8 @@
     "precompiledReferences": [],
     "autoReferenced": true,
     "defineConstraints": [
-        "ULTEVENTS"
+        "ULTEVENTS",
+        "ODIN_INSPECTOR"
     ],
     "versionDefines": [
         {
