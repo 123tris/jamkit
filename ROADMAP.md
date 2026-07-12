@@ -60,6 +60,10 @@ Genres still thin: **card/board** (drag-drop, hand layout), **puzzle-match** (gr
 
 - **One-click sample setup** — import offer + `JamKit > Samples` menu automate every sample README's setup section: non-interactive `JamProjectWizard.Scaffold`, per-sample ready-to-play scenes (Survivor rides `Game.unity` so the GameOver → Retry loop cycles), auto-assigned services, registry tests, editor-test compile coverage in the harness.
 
+## Done (0.8.0)
+
+- **FMOD backend** — define-gated `Metz.JamKit.Fmod` assemblies (auto-detected, `JAMKIT_FMOD`): `FmodAudioServiceSO`/Runner on the same Ripple volume variables + PlayerPrefs keys as the Unity path, `FmodSfxOnEvent`, `FmodMenuSounds`, wizard/sample scaffolding + Validate checks, FMOD legs in the compile harness. First consumer of the new integration rails: `JamProjectWizard.PostScaffold` + `JamKitValidateWindow.ExtraScans` (Wwise/Steam could ride the same hooks).
+
 ## M5 remainder — needs a human (cannot be done from inside the repo)
 
 1. ~~Publish Ripple to a git URL~~ **Done** — `https://github.com/123tris/Ripple.git#feature/abstraction+runtime-registry` (the branch pin matters: Ripple's `main` is an older API; when Ripple work merges to main, update the pin in the dev manifest, README, and ci.yml).

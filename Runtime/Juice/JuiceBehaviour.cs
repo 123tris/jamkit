@@ -11,6 +11,9 @@ namespace Metz.JamKit
     ///   2. Ripple event assets — global triggers (any-damage screen shake, wave stingers).
     ///   3. <see cref="Play()"/> — call from UltEvents, UnityEvents, Feel, or code.
     /// Graduating to Feel later: point the same triggers at an MMF_Player and delete nothing.
+    /// Adding receivers from code at runtime? The sibling-trigger defaults come from Reset(),
+    /// which is editor-only — set <see cref="OnSiblingDamage"/>/<see cref="OnSiblingDeath"/>
+    /// yourself before OnEnable runs (e.g. add to an inactive GameObject, then activate).
     /// </summary>
     public abstract class JuiceBehaviour : MonoBehaviour
     {

@@ -2,6 +2,23 @@
 
 All notable changes to JamKit are documented here. Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the package uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.8.0] - 2026-07-12
+
+Theme: FMOD as a first-class audio backend. Install FMOD for Unity and the kit grows an FMOD service, juice receiver, and menu sounds — remove it and they vanish instead of breaking the compile.
+
+### Added
+- **FMOD integration** (`Metz.JamKit.Fmod` + `.Editor` assemblies, gated on the new `JAMKIT_FMOD` define):
+  - `FmodAudioServiceSO` / `FmodAudioServiceRunner` — the FMOD flavor of the audio service. One-shots (`PlaySfx` positional/attached), music with code-driven fades, `DuckMusic` / `PlayStinger` parity with the Unity path, plus `SetMusicParameter` / `SetGlobalParameter` for Studio-authored intensity layers. Volume drives the `bus:/Music` / `bus:/SFX` buses (paths configurable) through the **same Ripple variables and PlayerPrefs keys** as `AudioServiceSO`, so menu sliders and persisted settings work unchanged with either backend. The music `EventInstance` lives on the SO and survives scene loads; instances mid-fade-out are swept by the departing runner so nothing plays unowned. Missing buses warn once with the authoring fix; an uninitialized FMOD system degrades to warned no-ops instead of throwing.
+  - `FmodSfxOnEvent` — Juice Lite receiver for FMOD events (same three triggers as `SfxOnEvent`; randomization/pitch stay in Studio where they belong). `FmodMenuSounds` — hover/click FMOD events for a sibling `MenuController`.
+  - `FmodDefineSync` (in the main editor assembly, so it needs no FMOD) — probes for the FMODUnity assembly after every domain reload and toggles `JAMKIT_FMOD` on the jam build targets. Install FMOD → components appear; delete FMOD → they disappear cleanly.
+  - `FmodJamKitSetup` — post-scaffold step that creates `FmodAudioService.asset` (sharing the wizard's Ripple volume variables), puts `FmodAudioServiceRunner` on the `JamKitCore` prefab and `FmodMenuSounds` on `JamKitMenu`. Runs inside `New Jam Project` and one-click sample setup when FMOD is present, and on demand via `JamKit > Setup > Add FMOD Audio Service` for projects scaffolded before FMOD was installed. All create-or-load.
+  - Validate window: FMOD checks — integration not linked to a Studio project, missing `FmodAudioServiceSO`, missing volume variables, core prefab without the runner (with Fix buttons).
+- **Extension points for optional integrations:** `JamProjectWizard.PostScaffold` (steps appended from `[InitializeOnLoad]`, run at the end of every `Scaffold`) and `JamKitValidateWindow.ExtraScans` (extra checks reporting through the window's `IssueReporter`). FMOD is the first consumer; Wwise or Steam could ride the same rails.
+- `Tools~/compile-check.sh` builds the FMOD assemblies too (compiling `FMODUnity.dll` from the integration's sources first) whenever the project has `Assets/Plugins/FMOD` or `FMOD_SRC` points at one; skipped with a note otherwise, so the base kit stays verifiable without FMOD.
+
+### Changed
+- `JamProjectWizard` exposes `MenuPrefabPath` alongside the existing scene/prefab path constants.
+
 ## [0.7.0] - 2026-07-12
 
 Theme: zero-step samples. Every sample README's setup section is now a single menu click (or one dialog button at import time) — the manual steps stay in the READMEs as documentation of what the automation does.

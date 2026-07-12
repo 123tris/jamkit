@@ -61,6 +61,7 @@ Each service is a `ScriptableObject` you can drop into any component's inspector
 | Service | Type | What it does | Needs a scene Runner? |
 | --- | --- | --- | --- |
 | Audio  | `AudioServiceSO`  | `PlaySfx(clip)`, `PlayMusic(clip)`. Routes through an AudioMixer; volume is Ripple-bound. | Yes — `AudioServiceRunner` (audio sources). |
+| Audio (FMOD) | `FmodAudioServiceSO` | Exists when FMOD for Unity is installed (see [FMOD integration](#fmod-integration)). `PlaySfx(event)`, `PlayMusic(event)`, `SetMusicParameter(name, v)`, stingers/ducking; volume drives FMOD buses through the same Ripple variables. | Yes — `FmodAudioServiceRunner`. |
 | Time   | `TimeServiceSO`   | `Pause()`, `Resume()`, `Push(scale)`, `Pop()`. Stack composes pause + freeze + slow-mo. | Only for `FreezeForSeconds` (needs a coroutine driver). |
 | Scenes | `SceneServiceSO`  | `LoadAsync(name)`, `ReloadCurrent()`. Optional Ripple `VoidEventSO`s announce load start/end. | Yes — `SceneServiceRunner` (coroutine + fade). |
 | Input  | `InputServiceSO`  | Exposes Move / Look / Jump / Attack / Pause from a configured `InputActionAsset`. | No — but call `SwitchToGameplay()` / `SwitchToUI()` to switch maps. |
@@ -77,7 +78,7 @@ Drop-in MonoBehaviours that reference service SOs in their inspector — never a
 - **Combat:** `Health` (Ripple + per-instance C# events, pool-aware refill), `Damager` / `Damager2D` (pool-aware), `Hitbox` + `Hurtbox` (weak points, one hit per swing), `Knockback`, `Respawner` (checkpoints, death respawn).
 - **Spawning:** `Spawner` (interval, concurrent `MaxAlive`), `WaveSpawner` (sequenced waves), `ProjectileShooter` (pooled firing), `SpawnBurst` (death explosions / asteroid splits / loot drops), `AutoDespawn` (pool-aware lifetime), `Pickup` (trigger → score/event/despawn), `TriggerZone` (kill pit / goal / score gate / level exit in one component).
 - **Interaction:** `Interactor` (on the player: nearest-target probe, 2D+3D, allocation-free) + `Interactable` ("press E" targets with a zero-plumbing prompt visual).
-- **Juice Lite** (all trigger from sibling `Health`, Ripple events, or a public `Play()` — see below): `CameraShake`, `HitStop`, `SpriteFlash`, `MaterialFlash`, `PunchScale`, `ParticleBurst`, `SfxOnEvent`, `FloatingText` (+ scene `FloatingTextLayer`), `Toast`.
+- **Juice Lite** (all trigger from sibling `Health`, Ripple events, or a public `Play()` — see below): `CameraShake`, `HitStop`, `SpriteFlash`, `MaterialFlash`, `PunchScale`, `ParticleBurst`, `SfxOnEvent` (`FmodSfxOnEvent` when FMOD is installed), `FloatingText` (+ scene `FloatingTextLayer`), `Toast`.
 - **UI / HUD:** `MenuController` (Start/Settings/Pause), `PauseController`, `GameOverController`, `FadeOverlay`, `DebugPanel`, and the bindings `LabelBinding` / `BarBinding` that drive a UI Toolkit label/bar from a `FloatVariableSO` with no code.
 - **Utilities:** `Timer` / `Stopwatch` / `Cooldown` structs, `FSM<TState>`, `ObjectPool<T>`, `RandomBag<T>`, and the `MathX` / `VectorX` / `ColorX` / `GizmoX` extension helpers.
 
@@ -135,12 +136,23 @@ No compile-time coupling between JamKit and Feel; designers tune feedbacks witho
 - `JamKit > Create Bootstrap Scene Only` — drops the bootstrap scene + services into an existing project.
 - `JamKit > Create Menu Prefab` — saves a reusable `JamKitMenu.prefab` (assign services after dragging in).
 - `JamKit > Setup > Create Audio Mixer` / `Create Panel Settings` — re-creates the assets if you deleted them.
+- `JamKit > Setup > Add FMOD Audio Service` — retrofits the FMOD service/runner/menu-sounds into an already-scaffolded project (menu exists only when FMOD is installed).
 
 ## Sound polish
 
 - `MenuController` takes optional hover/click clips — hover covers gamepad focus too.
 - `AudioServiceSO.PlayStinger(clip)` ducks the music under a one-shot; `SfxOnEvent` has a `DuckMusic` toggle for the same thing, no code.
 - Two-player keyboard input ships in `JamKitInput`: maps `Gameplay1` (WASD) and `Gameplay2` (arrows). Make a second `InputServiceSO` pointing at `Gameplay2`, tick `AutoEnableGameplay`, assign it to player 2's mover — see [Pong in 60 seconds](Documentation~/pong-in-60-seconds.md).
+
+## FMOD integration
+
+Install [FMOD for Unity](https://assetstore.unity.com/packages/tools/audio/fmod-for-unity-161631) and JamKit grows an FMOD backend — no setup flags, no manual defines:
+
+- **Detection is automatic.** An editor probe toggles the `JAMKIT_FMOD` scripting define with the FMODUnity assembly's presence; the `Metz.JamKit.Fmod` assemblies compile in when FMOD exists and vanish (instead of breaking the build) when it doesn't.
+- **`FmodAudioServiceSO` + `FmodAudioServiceRunner`** mirror the Unity-audio service: `PlaySfx(EventReference)` (positional + attached variants), `PlayMusic` / `StopMusic` with code-driven fades, `DuckMusic` / `PlayStinger`, and the FMOD-only superpowers `SetMusicParameter(name, value)` (intensity layers you authored in Studio) and `SetGlobalParameter`. Volume flows through the **same Ripple variables and PlayerPrefs keys** as the Unity path, so the menu sliders drive FMOD buses with zero changes — and the music `EventInstance` lives on the SO, so **music survives scene loads**.
+- **`FmodSfxOnEvent`** is the Juice Lite receiver (same three triggers); randomization/pitch variation belong on the event in Studio. **`FmodMenuSounds`** sits next to `MenuController` for hover/click events.
+- **Scaffolding knows about it.** With FMOD installed, `New Jam Project` (and one-click sample setup) also creates `FmodAudioService.asset` and puts the runner on `JamKitCore` + `FmodMenuSounds` on the menu prefab. Already scaffolded? `JamKit > Setup > Add FMOD Audio Service` retrofits the same, idempotently. `JamKit > Validate Setup` checks the FMOD side too (project linked, service present, runner on the core prefab).
+- **Conventions:** group buses `bus:/Music` and `bus:/SFX` in your Studio project's mixer (paths configurable on the SO; a missing bus warns once and skips that channel). The Unity-audio service stays functional alongside — placeholder clips keep working until your banks exist.
 
 ## Samples
 

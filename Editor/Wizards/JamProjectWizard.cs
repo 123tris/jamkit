@@ -28,6 +28,15 @@ namespace Metz.JamKit.Editor
         public const string GameScenePath = ProjectRoot + "/Scenes/Game.unity";
         public const string GameOverScenePath = ProjectRoot + "/Scenes/GameOver.unity";
         public const string CorePrefabPath = PrefabsDir + "/JamKitCore.prefab";
+        public const string MenuPrefabPath = PrefabsDir + "/JamKitMenu.prefab";
+
+        /// <summary>
+        /// Optional integrations (FMOD, …) append extra scaffold steps here from
+        /// [InitializeOnLoad]; they run at the end of every <see cref="Scaffold"/> — wizard and
+        /// one-click sample setup alike. Steps must be idempotent (create-or-load) and work on
+        /// assets only: a throwaway scene is open when they run.
+        /// </summary>
+        public static readonly List<System.Action> PostScaffold = new();
 
         [MenuItem("JamKit/New Jam Project", priority = 0)]
         public static void Run()
@@ -137,6 +146,9 @@ namespace Metz.JamKit.Editor
                 CreateBootstrapScene(BootstrapScenePath, corePrefab, menuPrefab);
 
             AddScenesToBuildSettings(new[] { BootstrapScenePath, GameScenePath, GameOverScenePath });
+
+            foreach (var step in PostScaffold) step();
+
             AssetDatabase.SaveAssets();
             AssetDatabase.Refresh();
         }
@@ -263,7 +275,7 @@ namespace Metz.JamKit.Editor
         /// <summary>Menu prefab wired to the services; scenes instance it and override InitialView.</summary>
         static GameObject CreateOrLoadMenuPrefab(AudioServiceSO audio, TimeServiceSO time, SceneServiceSO scene, InputServiceSO input)
         {
-            string path = PrefabsDir + "/JamKitMenu.prefab";
+            string path = MenuPrefabPath;
             var existing = AssetDatabase.LoadAssetAtPath<GameObject>(path);
             if (existing != null) return existing;
 
