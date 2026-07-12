@@ -31,7 +31,8 @@ build_asm () {
         esac
       done
 
-  if [ -n "$extra_ref" ]; then echo "-r:\"$extra_ref\"" >> "$rsp"; fi
+  # extra_ref may hold several space-separated dll paths ($OUT never contains spaces).
+  for ref in $extra_ref; do echo "-r:\"$ref\"" >> "$rsp"; done
 
   find "$srcdir" -name '*.cs' | sed 's/^/"/;s/$/"/' >> "$rsp"
 
@@ -50,6 +51,10 @@ build_asm () {
 build_asm "$PROJ/Metz.JamKit.Runtime.csproj" "$PKG/Runtime" "$OUT/Metz.JamKit.Runtime.dll" || exit 1
 build_asm "$PROJ/Metz.JamKit.Editor.csproj" "$PKG/Editor" "$OUT/Metz.JamKit.Editor.dll" "$OUT/Metz.JamKit.Runtime.dll" || exit 1
 build_asm "$PROJ/Metz.JamKit.Tests.csproj" "$PKG/Tests/Runtime" "$OUT/Metz.JamKit.Tests.dll" "$OUT/Metz.JamKit.Runtime.dll" || exit 1
+# Editor tests borrow the runtime-tests reference set (nunit + full Unity incl. UnityEditor):
+# Metz.JamKit.EditorTests.csproj stays a referenceless stub until Unity regenerates it with
+# scripts present, so it can't be trusted as the reference source.
+build_asm "$PROJ/Metz.JamKit.Tests.csproj" "$PKG/Tests/Editor" "$OUT/Metz.JamKit.EditorTests.dll" "$OUT/Metz.JamKit.Runtime.dll $OUT/Metz.JamKit.Editor.dll" || exit 1
 # Samples~ is invisible to Unity until imported, so this is the ONLY compile coverage sample
 # code gets. Same reference set as Runtime + the fresh Runtime dll.
 build_asm "$PROJ/Metz.JamKit.Runtime.csproj" "$PKG/Samples~" "$OUT/Metz.JamKit.Samples.dll" "$OUT/Metz.JamKit.Runtime.dll" || exit 1

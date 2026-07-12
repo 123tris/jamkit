@@ -4,6 +4,10 @@ Self-building 3D walker scene with a player capsule and a ring of pickups. Demon
 
 ## Setup
 
+One click: **`JamKit > Samples > Set Up 02 3D Walker Mini`** (also offered right after import) — scaffolds `Assets/_Project` if needed, builds the demo scene, adds the component, and assigns the services. Press Play.
+
+Or manually:
+
 1. `JamKit > New Jam Project` first.
 2. Empty scene, add a GameObject with `WalkerDemo`.
 3. Inspector:

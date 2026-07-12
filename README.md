@@ -154,6 +154,8 @@ Open `Window > Package Manager > JamKit > Samples` and import:
 - **05 Juice Toggle** — the Juice Lite before/after: turret vs target, press J to flip every receiver at once (synthesized SFX, zero assets).
 - **06 Arcade Playground** — frogger crossing + interactable lever + self-playing breakout in one scene: the any-genre kit composed.
 
+Importing offers one-click setup, and `JamKit > Samples > Set Up <sample>` does the same any time: project scaffold if missing, a ready-to-play scene with a JamKitCore, the demo component with services assigned. Each sample README keeps the manual steps (they document what the button does) plus the Feel wiring to try.
+
 ## License
 
 MIT. See [LICENSE.md](LICENSE.md).

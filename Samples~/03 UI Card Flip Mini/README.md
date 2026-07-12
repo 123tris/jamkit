@@ -4,6 +4,10 @@ UI Toolkit demo with a `SaveServiceSO`-backed persistent high score. Click any o
 
 ## Setup
 
+One click: **`JamKit > Samples > Set Up 03 UI Card Flip Mini`** (also offered right after import) — scaffolds `Assets/_Project` if needed, builds the demo scene, adds the component, and assigns the save service. Press Play.
+
+Or manually:
+
 1. `JamKit > New Jam Project` first.
 2. Empty scene, add a GameObject with `CardFlipDemo`. A `UIDocument` is added automatically.
 3. Inspector:

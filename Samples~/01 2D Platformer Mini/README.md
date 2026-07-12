@@ -4,6 +4,10 @@ Self-building 2D platformer test scene. Demonstrates `Mover2D` driven by `InputS
 
 ## Setup
 
+One click: **`JamKit > Samples > Set Up 01 2D Platformer Mini`** (also offered right after import) — scaffolds `Assets/_Project` if needed, builds the demo scene, adds the component, and assigns the services. Press Play.
+
+Or manually:
+
 1. Run `JamKit > New Jam Project` first.
 2. New empty scene, add a GameObject with `PlatformerDemo`.
 3. Inspector:
