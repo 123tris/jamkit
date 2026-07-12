@@ -12,7 +12,8 @@ namespace Metz.JamKit.Editor
 {
     /// <summary>
     /// One-click jam scaffold. Creates the SO service assets (Audio / Time / Scene / Input / Save /
-    /// Pool / Score / Timer), the Ripple variables, the AudioMixer + PanelSettings, and three scenes
+    /// Pool), the Ripple variables (score + high score + timer as plain variables — no service;
+    /// volume + high score marked persistent), the AudioMixer + PanelSettings, and three scenes
     /// (Bootstrap / Game / GameOver). Every scene gets a self-contained JamKitCore (all runners) plus
     /// an EventSystem, so audio/pause/input/transitions work in each scene without a persistent root
     /// or any singletons — the runners simply register with the shared service SOs on load.
@@ -43,7 +44,7 @@ namespace Metz.JamKit.Editor
         {
             if (!EditorUtility.DisplayDialog(
                 "JamKit: New Jam Project",
-                "Creates Bootstrap / Game / GameOver scenes, the SO service assets (incl. Score + Timer), " +
+                "Creates Bootstrap / Game / GameOver scenes, the SO service assets, the Ripple variables, " +
                 "the audio mixer, the UI Toolkit panel settings, and wires each scene with a JamKitCore, " +
                 "menu/pause flow, and an EventSystem for gamepad navigation.\n\nProceed?",
                 "Create", "Cancel"))
@@ -97,15 +98,17 @@ namespace Metz.JamKit.Editor
 
             var panelSettings = PanelSettingsCreator.CreateAt($"{PanelSettingsCreator.DefaultDir}/{PanelSettingsCreator.DefaultName}.asset");
 
-            // Ripple volume variables (0..1) and score/timer mirrors (HUD-bindable).
-            var master = CreateOrLoadFloatVar($"{VariablesDir}/MasterVolume.asset");
-            var music  = CreateOrLoadFloatVar($"{VariablesDir}/MusicVolume.asset");
-            var sfx    = CreateOrLoadFloatVar($"{VariablesDir}/SfxVolume.asset");
+            // Ripple variables: volumes (persistent — settings survive restarts), score/high-score
+            // (high score persistent), and a timer readout for HUD binding. State lives here, not
+            // in services (see PILLARS.md); the only score logic is the HighScoreTracker on Core.
+            var master = CreateOrLoadFloatVar($"{VariablesDir}/MasterVolume.asset", persist: true);
+            var music  = CreateOrLoadFloatVar($"{VariablesDir}/MusicVolume.asset", persist: true);
+            var sfx    = CreateOrLoadFloatVar($"{VariablesDir}/SfxVolume.asset", persist: true);
             var scoreVar = CreateOrLoadFloatVar($"{VariablesDir}/Score.asset", 0f, 999999f, 0f);
-            var highVar  = CreateOrLoadFloatVar($"{VariablesDir}/HighScore.asset", 0f, 999999f, 0f);
+            var highVar  = CreateOrLoadFloatVar($"{VariablesDir}/HighScore.asset", 0f, 999999f, 0f, persist: true);
             var timeVar  = CreateOrLoadFloatVar($"{VariablesDir}/Timer.asset", 0f, 999999f, 0f);
 
-            // Service SOs.
+            // Service SOs — services wrap behavior only (scene loads, timescale, input, pooling, IO).
             var audio = CreateOrLoadSO<AudioServiceSO>($"{ServicesDir}/AudioService.asset", a =>
             {
                 a.Mixer = mixer;
@@ -115,15 +118,8 @@ namespace Metz.JamKit.Editor
             });
             var time  = CreateOrLoadSO<TimeServiceSO>($"{ServicesDir}/TimeService.asset");
             var scene = CreateOrLoadSO<SceneServiceSO>($"{ServicesDir}/SceneService.asset");
-            var save  = CreateOrLoadSO<SaveServiceSO>($"{ServicesDir}/SaveService.asset");
+            CreateOrLoadSO<SaveServiceSO>($"{ServicesDir}/SaveService.asset");
             var pool  = CreateOrLoadSO<PoolServiceSO>($"{ServicesDir}/PoolService.asset");
-            var timer = CreateOrLoadSO<TimerServiceSO>($"{ServicesDir}/TimerService.asset", t => { t.TimeVariable = timeVar; });
-            var score = CreateOrLoadSO<ScoreServiceSO>($"{ServicesDir}/ScoreService.asset", sc =>
-            {
-                sc.SaveService = save;
-                sc.ScoreVariable = scoreVar;
-                sc.HighScoreVariable = highVar;
-            });
 
             var actions = Resources.Load<InputActionAsset>("JamKitInput");
             var input = CreateOrLoadSO<InputServiceSO>($"{ServicesDir}/InputService.asset", i => { i.Actions = actions; });
@@ -134,14 +130,14 @@ namespace Metz.JamKit.Editor
             // later fix or addition propagates everywhere at once. Built in a throwaway empty
             // scene so the user's scene never gets temp objects; we open Bootstrap at the end.
             EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
-            var corePrefab = CreateOrLoadCorePrefab(audio, time, scene, pool, timer);
+            var corePrefab = CreateOrLoadCorePrefab(audio, time, scene, pool, scoreVar, highVar);
             var menuPrefab = CreateOrLoadMenuPrefab(audio, time, scene, input);
 
             // Bootstrap is built last so it's the scene left open for the user.
             if (overwriteScenes || !File.Exists(GameScenePath))
                 CreateGameScene(GameScenePath, corePrefab, menuPrefab, input);
             if (overwriteScenes || !File.Exists(GameOverScenePath))
-                CreateGameOverScene(GameOverScenePath, corePrefab, scene, score, panelSettings);
+                CreateGameOverScene(GameOverScenePath, corePrefab, scene, scoreVar, highVar, panelSettings);
             if (overwriteScenes || !File.Exists(BootstrapScenePath))
                 CreateBootstrapScene(BootstrapScenePath, corePrefab, menuPrefab);
 
@@ -211,7 +207,7 @@ namespace Metz.JamKit.Editor
             return inst;
         }
 
-        static FloatVariableSO CreateOrLoadFloatVar(string path, float min = 0f, float max = 1f, float initial = 1f)
+        static FloatVariableSO CreateOrLoadFloatVar(string path, float min = 0f, float max = 1f, float initial = 1f, bool persist = false)
         {
             var existing = AssetDatabase.LoadAssetAtPath<FloatVariableSO>(path);
             if (existing != null) return existing;
@@ -219,12 +215,13 @@ namespace Metz.JamKit.Editor
             Directory.CreateDirectory(Path.GetDirectoryName(path));
             AssetDatabase.CreateAsset(inst, path);
 
-            // Set min/max/initial on the NumericalVariable<float> base via SerializedObject so the
-            // values stick across domain reload.
+            // Set min/max/initial/persist on the Ripple base via SerializedObject (string paths, so
+            // no compile-time dependency on Ripple's private fields) so the values stick.
             var so = new SerializedObject(inst);
             TrySetFloat(so, "min", min);
             TrySetFloat(so, "max", max);
             TrySetFloat(so, "_initialValue", initial);
+            TrySetBool(so, "_persist", persist);
             so.ApplyModifiedPropertiesWithoutUndo();
             return inst;
         }
@@ -235,14 +232,21 @@ namespace Metz.JamKit.Editor
             if (prop != null && prop.propertyType == SerializedPropertyType.Float) prop.floatValue = v;
         }
 
+        static void TrySetBool(SerializedObject so, string name, bool v)
+        {
+            var prop = so.FindProperty(name);
+            if (prop != null && prop.propertyType == SerializedPropertyType.Boolean) prop.boolValue = v;
+        }
+
         // -------------------- shared scene pieces --------------------
 
         /// <summary>
-        /// The JamKitCore prefab: every service runner + fade overlay, plus the juice/UI scene
-        /// counterparts (FloatingTextLayer, Toast — each on its own child because each hosts its
-        /// own UIDocument at runtime). Load-or-create so user customizations survive re-running.
+        /// The JamKitCore prefab: every service runner + fade overlay + the score tracker, plus
+        /// the Toast child (it hosts its own UIDocument at runtime). Load-or-create so user
+        /// customizations survive re-running.
         /// </summary>
-        static GameObject CreateOrLoadCorePrefab(AudioServiceSO audio, TimeServiceSO time, SceneServiceSO scene, PoolServiceSO pool, TimerServiceSO timer)
+        static GameObject CreateOrLoadCorePrefab(AudioServiceSO audio, TimeServiceSO time, SceneServiceSO scene, PoolServiceSO pool,
+            FloatVariableSO scoreVar, FloatVariableSO highVar)
         {
             string path = CorePrefabPath;
             var existing = AssetDatabase.LoadAssetAtPath<GameObject>(path);
@@ -252,15 +256,13 @@ namespace Metz.JamKit.Editor
             core.AddComponent<AudioServiceRunner>().Service = audio;
             core.AddComponent<TimeServiceRunner>().Service = time;
             core.AddComponent<PoolServiceRunner>().Service = pool;
-            core.AddComponent<TimerServiceRunner>().Service = timer;
             var fade = core.AddComponent<FadeOverlay>();
             var sceneRunner = core.AddComponent<SceneServiceRunner>();
             sceneRunner.Service = scene;
             sceneRunner.Fade = fade;
-
-            var textLayer = new GameObject("FloatingTextLayer");
-            textLayer.transform.SetParent(core.transform, false);
-            textLayer.AddComponent<FloatingTextLayer>();
+            var tracker = core.AddComponent<HighScoreTracker>();
+            tracker.Score = scoreVar;
+            tracker.HighScore = highVar;
 
             var toast = new GameObject("Toast");
             toast.transform.SetParent(core.transform, false);
@@ -372,7 +374,7 @@ namespace Metz.JamKit.Editor
         }
 
         static void CreateGameOverScene(string path, GameObject corePrefab,
-            SceneServiceSO scene, ScoreServiceSO score, PanelSettings panelSettings)
+            SceneServiceSO scene, FloatVariableSO scoreVar, FloatVariableSO highVar, PanelSettings panelSettings)
         {
             var s = EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
 
@@ -384,7 +386,8 @@ namespace Metz.JamKit.Editor
             doc.panelSettings = panelSettings;
             var over = uiGo.AddComponent<GameOverController>();
             over.SceneService = scene;
-            over.ScoreService = score;
+            over.ScoreVariable = scoreVar;
+            over.HighScoreVariable = highVar;
             over.RetrySceneName = "Game";
             over.MainMenuSceneName = "Bootstrap";
 

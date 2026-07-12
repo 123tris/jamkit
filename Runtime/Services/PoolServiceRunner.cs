@@ -1,26 +1,11 @@
-using UnityEngine;
-
 namespace Metz.JamKit
 {
     /// <summary>
-    /// Scene-side host for <see cref="PoolServiceSO"/>. Provides a parent transform for
-    /// pooled instances so the scene hierarchy stays tidy and idle objects survive
-    /// scene loads if this runner is marked DontDestroyOnLoad.
+    /// Scene-side host for <see cref="PoolServiceSO"/>: idle pooled instances parent under this
+    /// transform so the hierarchy stays tidy. Registration (and the per-scene pool reset that
+    /// keeps Domain-Reload-off sessions clean) comes entirely from the base class.
     /// </summary>
-    public sealed class PoolServiceRunner : MonoBehaviour
+    public sealed class PoolServiceRunner : ServiceRunner<PoolServiceSO, PoolServiceRunner>
     {
-        public PoolServiceSO Service;
-
-        void OnEnable()
-        {
-            if (Service == null) return;
-            Service.ResetState();   // drop pools left over from a previous play session
-            Service.SetRoot(transform);
-        }
-
-        void OnDisable()
-        {
-            if (Service != null) Service.ClearRoot(transform);
-        }
     }
 }

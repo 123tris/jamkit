@@ -115,7 +115,7 @@ namespace Metz.JamKit.Editor
         static readonly Type[] ServiceTypes =
         {
             typeof(AudioServiceSO), typeof(TimeServiceSO), typeof(SceneServiceSO), typeof(InputServiceSO),
-            typeof(SaveServiceSO), typeof(PoolServiceSO), typeof(ScoreServiceSO), typeof(TimerServiceSO),
+            typeof(SaveServiceSO), typeof(PoolServiceSO),
         };
 
         void ScanServices()

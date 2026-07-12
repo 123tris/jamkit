@@ -1,32 +1,39 @@
 using Ripple;
+using Sirenix.OdinInspector;
+using UltEvents;
 using UnityEngine;
 
 namespace Metz.JamKit
 {
     /// <summary>
-    /// Trigger-based collectible. When something on <see cref="CollectorLayers"/> enters its trigger,
-    /// it optionally awards score, raises a Ripple event (wire to a sound / Feel via UltEvents),
-    /// and despawns. Works for both 2D and 3D triggers — only the matching collider type fires.
-    /// Requires a trigger Collider/Collider2D on this object.
+    /// Trigger-based collectible. When something on <see cref="CollectorLayers"/> enters its
+    /// trigger, it optionally adds to a score variable, fires its events, and despawns.
+    /// Score is a plain Ripple variable — no service involved (see PILLARS.md).
+    /// Works for both 2D and 3D triggers; requires a trigger Collider/Collider2D on this object.
     /// </summary>
     public sealed class Pickup : MonoBehaviour
     {
-        [Header("Service")]
-        [Tooltip("Pool to return to on pickup. If null, the object is destroyed.")]
-        public PoolServiceSO PoolService;
-
         [Header("Collect")]
         [Tooltip("Only objects with this tag can collect. Empty = any tag. Defaults to Unity's built-in 'Player' tag so enemies/projectiles on the same layer don't hoover up pickups.")]
         public string RequiredTag = "Player";
         public LayerMask CollectorLayers = ~0;
 
         [Header("Score (optional)")]
-        public ScoreServiceSO ScoreService;
-        public int ScoreValue = 0;
+        [Tooltip("Ripple variable the value is added to (the project's Score). Null = no score.")]
+        public FloatVariableSO ScoreVariable;
+        public float ScoreValue = 0f;
 
-        [Header("Events (Ripple)")]
-        [Tooltip("Raised when collected. Wire to AudioServiceSO.PlaySfx() or a Feel MMF_Player via UltEvents.")]
-        public VoidEventSO OnCollected;
+        [Header("Despawn")]
+        [Tooltip("Pool to return to on pickup. If null, the object is destroyed.")]
+        public PoolServiceSO PoolService;
+
+        [FoldoutGroup("Events (this instance)")]
+        [Tooltip("This exact pickup was collected — wire feedbacks or game logic here.")]
+        public UltEvent OnCollected;
+
+        [FoldoutGroup("Broadcast (Ripple, global)")]
+        [Tooltip("Optional — raised when any pickup sharing this event is collected (global SFX, counters).")]
+        public VoidEventSO BroadcastCollected;
 
         bool _collected;
 
@@ -42,8 +49,9 @@ namespace Metz.JamKit
             if (!string.IsNullOrEmpty(RequiredTag) && !other.CompareTag(RequiredTag)) return;
 
             _collected = true;
-            if (ScoreService != null && ScoreValue != 0) ScoreService.Add(ScoreValue);
-            if (OnCollected != null) OnCollected.Invoke();
+            if (ScoreVariable != null && ScoreValue != 0f) ScoreVariable.Add(ScoreValue);
+            OnCollected?.Invoke();
+            if (BroadcastCollected != null) BroadcastCollected.Invoke();
 
             if (PoolService != null) PoolService.Despawn(gameObject);
             else Destroy(gameObject);

@@ -13,8 +13,12 @@ namespace Metz.JamKit
     {
         [Header("Services")]
         public SceneServiceSO SceneService;
-        [Tooltip("Optional — when set, shows the final score and best.")]
-        public ScoreServiceSO ScoreService;
+
+        [Header("Score (optional)")]
+        [Tooltip("Optional — when set, shows the final score.")]
+        public Ripple.FloatVariableSO ScoreVariable;
+        [Tooltip("Optional — when set, shows the best score next to the final one.")]
+        public Ripple.FloatVariableSO HighScoreVariable;
 
         [Header("Behaviour")]
         public string RetrySceneName = "Game";
@@ -54,9 +58,11 @@ namespace Metz.JamKit
             title.AddToClassList("jk-title");
             panel.Add(title);
 
-            if (ScoreService != null)
+            if (ScoreVariable != null)
             {
-                var score = new Label($"Score: {ScoreService.Score}    Best: {ScoreService.HighScore}");
+                var text = $"Score: {ScoreVariable.CurrentValue:0}";
+                if (HighScoreVariable != null) text += $"    Best: {HighScoreVariable.CurrentValue:0}";
+                var score = new Label(text);
                 score.AddToClassList("jk-section-title");
                 score.style.unityTextAlign = TextAnchor.MiddleCenter;
                 panel.Add(score);

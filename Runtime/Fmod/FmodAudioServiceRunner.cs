@@ -7,63 +7,52 @@ namespace Metz.JamKit
 {
     /// <summary>
     /// Scene-side host for <see cref="FmodAudioServiceSO"/>: subscribes the Ripple volume
-    /// variables to the FMOD buses, persists volume to PlayerPrefs (same keys as
-    /// <see cref="AudioServiceRunner"/>, so settings carry over if you switch backends), and
-    /// runs the music fade/duck coroutines. The music EventInstance itself lives on the SO and
-    /// deliberately survives this runner — only instances mid-fade-out are swept on teardown.
+    /// variables to the FMOD buses and runs the music fade/duck coroutines. Volume persistence
+    /// belongs to the variables themselves (tick Persist on the assets). The music EventInstance
+    /// lives on the SO and deliberately survives this runner — only instances mid-fade-out are
+    /// swept on teardown.
     /// </summary>
-    public sealed class FmodAudioServiceRunner : MonoBehaviour
+    public sealed class FmodAudioServiceRunner : ServiceRunner<FmodAudioServiceSO, FmodAudioServiceRunner>
     {
-        [Tooltip("The FmodAudioServiceSO this runner serves. Required.")]
-        public FmodAudioServiceSO Service;
-
-        // Deliberately shared with AudioServiceRunner: one set of persisted volumes per game,
-        // whichever audio backend is in the scene.
-        const string PrefsMaster = "JamKit.Vol.Master";
-        const string PrefsMusic = "JamKit.Vol.Music";
-        const string PrefsSfx = "JamKit.Vol.Sfx";
-
         Bus _masterBus, _musicBus, _sfxBus;
         bool _busesResolved;
         bool _warnedNotReady;
 
-        void OnEnable()
+        protected override void OnEnable()
         {
-            if (Service == null)
-            {
-                Debug.LogWarning($"[JamKit] {name}: FmodAudioServiceRunner has no Service assigned.");
-                return;
-            }
-            Service.RegisterRunner(this);
+            base.OnEnable();
+            if (!IsRegistered) return;
             SubscribeVolumes();
         }
 
         void Start()
         {
             // Bus lookups need the FMOD system up and the master banks loaded, which is not
-            // guaranteed during OnEnable on all platforms (WebGL streams banks in), so persisted
+            // guaranteed during OnEnable on all platforms (WebGL streams banks in), so current
             // volumes are applied here — and re-applied lazily if banks arrive even later.
-            if (Service == null) return;
-            ApplyPersistedVolumes();
+            if (!IsRegistered) return;
+            ApplyCurrentVolumes();
             // A music instance may have survived from the previous scene mid-fade; make sure it
             // sits at its target volume now that no coroutine owns it.
             if (Service.Music.isValid()) Service.Music.setVolume(Service.MusicTargetVolume);
         }
 
-        void OnDisable()
+        protected override void OnDisable()
         {
-            if (Service == null) return;
-            UnsubscribeVolumes();
-            // Fade-out coroutines die with the scene; hard-stop their instances so nothing keeps
-            // playing unowned. The active music instance intentionally lives on.
-            foreach (var inst in Service.Retiring)
+            if (IsRegistered)
             {
-                if (!inst.isValid()) continue;
-                inst.stop(STOP_MODE.IMMEDIATE);
-                inst.release();
+                UnsubscribeVolumes();
+                // Fade-out coroutines die with the scene; hard-stop their instances so nothing keeps
+                // playing unowned. The active music instance intentionally lives on.
+                foreach (var inst in Service.Retiring)
+                {
+                    if (!inst.isValid()) continue;
+                    inst.stop(STOP_MODE.IMMEDIATE);
+                    inst.release();
+                }
+                Service.Retiring.Clear();
             }
-            Service.Retiring.Clear();
-            Service.UnregisterRunner(this);
+            base.OnDisable();
         }
 
         // -------------------- API used by FmodAudioServiceSO --------------------
@@ -191,7 +180,7 @@ namespace Metz.JamKit
             }
         }
 
-        // -------------------- volume binding + persistence --------------------
+        // -------------------- volume binding --------------------
 
         void SubscribeVolumes()
         {
@@ -207,9 +196,9 @@ namespace Metz.JamKit
             if (Service.SfxVolume    != null) Service.SfxVolume.OnValueChanged    -= OnSfxChanged;
         }
 
-        void OnMasterChanged(float v) { ApplyToBus(ref _masterBus, v); PlayerPrefs.SetFloat(PrefsMaster, v); }
-        void OnMusicChanged(float v)  { ApplyToBus(ref _musicBus,  v); PlayerPrefs.SetFloat(PrefsMusic,  v); }
-        void OnSfxChanged(float v)    { ApplyToBus(ref _sfxBus,    v); PlayerPrefs.SetFloat(PrefsSfx,    v); }
+        void OnMasterChanged(float v) => ApplyToBus(ref _masterBus, v);
+        void OnMusicChanged(float v)  => ApplyToBus(ref _musicBus,  v);
+        void OnSfxChanged(float v)    => ApplyToBus(ref _sfxBus,    v);
 
         void ApplyToBus(ref Bus bus, float linear)
         {
@@ -218,13 +207,10 @@ namespace Metz.JamKit
             if (bus.isValid()) bus.setVolume(Mathf.Clamp01(linear));
         }
 
-        void ApplyPersistedVolumes()
+        void ApplyCurrentVolumes()
         {
-            if (Service.MasterVolume != null) Service.MasterVolume.SetCurrentValue(PlayerPrefs.GetFloat(PrefsMaster, Service.MasterVolume.CurrentValue));
-            if (Service.MusicVolume  != null) Service.MusicVolume.SetCurrentValue(PlayerPrefs.GetFloat(PrefsMusic,  Service.MusicVolume.CurrentValue));
-            if (Service.SfxVolume    != null) Service.SfxVolume.SetCurrentValue(PlayerPrefs.GetFloat(PrefsSfx,      Service.SfxVolume.CurrentValue));
-            // SetCurrentValue only notifies on change, so unchanged values never reach the buses
-            // on a fresh scene. Push them explicitly.
+            // The variables load their own persisted values; a fresh scene just needs them
+            // pushed to the buses (change events only fire on change).
             if (Service.MasterVolume != null) ApplyToBus(ref _masterBus, Service.MasterVolume.CurrentValue);
             if (Service.MusicVolume  != null) ApplyToBus(ref _musicBus,  Service.MusicVolume.CurrentValue);
             if (Service.SfxVolume    != null) ApplyToBus(ref _sfxBus,    Service.SfxVolume.CurrentValue);

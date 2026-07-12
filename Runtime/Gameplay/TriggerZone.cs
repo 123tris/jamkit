@@ -1,4 +1,6 @@
 using Ripple;
+using Sirenix.OdinInspector;
+using UltEvents;
 using UnityEngine;
 
 namespace Metz.JamKit
@@ -7,7 +9,7 @@ namespace Metz.JamKit
     /// The universal "something entered this area" primitive: kill pit, water hazard, goal line,
     /// score gate, level exit — all the same component with different toggles. Filters by tag +
     /// layer, then (in order) damages/kills the enterer's <see cref="Health"/>, awards score,
-    /// raises events, removes the enterer, and finally loads a scene. Works with 2D and 3D
+    /// fires events, removes the enterer, and finally loads a scene. Works with 2D and 3D
     /// triggers; needs a trigger collider on this object.
     /// </summary>
     public sealed class TriggerZone : MonoBehaviour
@@ -26,8 +28,9 @@ namespace Metz.JamKit
         public bool Kill = false;
 
         [Header("Score (optional)")]
-        public ScoreServiceSO ScoreService;
-        public int ScoreValue = 0;
+        [Tooltip("Ripple variable the value is added to (the project's Score). Null = no score.")]
+        public FloatVariableSO ScoreVariable;
+        public float ScoreValue = 0f;
 
         [Header("Remove (optional)")]
         [Tooltip("Despawn/destroy the enterer (goal swallowing a ball, off-screen cleanup).")]
@@ -40,10 +43,13 @@ namespace Metz.JamKit
         public SceneServiceSO SceneService;
         public string LoadScene = "";
 
-        [Header("Events")]
-        [Tooltip("Raised per qualifying enter — wire Toast / SFX / respawn logic here.")]
-        public VoidEventSO OnEntered;
-        public event System.Action<GameObject> Entered;
+        [FoldoutGroup("Events (this instance)")]
+        [Tooltip("This exact zone was entered, with the enterer — wire respawns, gates, feedbacks here.")]
+        public UltEvent<GameObject> OnEntered;
+
+        [FoldoutGroup("Broadcast (Ripple, global)")]
+        [Tooltip("Optional — raised for any qualifying enter (Toast, global SFX).")]
+        public VoidEventSO BroadcastEntered;
 
         bool _fired;
 
@@ -69,10 +75,10 @@ namespace Metz.JamKit
                 }
             }
 
-            if (ScoreService != null && ScoreValue != 0) ScoreService.Add(ScoreValue);
+            if (ScoreVariable != null && ScoreValue != 0f) ScoreVariable.Add(ScoreValue);
 
-            Entered?.Invoke(other);
-            if (OnEntered != null) OnEntered.Invoke();
+            OnEntered?.Invoke(other);
+            if (BroadcastEntered != null) BroadcastEntered.Invoke();
 
             if (RemoveEnterer)
             {

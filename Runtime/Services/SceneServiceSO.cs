@@ -1,4 +1,5 @@
 using Ripple;
+using Sirenix.OdinInspector;
 using UnityEngine;
 
 namespace Metz.JamKit
@@ -9,7 +10,7 @@ namespace Metz.JamKit
     /// load start/finish for designer wiring (audio cues, analytics, achievements).
     /// </summary>
     [CreateAssetMenu(menuName = "JamKit/Services/Scene Service", fileName = "SceneService")]
-    public sealed class SceneServiceSO : ScriptableObject
+    public sealed class SceneServiceSO : ServiceSO<SceneServiceRunner>
     {
         [Header("Defaults")]
         [Min(0f)] public float DefaultFadeSeconds = 0.35f;
@@ -21,20 +22,17 @@ namespace Metz.JamKit
         [Tooltip("Optional VoidEventSO raised when a scene load finishes.")]
         public VoidEventSO OnSceneLoadCompleted;
 
-        SceneServiceRunner _runner;
-
-        internal void RegisterRunner(SceneServiceRunner r) => _runner = r;
-        internal void UnregisterRunner(SceneServiceRunner r) { if (_runner == r) _runner = null; }
-        public bool HasRunner => _runner != null;
-
         public Coroutine LoadAsync(string sceneName)
-            => _runner?.Load(sceneName, DefaultFadeSeconds, DefaultFadeColor);
+            => Runner?.Load(sceneName, DefaultFadeSeconds, DefaultFadeColor);
 
         public Coroutine LoadAsync(string sceneName, float fadeSeconds, Color fadeColor)
-            => _runner?.Load(sceneName, fadeSeconds, fadeColor);
+            => Runner?.Load(sceneName, fadeSeconds, fadeColor);
 
-        public Coroutine ReloadCurrent() => _runner?.ReloadCurrent(DefaultFadeSeconds, DefaultFadeColor);
-        public Coroutine ReloadCurrent(float fadeSeconds, Color fadeColor) => _runner?.ReloadCurrent(fadeSeconds, fadeColor);
+        [Button, DisableInEditorMode, FoldoutGroup("Debug")]
+        public void ReloadCurrentScene() => ReloadCurrent();
+
+        public Coroutine ReloadCurrent() => Runner?.ReloadCurrent(DefaultFadeSeconds, DefaultFadeColor);
+        public Coroutine ReloadCurrent(float fadeSeconds, Color fadeColor) => Runner?.ReloadCurrent(fadeSeconds, fadeColor);
 
         internal void RaiseStarted() => OnSceneLoadStarted?.Invoke();
         internal void RaiseCompleted() => OnSceneLoadCompleted?.Invoke();
