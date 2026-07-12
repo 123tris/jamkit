@@ -56,6 +56,10 @@ Genres still thin: **card/board** (drag-drop, hand layout), **puzzle-match** (gr
 - Toast/FloatingTextLayer: **in the JamKitCore prefab** (every scene gets them for free).
 - Paddle english: **marker component**, not a layer mask (layers are project-global state; the marker auto-wires and carries per-paddle `EnglishMultiplier`).
 
+## Done (0.7.0)
+
+- **One-click sample setup** — import offer + `JamKit > Samples` menu automate every sample README's setup section: non-interactive `JamProjectWizard.Scaffold`, per-sample ready-to-play scenes (Survivor rides `Game.unity` so the GameOver → Retry loop cycles), auto-assigned services, registry tests, editor-test compile coverage in the harness.
+
 ## M5 remainder — needs a human (cannot be done from inside the repo)
 
 1. ~~Publish Ripple to a git URL~~ **Done** — `https://github.com/123tris/Ripple.git#feature/abstraction+runtime-registry` (the branch pin matters: Ripple's `main` is an older API; when Ripple work merges to main, update the pin in the dev manifest, README, and ci.yml).

@@ -4,6 +4,10 @@ Shows the canonical pattern: a single MonoBehaviour that takes service SOs in th
 
 ## Setup
 
+One click: **`JamKit > Samples > Set Up 00 Bootstrap`** (also offered right after import) — scaffolds `Assets/_Project` if needed, builds the demo scene, adds the component, and assigns the services. Press Play.
+
+Or manually:
+
 1. Run `JamKit > New Jam Project` so the service SOs exist in `Assets/_Project/Services/`.
 2. Open `Assets/_Project/Scenes/Game.unity` (or any scene with the JamKitCore in it).
 3. Add an empty GameObject with the `BootstrapDemo` component.

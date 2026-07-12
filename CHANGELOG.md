@@ -2,6 +2,21 @@
 
 All notable changes to JamKit are documented here. Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the package uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.7.0] - 2026-07-12
+
+Theme: zero-step samples. Every sample README's setup section is now a single menu click (or one dialog button at import time) — the manual steps stay in the READMEs as documentation of what the automation does.
+
+### Added
+- **One-click sample setup** — `JamKit > Samples > Set Up <sample>`, also offered by a dialog right after a sample is imported (once per sample per project; never in batch mode). It scaffolds `Assets/_Project` if missing (the wizard, minus its dialogs), opens or builds the demo scene, adds the demo component, auto-assigns its service references, saves, selects the object, and logs the play hint plus any optional fields left for the README's Feel/SFX wiring. Idempotent: re-running reopens the scene and re-fills references; nothing is ever overwritten.
+  - Each sample gets its own scene saved beside the imported sample (camera + CinemachineBrain + impulse listener, directional light, JamKitCore instance, EventSystem), so removing the sample removes its scene too. Exception: **04 Survivor Mini** is added to the wizard's `Game.unity` — the GameOver screen's Retry loads the scene *named* "Game", so that's where the demo must live for the loop to cycle.
+  - Menu entries gray out until the sample is imported; `JamKit > Samples > Import Samples (Package Manager)…` is the door to the import UI.
+- **Editor-test compile coverage** — `Tools~/compile-check.sh` now also builds `Tests/Editor` (against the runtime-tests reference set + the fresh Runtime/Editor dlls).
+- **Sample-registry tests** (`Tests/Editor/SampleSetupRegistryTests.cs`) — registry ↔ `Samples~` folders ↔ `package.json` consistency: folder, demo script, README, and display-name entries all have to agree, so a sample rename can't silently break one-click setup.
+
+### Changed
+- **`JamProjectWizard.Scaffold(bool overwriteScenes)`** — the wizard's work is now callable without its dialogs (sample setup uses it; `New Jam Project` behavior is unchanged). Scene/prefab path constants (`GameScenePath`, `CorePrefabPath`, …) and the camera/light/EventSystem scene-piece builders are exposed to editor tooling.
+- Sample READMEs lead with the one-click setup; the numbered manual steps remain as the reference.
+
 ## [0.6.0] - 2026-07-08
 
 Theme: everything left on the roadmap that doesn't require a human with a GitHub account — samples that prove the kit, docs that double as test scripts, tests for the new math, prefab-first scaffolding, sound polish, two-player input, and a WebGL button. Plus three re-evaluations from the open-questions list.

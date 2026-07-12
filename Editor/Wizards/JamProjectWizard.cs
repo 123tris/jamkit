@@ -20,9 +20,14 @@ namespace Metz.JamKit.Editor
     public static class JamProjectWizard
     {
         const string ProjectRoot = "Assets/_Project";
-        const string ServicesDir = "Assets/_Project/Services";
+        public const string ServicesDir = "Assets/_Project/Services";
         const string VariablesDir = "Assets/_Project/Variables";
         const string PrefabsDir = "Assets/_Project/Prefabs";
+
+        public const string BootstrapScenePath = ProjectRoot + "/Scenes/Bootstrap.unity";
+        public const string GameScenePath = ProjectRoot + "/Scenes/Game.unity";
+        public const string GameOverScenePath = ProjectRoot + "/Scenes/GameOver.unity";
+        public const string CorePrefabPath = PrefabsDir + "/JamKitCore.prefab";
 
         [MenuItem("JamKit/New Jam Project", priority = 0)]
         public static void Run()
@@ -35,15 +40,11 @@ namespace Metz.JamKit.Editor
                 "Create", "Cancel"))
                 return;
 
-            const string bootstrapPath = ProjectRoot + "/Scenes/Bootstrap.unity";
-            const string gamePath = ProjectRoot + "/Scenes/Game.unity";
-            const string gameOverPath = ProjectRoot + "/Scenes/GameOver.unity";
-
             // Never silently stomp scenes the user may have built their jam in. Asset creation is
             // create-or-load (safe); scene creation is the destructive part, so it gets a choice.
             bool overwriteScenes = true;
             var existingScenes = new List<string>();
-            foreach (var p in new[] { bootstrapPath, gamePath, gameOverPath })
+            foreach (var p in new[] { BootstrapScenePath, GameScenePath, GameOverScenePath })
                 if (File.Exists(p)) existingScenes.Add(p);
             if (existingScenes.Count > 0)
             {
@@ -59,6 +60,26 @@ namespace Metz.JamKit.Editor
             // The scene builds below open new scenes, which discards unsaved work without this prompt.
             if (!EditorSceneManager.SaveCurrentModifiedScenesIfUserWantsTo()) return;
 
+            Scaffold(overwriteScenes);
+            EditorSceneManager.OpenScene(BootstrapScenePath);
+
+            OfferFastPlayMode();
+
+            EditorUtility.DisplayDialog("JamKit",
+                "Setup complete.\n\n" +
+                "Service SOs live in Assets/_Project/Services; JamKitCore + JamKitMenu prefabs in Assets/_Project/Prefabs\n" +
+                "(edit the prefab once, every scene updates).\n\n" +
+                "Press Play: Start → Settings → Game (pause with Esc) → GameOver all work end-to-end.", "OK");
+        }
+
+        /// <summary>
+        /// The wizard's work without its dialogs, for tools that scaffold on demand (sample setup).
+        /// Create-or-load throughout; existing scenes are replaced only when <paramref name="overwriteScenes"/>.
+        /// Callers own the save-modified-scenes prompt, and a throwaway scene is left open at the
+        /// end (prefab building) — open a real one afterwards.
+        /// </summary>
+        public static void Scaffold(bool overwriteScenes)
+        {
             EnsureFolders();
 
             var mixerPath = $"{ProjectRoot}/Audio/Resources/JamKitMixer.mixer";
@@ -108,25 +129,16 @@ namespace Metz.JamKit.Editor
             var menuPrefab = CreateOrLoadMenuPrefab(audio, time, scene, input);
 
             // Bootstrap is built last so it's the scene left open for the user.
-            if (overwriteScenes || !File.Exists(gamePath))
-                CreateGameScene(gamePath, corePrefab, menuPrefab, input);
-            if (overwriteScenes || !File.Exists(gameOverPath))
-                CreateGameOverScene(gameOverPath, corePrefab, scene, score, panelSettings);
-            if (overwriteScenes || !File.Exists(bootstrapPath))
-                CreateBootstrapScene(bootstrapPath, corePrefab, menuPrefab);
+            if (overwriteScenes || !File.Exists(GameScenePath))
+                CreateGameScene(GameScenePath, corePrefab, menuPrefab, input);
+            if (overwriteScenes || !File.Exists(GameOverScenePath))
+                CreateGameOverScene(GameOverScenePath, corePrefab, scene, score, panelSettings);
+            if (overwriteScenes || !File.Exists(BootstrapScenePath))
+                CreateBootstrapScene(BootstrapScenePath, corePrefab, menuPrefab);
 
-            AddScenesToBuildSettings(new[] { bootstrapPath, gamePath, gameOverPath });
+            AddScenesToBuildSettings(new[] { BootstrapScenePath, GameScenePath, GameOverScenePath });
             AssetDatabase.SaveAssets();
             AssetDatabase.Refresh();
-            EditorSceneManager.OpenScene(bootstrapPath);
-
-            OfferFastPlayMode();
-
-            EditorUtility.DisplayDialog("JamKit",
-                "Setup complete.\n\n" +
-                "Service SOs live in Assets/_Project/Services; JamKitCore + JamKitMenu prefabs in Assets/_Project/Prefabs\n" +
-                "(edit the prefab once, every scene updates).\n\n" +
-                "Press Play: Start → Settings → Game (pause with Esc) → GameOver all work end-to-end.", "OK");
         }
 
         /// <summary>
@@ -220,7 +232,7 @@ namespace Metz.JamKit.Editor
         /// </summary>
         static GameObject CreateOrLoadCorePrefab(AudioServiceSO audio, TimeServiceSO time, SceneServiceSO scene, PoolServiceSO pool, TimerServiceSO timer)
         {
-            string path = PrefabsDir + "/JamKitCore.prefab";
+            string path = CorePrefabPath;
             var existing = AssetDatabase.LoadAssetAtPath<GameObject>(path);
             if (existing != null) return existing;
 
@@ -275,14 +287,22 @@ namespace Metz.JamKit.Editor
             return go;
         }
 
-        static void CreateEventSystem()
+        internal static void CreateEventSystem()
         {
             var es = new GameObject("EventSystem");
             es.AddComponent<UnityEngine.EventSystems.EventSystem>();
             es.AddComponent<UnityEngine.InputSystem.UI.InputSystemUIInputModule>();
         }
 
-        static void CreateCamera(bool cinemachine)
+        internal static void CreateDirectionalLight()
+        {
+            var lightGo = new GameObject("Directional Light");
+            var light = lightGo.AddComponent<Light>();
+            light.type = LightType.Directional;
+            lightGo.transform.rotation = Quaternion.Euler(50f, -30f, 0f);
+        }
+
+        internal static void CreateCamera(bool cinemachine)
         {
             var camGo = new GameObject("Main Camera");
             camGo.tag = "MainCamera";
@@ -320,11 +340,7 @@ namespace Metz.JamKit.Editor
             var s = EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
 
             CreateCamera(cinemachine: true);
-
-            var lightGo = new GameObject("Directional Light");
-            var light = lightGo.AddComponent<Light>();
-            light.type = LightType.Directional;
-            lightGo.transform.rotation = Quaternion.Euler(50f, -30f, 0f);
+            CreateDirectionalLight();
 
             Instance(corePrefab);
 

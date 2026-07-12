@@ -6,6 +6,10 @@ Demonstrates how the pieces compose: `Mover3D`, `Spawner` + `PoolService`, `Pick
 
 ## Setup
 
+One click: **`JamKit > Samples > Set Up 04 Survivor Mini`** (also offered right after import) — scaffolds `Assets/_Project` if needed, adds the demo to the wizard's Game scene (it has to *be* "Game": the GameOver screen's Retry loads the scene by that name), and assigns the services. Press Play.
+
+Or manually:
+
 1. Run `JamKit > New Jam Project` so the service SOs exist and the Game / GameOver scenes are wired.
 2. Open `Assets/_Project/Scenes/Game.unity` (it already has a `JamKitCore`, so the pool/timer/scene runners are present).
 3. Add an empty GameObject with the `SurvivorDemo` component.

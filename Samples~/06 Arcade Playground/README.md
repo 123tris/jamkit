@@ -12,6 +12,10 @@ Everything is tinted white-square sprites generated at runtime — no art, no as
 
 ## Setup
 
+One click: **`JamKit > Samples > Set Up 06 Arcade Playground`** (also offered right after import) — scaffolds `Assets/_Project` if needed, builds the demo scene, adds the component, and assigns the services. Press Play.
+
+Or manually:
+
 1. Run `JamKit > New Jam Project` (for the service SOs; the Game scene's JamKitCore is handy but not required).
 2. Empty GameObject → add `ArcadePlaygroundDemo`.
 3. Assign `InputService` (required), `ScoreService` and `PoolService` (optional) from `Assets/_Project/Services/`.

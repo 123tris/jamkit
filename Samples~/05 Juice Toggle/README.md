@@ -7,6 +7,10 @@ With juice OFF: exactly the same mechanics, completely dead. That difference is 
 
 ## Setup
 
+One click: **`JamKit > Samples > Set Up 05 Juice Toggle`** (also offered right after import) — scaffolds `Assets/_Project` if needed, builds the demo scene (with a JamKitCore, so hit-stop and blips work), adds the component, and assigns the services. Press Play.
+
+Or manually:
+
 1. Run `JamKit > New Jam Project` (or make sure PoolService / AudioService / TimeService assets exist).
 2. Open a scene with a `JamKitCore` (the wizard's Game scene), add an empty GameObject with `JuiceToggleDemo`.
 3. Assign `PoolService`, `AudioService`, `TimeService` from `Assets/_Project/Services/` (auto-assign usually does this for you on add).
