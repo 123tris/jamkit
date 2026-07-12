@@ -1,8 +1,8 @@
 {
   "name": "com.metz.jamkit",
-  "version": "0.7.0",
+  "version": "0.8.0",
   "displayName": "JamKit",
-  "description": "Rapid game-jam toolkit for Unity 6. ScriptableObject service architecture (no singletons), Ripple-native event/variable wiring, UI Toolkit menus, built-in Juice Lite feedback layer, genre primitives for the classic jam archetypes, and a graduation path to the Feel asset.",
+  "description": "Rapid game-jam toolkit for Unity 6. ScriptableObject service architecture (no singletons), Ripple-native event/variable wiring, UI Toolkit menus, built-in Juice Lite feedback layer, genre primitives for the classic jam archetypes, an auto-detected FMOD Studio audio backend, and a graduation path to the Feel asset.",
   "unity": "6000.0",
   "author": {
     "name": "Metz"
@@ -15,6 +15,7 @@
     "rapid-prototyping",
     "ripple",
     "feel",
+    "fmod",
     "urp",
     "ui-toolkit",
     "scriptable-objects",

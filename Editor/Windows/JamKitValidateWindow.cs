@@ -30,6 +30,15 @@ namespace Metz.JamKit.Editor
         Vector2 _scroll;
         bool _scanned;
 
+        /// <summary>Signature of <see cref="Add"/> — what an external scan reports through.</summary>
+        public delegate void IssueReporter(MessageType severity, string message, string fixLabel = null, Action fix = null, Object context = null);
+
+        /// <summary>
+        /// Optional integrations (FMOD, …) append extra checks here from [InitializeOnLoad];
+        /// they run on every scan and report through the supplied <see cref="IssueReporter"/>.
+        /// </summary>
+        public static readonly List<Action<IssueReporter>> ExtraScans = new();
+
         [MenuItem("JamKit/Validate Setup", priority = 1)]
         public static void Open()
         {
@@ -94,6 +103,7 @@ namespace Metz.JamKit.Editor
             ScanPanelSettings();
             ScanBuildScenes();
             ScanOpenScenes();
+            foreach (var scan in ExtraScans) scan(Add);
             Repaint();
         }
 

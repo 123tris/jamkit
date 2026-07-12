@@ -99,37 +99,50 @@ namespace Metz.JamKit.Samples
             target.transform.position = new Vector3(0f, 1.5f, 3f);
             target.transform.localScale = Vector3.one * 2f;
             Tint(target, new Color(0.85f, 0.3f, 0.35f));
+            // Built inactive: JuiceBehaviour subscribes to Health in OnEnable, and the Reset()
+            // sibling-trigger defaults are editor-only — for runtime AddComponent the flags must
+            // be set by hand before OnEnable runs, so activation waits until the end.
+            target.SetActive(false);
 
             var health = target.AddComponent<Health>();
             health.Max = health.Current = TargetHealth;
 
-            // The full Juice Lite stack, all riding the sibling-damage default:
-            target.AddComponent<MaterialFlash>();
+            // The full Juice Lite stack, all triggered by sibling damage/death:
+            target.AddComponent<MaterialFlash>().OnSiblingDamage = true;
             var punch = target.AddComponent<PunchScale>();
+            punch.OnSiblingDamage = true;
             punch.Punch = 0.85f; // squash, not pop — reads as "impact" on a big block
 
             var shake = target.AddComponent<CameraShake>();
+            shake.OnSiblingDamage = true;
             shake.Force = 0.5f;
-            target.AddComponent<HitStop>().TimeService = TimeService;
+
+            var hitStop = target.AddComponent<HitStop>();
+            hitStop.OnSiblingDamage = true;
+            hitStop.TimeService = TimeService;
 
             var text = target.AddComponent<FloatingText>();
+            text.OnSiblingDamage = true;
             text.Layer = _textLayer;
             text.ScaleByEventValue = true;
             text.WorldOffset = new Vector3(0f, 1.6f, 0f);
 
             var sfx = target.AddComponent<SfxOnEvent>();
+            sfx.OnSiblingDamage = true;
             sfx.AudioService = AudioService;
             sfx.Clips = new[] { SynthBlip(220f), SynthBlip(196f), SynthBlip(247f) };
 
             var burst = target.AddComponent<SpawnBurst>();
+            burst.OnSiblingDeath = true;
             burst.PoolService = PoolService;
             burst.Prefab = BuildDebrisPrefab();
             burst.Count = 10;
             burst.Scatter = 0.8f;
             burst.LaunchSpeed = 5f;
 
-            // Death → debris burst (SpawnBurst's default), then refill so the show loops forever.
+            // Death → debris burst, then refill so the show loops forever.
             health.Died += () => Invoke(nameof(RefillTarget), 0.5f);
+            target.SetActive(true);
             return target;
         }
 

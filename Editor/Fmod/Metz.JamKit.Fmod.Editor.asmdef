@@ -1,0 +1,25 @@
+{
+    "name": "Metz.JamKit.Fmod.Editor",
+    "rootNamespace": "Metz.JamKit.Editor",
+    "references": [
+        "Metz.JamKit.Fmod",
+        "Metz.JamKit.Runtime",
+        "Metz.JamKit.Editor",
+        "Metz.Ripple.Runtime",
+        "FMODUnity"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [
+        "ULTEVENTS",
+        "JAMKIT_FMOD"
+    ],
+    "versionDefines": [],
+    "noEngineReferences": false
+}
