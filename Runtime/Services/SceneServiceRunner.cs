@@ -1,4 +1,5 @@
 using System.Collections;
+using Sirenix.OdinInspector;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
@@ -6,18 +7,14 @@ namespace Metz.JamKit
 {
     /// <summary>
     /// Scene-side host for <see cref="SceneServiceSO"/>. Drives the async load coroutine
-    /// and the fade overlay. Drop one into your bootstrap scene with DontDestroyOnLoad,
-    /// or one per scene if you don't need a persistent root.
+    /// and the fade overlay. Lives on JamKitCore, one per scene — scenes stay clean slates.
     /// </summary>
-    public sealed class SceneServiceRunner : MonoBehaviour
+    public sealed class SceneServiceRunner : ServiceRunner<SceneServiceSO, SceneServiceRunner>
     {
-        public SceneServiceSO Service;
+        [Tooltip("Optional fade overlay for load transitions. Loads still work without one — they just cut instead of fading.")]
         public FadeOverlay Fade;
 
         bool _loading;
-
-        void OnEnable() { if (Service != null) Service.RegisterRunner(this); }
-        void OnDisable() { if (Service != null) Service.UnregisterRunner(this); }
 
         internal Coroutine Load(string scene, float fadeSeconds, Color fadeColor)
         {

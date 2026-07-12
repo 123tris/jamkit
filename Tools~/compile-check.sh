@@ -7,6 +7,8 @@
 # Usage: bash Packages/com.metz.jamkit/Tools~/compile-check.sh [project-root]
 set -u
 PROJ="${1:-$(cd "$(dirname "$0")/../../.." && pwd)}"
+# csc.dll is a Windows process: /c/... paths from Git Bash's pwd/find don't resolve there.
+PROJ="$(cygpath -m "$PROJ" 2>/dev/null || echo "$PROJ")"
 PKG="$PROJ/Packages/com.metz.jamkit"
 # Windows-style path so the native compiler can write to it (Git Bash /tmp is not C:\tmp).
 OUT="$(cygpath -m "${TEMP:-/tmp}" 2>/dev/null || echo /tmp)/jamkit-compile-check"
@@ -34,11 +36,17 @@ build_asm () {
   # extra_ref may hold several space-separated dll paths ($OUT never contains spaces).
   for ref in $extra_ref; do echo "-r:\"$ref\"" >> "$rsp"; done
 
+  local srcs
   if [ -n "$exclude" ]; then
-    find "$srcdir" -name '*.cs' -not -path "$exclude" | sed 's/^/"/;s/$/"/' >> "$rsp"
+    srcs=$(find "$srcdir" -name '*.cs' -not -path "$exclude" 2>/dev/null)
   else
-    find "$srcdir" -name '*.cs' | sed 's/^/"/;s/$/"/' >> "$rsp"
+    srcs=$(find "$srcdir" -name '*.cs' 2>/dev/null)
   fi
+  if [ -z "$srcs" ]; then
+    echo "=== $(basename "$out") skipped (no sources in $srcdir)"
+    return 0
+  fi
+  echo "$srcs" | sed 's/^/"/;s/$/"/' >> "$rsp"
 
   local defines
   defines=$(grep -o 'DefineConstants>[^<]*' "$csproj" | sed 's/DefineConstants>//' | head -1)
@@ -57,11 +65,14 @@ build_asm () {
 # when FMOD is available), so the base builds exclude them.
 build_asm "$PROJ/Metz.JamKit.Runtime.csproj" "$PKG/Runtime" "$OUT/Metz.JamKit.Runtime.dll" "" "*/Fmod/*" || exit 1
 build_asm "$PROJ/Metz.JamKit.Editor.csproj" "$PKG/Editor" "$OUT/Metz.JamKit.Editor.dll" "$OUT/Metz.JamKit.Runtime.dll" "*/Fmod/*" || exit 1
-build_asm "$PROJ/Metz.JamKit.Tests.csproj" "$PKG/Tests/Runtime" "$OUT/Metz.JamKit.Tests.dll" "$OUT/Metz.JamKit.Runtime.dll" || exit 1
+# The tests asmdefs reference Ripple + UltEvents (0.9); csprojs generated before that change
+# don't list them, so stage the dlls into $OUT (extra_ref paths must be space-free).
+cp -f "$PROJ/Library/ScriptAssemblies/Metz.Ripple.Runtime.dll" "$PROJ/Library/ScriptAssemblies/Kybernetik.UltEvents.dll" "$OUT/" 2>/dev/null
+build_asm "$PROJ/Metz.JamKit.Tests.csproj" "$PKG/Tests/Runtime" "$OUT/Metz.JamKit.Tests.dll" "$OUT/Metz.JamKit.Runtime.dll $OUT/Metz.Ripple.Runtime.dll $OUT/Kybernetik.UltEvents.dll" || exit 1
 # Editor tests borrow the runtime-tests reference set (nunit + full Unity incl. UnityEditor):
 # Metz.JamKit.EditorTests.csproj stays a referenceless stub until Unity regenerates it with
 # scripts present, so it can't be trusted as the reference source.
-build_asm "$PROJ/Metz.JamKit.Tests.csproj" "$PKG/Tests/Editor" "$OUT/Metz.JamKit.EditorTests.dll" "$OUT/Metz.JamKit.Runtime.dll $OUT/Metz.JamKit.Editor.dll" || exit 1
+build_asm "$PROJ/Metz.JamKit.Tests.csproj" "$PKG/Tests/Editor" "$OUT/Metz.JamKit.EditorTests.dll" "$OUT/Metz.JamKit.Runtime.dll $OUT/Metz.JamKit.Editor.dll $OUT/Metz.Ripple.Runtime.dll $OUT/Kybernetik.UltEvents.dll" || exit 1
 # Samples~ is invisible to Unity until imported, so this is the ONLY compile coverage sample
 # code gets. Same reference set as Runtime + the fresh Runtime dll.
 build_asm "$PROJ/Metz.JamKit.Runtime.csproj" "$PKG/Samples~" "$OUT/Metz.JamKit.Samples.dll" "$OUT/Metz.JamKit.Runtime.dll" || exit 1

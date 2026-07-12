@@ -7,31 +7,21 @@ namespace Metz.JamKit
 {
     /// <summary>
     /// Scene-side host for <see cref="AudioServiceSO"/>: spawns the SFX one-shot pool,
-    /// owns the music crossfade sources, and subscribes to volume Ripple variables so changes
-    /// drive the AudioMixer. Persists volume to PlayerPrefs.
+    /// owns the music crossfade sources, and subscribes to the volume Ripple variables so
+    /// changes drive the AudioMixer. Volume persistence belongs to the variables themselves
+    /// (tick Persist on the assets) — this runner only applies values.
     /// </summary>
-    public sealed class AudioServiceRunner : MonoBehaviour
+    public sealed class AudioServiceRunner : ServiceRunner<AudioServiceSO, AudioServiceRunner>
     {
-        [Tooltip("The AudioServiceSO this runner serves. Required.")]
-        public AudioServiceSO Service;
-
-        const string PrefsMaster = "JamKit.Vol.Master";
-        const string PrefsMusic = "JamKit.Vol.Music";
-        const string PrefsSfx = "JamKit.Vol.Sfx";
-
         readonly List<AudioSource> _sfxPool = new();
         AudioSource _musicA, _musicB;
         bool _musicAActive = true;
         AudioMixerGroup _musicGroup, _sfxGroup;
 
-        void OnEnable()
+        protected override void OnEnable()
         {
-            if (Service == null)
-            {
-                Debug.LogWarning($"[JamKit] {name}: AudioServiceRunner has no Service assigned.");
-                return;
-            }
-            Service.RegisterRunner(this);
+            base.OnEnable();
+            if (!IsRegistered) return;
             BuildPool();
             SubscribeVolumes();
         }
@@ -39,15 +29,14 @@ namespace Metz.JamKit
         void Start()
         {
             // AudioMixer.SetFloat is unreliable during Awake/OnEnable (Unity applies the mixer's own
-            // snapshot after enable, stomping early writes), so persisted volumes are applied here.
-            if (Service != null) ApplyPersistedVolumes();
+            // snapshot after enable, stomping early writes), so current volumes are applied here.
+            if (IsRegistered) ApplyCurrentVolumes();
         }
 
-        void OnDisable()
+        protected override void OnDisable()
         {
-            if (Service == null) return;
-            UnsubscribeVolumes();
-            Service.UnregisterRunner(this);
+            if (IsRegistered) UnsubscribeVolumes();
+            base.OnDisable();
         }
 
         // -------------------- API used by AudioServiceSO --------------------
@@ -182,7 +171,7 @@ namespace Metz.JamKit
             src.Stop(); src.volume = start;
         }
 
-        // -------------------- volume binding + persistence --------------------
+        // -------------------- volume binding --------------------
 
         void SubscribeVolumes()
         {
@@ -198,9 +187,9 @@ namespace Metz.JamKit
             if (Service.SfxVolume    != null) Service.SfxVolume.OnValueChanged    -= OnSfxChanged;
         }
 
-        void OnMasterChanged(float v) { ApplyToMixer(Service.MasterParam, v); PlayerPrefs.SetFloat(PrefsMaster, v); }
-        void OnMusicChanged(float v)  { ApplyToMixer(Service.MusicParam,  v); PlayerPrefs.SetFloat(PrefsMusic,  v); }
-        void OnSfxChanged(float v)    { ApplyToMixer(Service.SfxParam,    v); PlayerPrefs.SetFloat(PrefsSfx,    v); }
+        void OnMasterChanged(float v) => ApplyToMixer(Service.MasterParam, v);
+        void OnMusicChanged(float v)  => ApplyToMixer(Service.MusicParam,  v);
+        void OnSfxChanged(float v)    => ApplyToMixer(Service.SfxParam,    v);
 
         void ApplyToMixer(string exposedParam, float linear)
         {
@@ -209,11 +198,11 @@ namespace Metz.JamKit
             Service.Mixer.SetFloat(exposedParam, db);
         }
 
-        void ApplyPersistedVolumes()
+        void ApplyCurrentVolumes()
         {
-            if (Service.MasterVolume != null) Service.MasterVolume.SetCurrentValue(PlayerPrefs.GetFloat(PrefsMaster, Service.MasterVolume.CurrentValue));
-            if (Service.MusicVolume  != null) Service.MusicVolume.SetCurrentValue(PlayerPrefs.GetFloat(PrefsMusic,  Service.MusicVolume.CurrentValue));
-            if (Service.SfxVolume    != null) Service.SfxVolume.SetCurrentValue(PlayerPrefs.GetFloat(PrefsSfx,      Service.SfxVolume.CurrentValue));
+            if (Service.MasterVolume != null) ApplyToMixer(Service.MasterParam, Service.MasterVolume.CurrentValue);
+            if (Service.MusicVolume  != null) ApplyToMixer(Service.MusicParam,  Service.MusicVolume.CurrentValue);
+            if (Service.SfxVolume    != null) ApplyToMixer(Service.SfxParam,    Service.SfxVolume.CurrentValue);
         }
     }
 }

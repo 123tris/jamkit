@@ -11,7 +11,7 @@ namespace Metz.JamKit
     /// Move/Jump in Update + FixedUpdate) doesn't do a string dictionary lookup each call.
     /// </summary>
     [CreateAssetMenu(menuName = "JamKit/Services/Input Service", fileName = "InputService")]
-    public sealed class InputServiceSO : ScriptableObject
+    public sealed class InputServiceSO : ServiceSO
     {
         [Tooltip("InputActionAsset that contains 'UI' and 'Gameplay' maps. Drag JamKitInput here, or your own.")]
         public InputActionAsset Actions;
@@ -73,6 +73,9 @@ namespace Metz.JamKit
         InputActionMap _current;
         public InputActionMap CurrentMap => _current;
 
+        [Sirenix.OdinInspector.ShowInInspector, Sirenix.OdinInspector.ReadOnly, Sirenix.OdinInspector.FoldoutGroup("Debug")]
+        public string CurrentMapName => _current != null ? _current.name : "(none)";
+
         public void SwitchTo(InputActionMap map)
         {
             if (map == null) return;
@@ -85,17 +88,24 @@ namespace Metz.JamKit
         public void SwitchToUI() => SwitchTo(UI);
         public void SwitchToGameplay() => SwitchTo(Gameplay);
 
-        void OnEnable()
+        /// <summary>Drop cached maps and the current-map pointer (runs each play session via the base hook).</summary>
+        public override void ResetState()
         {
-            // Drop any state carried over from a previous play session (Domain Reload disabled).
             _current = null;
             _cachedAsset = null;
         }
 
-        void OnDisable()
+        protected override void OnEnable()
+        {
+            base.OnEnable();
+            ResetState();
+        }
+
+        protected override void OnDisable()
         {
             if (_current != null && Application.isPlaying) _current.Disable();
             _current = null;
+            base.OnDisable();
         }
     }
 }

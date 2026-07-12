@@ -7,19 +7,8 @@ namespace Metz.JamKit
     /// Scene-side host for <see cref="TimeServiceSO.FreezeForSeconds"/>.
     /// You only need this if you call FreezeForSeconds — Push/Pop/Pause/Resume work on the SO alone.
     /// </summary>
-    public sealed class TimeServiceRunner : MonoBehaviour
+    public sealed class TimeServiceRunner : ServiceRunner<TimeServiceSO, TimeServiceRunner>
     {
-        public TimeServiceSO Service;
-
-        void OnEnable()
-        {
-            if (Service == null) return;
-            Service.ResetState();   // clear any timescale push left over from a previous play session
-            Service.RegisterRunner(this);
-        }
-
-        void OnDisable() { if (Service != null) Service.UnregisterRunner(this); }
-
         internal Coroutine StartFreeze(float seconds, float scale)
             => StartCoroutine(FreezeRoutine(seconds, scale));
 
