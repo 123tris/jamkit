@@ -11,12 +11,6 @@ namespace Metz.JamKit
         public static float Remap01(float v, float a, float b)
             => Mathf.Clamp01((v - a) / (b - a));
 
-        public static float SmoothStep(float a, float b, float t)
-            => Mathf.SmoothStep(a, b, t);
-
-        public static float MoveTowardsAngle(float current, float target, float maxDelta)
-            => Mathf.MoveTowardsAngle(current, target, maxDelta);
-
         public static int WrapIndex(int i, int length)
         {
             if (length <= 0) return 0;

@@ -258,14 +258,12 @@ namespace Metz.JamKit.Editor
                     });
 
             bool hasHitStop = false, hasTimeRunner = Object.FindObjectsByType<TimeServiceRunner>(FindObjectsInactive.Include, FindObjectsSortMode.None).Length > 0;
-            bool hasFloatingText = false, hasLayer = Object.FindObjectsByType<FloatingTextLayer>(FindObjectsInactive.Include, FindObjectsSortMode.None).Length > 0;
 
             int autoFillable = 0;
             var unresolved = new List<string>();
             foreach (var mb in JamKitAutoAssign.AllJamKitComponentsInOpenScenes())
             {
                 if (mb is HitStop) hasHitStop = true;
-                if (mb is FloatingText) hasFloatingText = true;
 
                 foreach (var (field, candidates) in JamKitAutoAssign.AnalyzeNulls(mb))
                 {
@@ -284,15 +282,6 @@ namespace Metz.JamKit.Editor
 
             if (hasHitStop && !hasTimeRunner)
                 Add(MessageType.Warning, "HitStop present but no TimeServiceRunner in the scene — freeze-frames won't run. Add a JamKitCore (wizard) or a TimeServiceRunner.");
-            if (hasFloatingText && !hasLayer)
-                Add(MessageType.Warning, "FloatingText emitters present but no FloatingTextLayer in the scene.",
-                    "Create Layer", () =>
-                    {
-                        var go = new GameObject("FloatingTextLayer");
-                        go.AddComponent<FloatingTextLayer>();
-                        Undo.RegisterCreatedObjectUndo(go, "Create FloatingTextLayer");
-                        JamKitAutoAssign.FillOpenScenes();
-                    });
         }
 
         static IEnumerable<T> FindAssets<T>() where T : ScriptableObject

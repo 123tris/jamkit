@@ -1,15 +1,17 @@
+using Sirenix.OdinInspector;
 using UnityEngine;
 
 namespace Metz.JamKit
 {
     /// <summary>
-    /// Spawns a burst of prefabs on trigger — death explosions, asteroid splitting, loot drops,
-    /// brick debris. Defaults to sibling death, so dropping it on an enemy prefab with a debris
-    /// prefab assigned is the whole setup. <see cref="LaunchSpeed"/> flings spawned rigidbodies
-    /// outward from the center; pair spawns with <see cref="AutoDespawn"/> so debris cleans up.
+    /// Spawns a burst of prefabs on demand — death explosions, asteroid splitting, loot drops,
+    /// brick debris. A plain spawner with no trigger opinions: wire <c>Health.OnDied →
+    /// Burst()</c> for death debris, a Ripple EventListener for global triggers, or call from
+    /// code. <see cref="LaunchSpeed"/> flings spawned rigidbodies outward from the center; pair
+    /// spawns with <see cref="AutoDespawn"/> so debris cleans up.
     /// </summary>
     [DisallowMultipleComponent]
-    public sealed class SpawnBurst : JuiceBehaviour
+    public sealed class SpawnBurst : MonoBehaviour
     {
         [Header("Service")]
         [Tooltip("Optional. Spawns through the pool when assigned.")]
@@ -29,12 +31,14 @@ namespace Metz.JamKit
         [Tooltip("Fling spawned rigidbodies outward at this speed. 0 = leave them still.")]
         [Min(0f)] public float LaunchSpeed = 0f;
 
-        protected override bool DefaultOnSiblingDeath => true;
+        [Button, DisableInEditorMode, FoldoutGroup("Debug")]
+        public void Burst() => Burst(1f);
 
-        public override void Play(float strength)
+        /// <summary>Burst with a count multiplier (wire a FloatEvent or damage amount here for bigger bangs).</summary>
+        public void Burst(float countMultiplier)
         {
             if (Prefab == null) return;
-            int count = Mathf.Max(1, Mathf.RoundToInt(Count * strength));
+            int count = Mathf.Max(1, Mathf.RoundToInt(Count * countMultiplier));
             Vector3 center = transform.position;
 
             for (int i = 0; i < count; i++)

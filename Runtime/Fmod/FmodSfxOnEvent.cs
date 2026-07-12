@@ -1,19 +1,22 @@
 using FMODUnity;
+using Ripple;
+using Sirenix.OdinInspector;
 using UnityEngine;
 
 namespace Metz.JamKit
 {
     /// <summary>
     /// FMOD flavor of <see cref="SfxOnEvent"/>: plays an FMOD event one-shot through
-    /// <see cref="FmodAudioServiceSO"/> on trigger — hit sounds, death sounds, wave stingers.
-    /// No clip array or pitch variation here: multi-sound randomization and pitch wobble are
-    /// authored on the event in FMOD Studio, where they belong.
+    /// <see cref="FmodAudioServiceSO"/> — hit sounds, death sounds, wave stingers. Audio glue,
+    /// not a feedback: Feel can't drive FMOD, so this component is the bridge. No clip array or
+    /// pitch variation here: multi-sound randomization and pitch wobble are authored on the
+    /// event in FMOD Studio, where they belong. Trigger per-instance by wiring
+    /// <c>Health.OnDamaged → Play</c>, globally via <see cref="PlayOn"/>, or from code.
     /// </summary>
     [DisallowMultipleComponent]
-    public sealed class FmodSfxOnEvent : JuiceBehaviour
+    public sealed class FmodSfxOnEvent : MonoBehaviour
     {
-        [Header("Service")]
-        public FmodAudioServiceSO AudioService;
+        [Required] public FmodAudioServiceSO AudioService;
 
         [Header("Sound")]
         [Tooltip("The FMOD event to fire. Randomization/pitch variation live on the event in Studio.")]
@@ -23,9 +26,15 @@ namespace Metz.JamKit
         [Tooltip("Duck the music underneath this sound — turns any event into a stinger (wave complete, high score).")]
         public bool DuckMusic = false;
 
-        protected override bool DefaultOnSiblingDamage => true;
+        [Header("Global Trigger (Ripple, optional)")]
+        [Tooltip("Play whenever this global event fires.")]
+        public VoidEventSO PlayOn;
 
-        public override void Play(float strength)
+        void OnEnable() { if (PlayOn != null) PlayOn.AddListener(Play); }
+        void OnDisable() { if (PlayOn != null) PlayOn.RemoveListener(Play); }
+
+        [Button, DisableInEditorMode, FoldoutGroup("Debug")]
+        public void Play()
         {
             if (AudioService == null || Event.IsNull) return;
             if (DuckMusic) AudioService.PlayStinger(Event);

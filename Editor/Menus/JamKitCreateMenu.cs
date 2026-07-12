@@ -5,11 +5,12 @@ using UnityEngine;
 namespace Metz.JamKit.Editor
 {
     /// <summary>
-    /// <c>GameObject &gt; JamKit &gt; …</c> presets: fully composed, pre-wired archetypes so a
-    /// pong paddle or a survivor enemy is one menu click, not ten component adds. Every preset
-    /// runs through <see cref="JamKitAutoAssign"/> at the end, so service references land filled
-    /// when the wizard assets exist. Visuals use built-in sprites / primitive meshes — replace
-    /// the art, keep the wiring.
+    /// <c>GameObject &gt; JamKit &gt; …</c> presets: composed, pre-wired archetypes so a player
+    /// or a chaser enemy is one menu click, not ten component adds. Every preset runs through
+    /// <see cref="JamKitAutoAssign"/> at the end, so service references land filled when the
+    /// wizard assets exist. Visuals use built-in sprites / primitive meshes — replace the art,
+    /// keep the wiring. Feedback is Feel's job: add an MMF_Player and wire Health.OnDamaged →
+    /// PlayFeedbacks in the inspector (starters from the wizard come pre-wired).
     /// </summary>
     public static class JamKitCreateMenu
     {
@@ -30,9 +31,7 @@ namespace Metz.JamKit.Editor
             go.AddComponent<CapsuleCollider2D>();
             go.AddComponent<Mover2D>();
             go.AddComponent<Health>();
-            go.AddComponent<SpriteFlash>();
-            go.AddComponent<PunchScale>();
-            AddPlayerHitJuice(go);
+            go.AddComponent<HitStop>();
             Finish(go);
         }
 
@@ -48,60 +47,11 @@ namespace Metz.JamKit.Editor
             var mover = go.AddComponent<Mover2D>();
             mover.TopDown = true;
             go.AddComponent<Health>();
-            go.AddComponent<SpriteFlash>();
-            go.AddComponent<PunchScale>();
-            AddPlayerHitJuice(go);
+            go.AddComponent<HitStop>();
             Finish(go);
         }
 
-        [MenuItem(Menu2D + "Player (Grid — Frogger)", false, 12)]
-        static void Player2DGrid(MenuCommand cmd)
-        {
-            var go = NewSprite("GridPlayer", cmd, KnobSprite(), new Color(0.4f, 0.9f, 0.4f));
-            go.tag = "Player";
-            var rb = go.AddComponent<Rigidbody2D>();
-            rb.bodyType = RigidbodyType2D.Kinematic;
-            var col = go.AddComponent<CircleCollider2D>();
-            col.isTrigger = true;
-            col.radius = 0.25f;
-            go.AddComponent<GridMover>();
-            var health = go.AddComponent<Health>();
-            health.Max = health.Current = 1f;
-            go.AddComponent<Respawner>();
-            go.AddComponent<SpriteFlash>();
-            go.AddComponent<PunchScale>();
-            AddPlayerHitJuice(go);
-            Finish(go);
-        }
-
-        [MenuItem(Menu2D + "Ship (Asteroids)", false, 13)]
-        static void Ship2D(MenuCommand cmd)
-        {
-            var go = NewSprite("Ship", cmd, KnobSprite(), new Color(0.9f, 0.9f, 1f));
-            go.tag = "Player";
-            var rb = go.AddComponent<Rigidbody2D>();
-            rb.gravityScale = 0f;
-            go.AddComponent<CircleCollider2D>();
-            go.AddComponent<ThrustMover2D>();
-            go.AddComponent<ScreenWrap2D>();
-            go.AddComponent<Health>();
-            go.AddComponent<Respawner>();
-            go.AddComponent<SpriteFlash>();
-
-            // Nose points up (2D ship convention); the muzzle's right axis must match it for
-            // ProjectileShooter's 2D fire direction.
-            var muzzle = new GameObject("Muzzle").transform;
-            muzzle.SetParent(go.transform, false);
-            muzzle.localPosition = new Vector3(0f, 0.5f, 0f);
-            muzzle.localRotation = Quaternion.Euler(0f, 0f, 90f);
-            var shooter = go.AddComponent<ProjectileShooter>();
-            shooter.Is2D = true;
-            shooter.Muzzle = muzzle;
-            AddPlayerHitJuice(go);
-            Finish(go);
-        }
-
-        [MenuItem(Menu2D + "Enemy (Chaser)", false, 14)]
+        [MenuItem(Menu2D + "Enemy (Chaser)", false, 12)]
         static void Enemy2D(MenuCommand cmd)
         {
             var go = NewSprite("Enemy", cmd, KnobSprite(), new Color(1f, 0.35f, 0.3f));
@@ -113,57 +63,12 @@ namespace Metz.JamKit.Editor
             var health = go.AddComponent<Health>();
             health.Max = health.Current = 3f;
             health.DestroyOnDeath = true;
-            go.AddComponent<Damager2D>();
-            go.AddComponent<SpriteFlash>();
-            go.AddComponent<PunchScale>();
+            go.AddComponent<Damager>();
             go.AddComponent<SpawnBurst>().Is2D = true;
             Finish(go);
         }
 
-        [MenuItem(Menu2D + "Ball (Pong-Breakout)", false, 15)]
-        static void Ball2D(MenuCommand cmd)
-        {
-            var go = NewSprite("Ball", cmd, KnobSprite(), Color.white);
-            go.transform.localScale = Vector3.one * 0.6f;
-            go.AddComponent<Rigidbody2D>();
-            go.AddComponent<CircleCollider2D>();
-            go.AddComponent<Bouncer2D>();
-            var respawn = go.AddComponent<Respawner>();
-            respawn.OnSiblingDeath = false; // no Health — wire a goal TriggerZone to Respawn()
-            Finish(go);
-        }
-
-        [MenuItem(Menu2D + "Paddle", false, 16)]
-        static void Paddle2D(MenuCommand cmd)
-        {
-            var go = NewSprite("Paddle", cmd, BackgroundSprite(), Color.white);
-            go.transform.localScale = new Vector3(4f, 0.5f, 1f);
-            var rb = go.AddComponent<Rigidbody2D>();
-            rb.bodyType = RigidbodyType2D.Kinematic;
-            go.AddComponent<BoxCollider2D>();
-            go.AddComponent<Paddle>(); // english marker — Bouncer2D bends bounces by hit offset
-            var mover = go.AddComponent<Mover2D>();
-            mover.TopDown = true;
-            mover.AxisScale = new Vector2(1f, 0f); // breakout orientation; flip for pong
-            mover.MoveSpeed = 10f;
-            Finish(go);
-        }
-
-        [MenuItem(Menu2D + "Hazard (Patrol — cars, saws)", false, 17)]
-        static void Hazard2D(MenuCommand cmd)
-        {
-            var go = NewSprite("PatrolHazard", cmd, BackgroundSprite(), new Color(1f, 0.6f, 0.2f));
-            go.transform.localScale = new Vector3(1.6f, 0.8f, 1f);
-            var rb = go.AddComponent<Rigidbody2D>();
-            rb.bodyType = RigidbodyType2D.Kinematic;
-            var col = go.AddComponent<BoxCollider2D>();
-            col.isTrigger = true;
-            go.AddComponent<PatrolMover>().Mode = PatrolMover.EndMode.TeleportToStart;
-            go.AddComponent<Damager2D>().Damage = 999f;
-            Finish(go);
-        }
-
-        [MenuItem(Menu2D + "Kill Zone", false, 18)]
+        [MenuItem(Menu2D + "Kill Zone", false, 13)]
         static void KillZone2D(MenuCommand cmd)
         {
             var go = NewGO("KillZone", cmd);
@@ -174,14 +79,14 @@ namespace Metz.JamKit.Editor
             Finish(go);
         }
 
-        [MenuItem(Menu2D + "Follow Camera", false, 19)]
+        [MenuItem(Menu2D + "Follow Camera", false, 14)]
         static void Camera2D(MenuCommand cmd)
         {
             var go = NewGO("CM FollowCam 2D", cmd);
             go.AddComponent<CinemachineCamera>();
             var follow = go.AddComponent<CinemachineFollow>();
             follow.FollowOffset = new Vector3(0f, 0f, -10f);
-            go.AddComponent<CinemachineFollow2D>();
+            go.AddComponent<FollowCamera>();
             Finish(go);
         }
 
@@ -195,9 +100,7 @@ namespace Metz.JamKit.Editor
             go.AddComponent<Rigidbody>();
             go.AddComponent<Mover3D>();
             go.AddComponent<Health>();
-            go.AddComponent<MaterialFlash>();
-            go.AddComponent<PunchScale>();
-            AddPlayerHitJuice(go);
+            go.AddComponent<HitStop>();
             Finish(go);
         }
 
@@ -212,8 +115,6 @@ namespace Metz.JamKit.Editor
             health.Max = health.Current = 3f;
             health.DestroyOnDeath = true;
             go.AddComponent<Damager>();
-            go.AddComponent<MaterialFlash>();
-            go.AddComponent<PunchScale>();
             go.AddComponent<SpawnBurst>();
             Finish(go);
         }
@@ -238,7 +139,7 @@ namespace Metz.JamKit.Editor
             var follow = go.AddComponent<CinemachineFollow>();
             follow.FollowOffset = new Vector3(0f, 6f, -8f);
             go.AddComponent<CinemachineRotationComposer>();
-            go.AddComponent<CinemachineFollow3D>();
+            go.AddComponent<FollowCamera>();
             Finish(go);
         }
 
@@ -259,19 +160,11 @@ namespace Metz.JamKit.Editor
             go.transform.localScale = Vector3.one * 0.5f;
             var col = go.AddComponent<CircleCollider2D>();
             col.isTrigger = true;
-            go.AddComponent<Pickup>().ScoreValue = 1;
+            go.AddComponent<Pickup>().ScoreValue = 1f;
             Finish(go);
         }
 
-        [MenuItem(MenuShared + "Floating Text Layer", false, 52)]
-        static void FloatingTextLayerPreset(MenuCommand cmd)
-        {
-            var go = NewGO("FloatingTextLayer", cmd);
-            go.AddComponent<FloatingTextLayer>();
-            Finish(go);
-        }
-
-        [MenuItem(MenuShared + "Toast", false, 53)]
+        [MenuItem(MenuShared + "Toast", false, 52)]
         static void ToastPreset(MenuCommand cmd)
         {
             var go = NewGO("Toast", cmd);
@@ -314,19 +207,7 @@ namespace Metz.JamKit.Editor
             return go;
         }
 
-        /// <summary>
-        /// Player damage is the hit that matters most — pre-wire the global-feel receivers
-        /// (roadmap decision: players get CameraShake + HitStop, enemies just flash/pop).
-        /// Both default to sibling-damage triggers, so they fire only when THIS object is hit.
-        /// </summary>
-        static void AddPlayerHitJuice(GameObject go)
-        {
-            go.AddComponent<CameraShake>();
-            go.AddComponent<HitStop>();
-        }
-
         static Sprite KnobSprite() => AssetDatabase.GetBuiltinExtraResource<Sprite>("UI/Skin/Knob.psd");
-        static Sprite BackgroundSprite() => AssetDatabase.GetBuiltinExtraResource<Sprite>("UI/Skin/Background.psd");
 
         static void Finish(GameObject go)
         {

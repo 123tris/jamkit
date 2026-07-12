@@ -47,27 +47,4 @@ namespace Metz.JamKit
 
         public void Stop() => _running = false;
     }
-
-    /// <summary>Free-running stopwatch (no expiry). Tick to accumulate elapsed time.</summary>
-    public struct Stopwatch
-    {
-        public bool Unscaled;
-        public float Elapsed;
-        bool _running;
-
-        public static Stopwatch StartNew(bool unscaled = false)
-            => new() { Unscaled = unscaled, Elapsed = 0f, _running = true };
-
-        public bool IsRunning => _running;
-
-        public void Tick()
-        {
-            if (!_running) return;
-            Elapsed += Unscaled ? UnityEngine.Time.unscaledDeltaTime : UnityEngine.Time.deltaTime;
-        }
-
-        public void Reset() { Elapsed = 0f; }
-        public void Start() => _running = true;
-        public void Stop() => _running = false;
-    }
 }

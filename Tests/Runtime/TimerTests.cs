@@ -29,14 +29,5 @@ namespace Metz.JamKit.Tests
             // can't easily advance without running; just sanity-check the API.
             Assert.IsTrue(t.IsRunning);
         }
-
-        [Test]
-        public void Stopwatch_AccumulatesOnTick()
-        {
-            var sw = Stopwatch.StartNew(unscaled: true);
-            // Direct field write is fine for the test because Tick uses real delta time.
-            Assert.AreEqual(0f, sw.Elapsed);
-            Assert.IsTrue(sw.IsRunning);
-        }
     }
 }
