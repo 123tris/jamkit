@@ -24,6 +24,7 @@ namespace Metz.JamKit.Editor
         static JamKitAutoAssign()
         {
             ObjectFactory.componentWasAdded += OnComponentAdded;
+            ObjectChangeEvents.changesPublished += OnChangesPublished;
         }
 
         static void OnComponentAdded(Component c)
@@ -31,6 +32,48 @@ namespace Metz.JamKit.Editor
             if (EditorApplication.isPlayingOrWillChangePlaymode) return;
             if (c == null || !IsJamKitType(c.GetType())) return;
             FillComponent(c, log: true);
+        }
+
+        /// <summary>
+        /// Safety net for prefab drag-ins (componentWasAdded doesn't fire for those): when a
+        /// hierarchy is created — dragging a package/sample prefab into a scene — fill any null
+        /// JamKit refs as instance overrides. If this ever misses a path, [Required] shows red
+        /// and the Doctor's Auto-Assign button catches it: three nets, none load-bearing.
+        /// </summary>
+        static void OnChangesPublished(ref ObjectChangeEventStream stream)
+        {
+            if (EditorApplication.isPlayingOrWillChangePlaymode) return;
+            for (int i = 0; i < stream.length; i++)
+            {
+                if (stream.GetEventType(i) != ObjectChangeKind.CreateGameObjectHierarchy) continue;
+                stream.GetCreateGameObjectHierarchyEvent(i, out var evt);
+                if (EditorUtility.InstanceIDToObject(evt.instanceId) is not GameObject go) continue;
+                foreach (var mb in go.GetComponentsInChildren<MonoBehaviour>(true))
+                    if (mb != null && IsJamKitType(mb.GetType()))
+                        FillComponent(mb, log: false);
+            }
+        }
+
+        /// <summary>
+        /// Fill null JamKit refs across a prefab ASSET (sample setup wires imported sample
+        /// prefabs to the project's services this way — every instance everywhere inherits it).
+        /// </summary>
+        public static int FillPrefabAsset(string prefabPath)
+        {
+            var root = PrefabUtility.LoadPrefabContents(prefabPath);
+            try
+            {
+                int filled = 0;
+                foreach (var mb in root.GetComponentsInChildren<MonoBehaviour>(true))
+                    if (mb != null && IsJamKitType(mb.GetType()))
+                        filled += FillComponent(mb, log: false);
+                if (filled > 0) PrefabUtility.SaveAsPrefabAsset(root, prefabPath);
+                return filled;
+            }
+            finally
+            {
+                PrefabUtility.UnloadPrefabContents(root);
+            }
         }
 
         [MenuItem("JamKit/Auto-Assign References In Open Scenes", priority = 20)]
@@ -59,7 +102,10 @@ namespace Metz.JamKit.Editor
             int filled = 0;
             StringBuilder report = null;
             var so = new SerializedObject(c);
-            bool inPrefabStage = PrefabStageUtility.GetPrefabStage(c.gameObject) != null;
+            // Prefab stage AND LoadPrefabContents previews are isolated: scene references can't be
+            // saved into them, so component lookups are skipped there (asset refs still fill).
+            bool inPrefabStage = PrefabStageUtility.GetPrefabStage(c.gameObject) != null
+                || EditorSceneManager.IsPreviewSceneObject(c.gameObject);
 
             foreach (var field in CandidateFields(c.GetType()))
             {
@@ -82,26 +128,6 @@ namespace Metz.JamKit.Editor
             if (filled > 0) so.ApplyModifiedProperties();
             if (report != null) Debug.Log(report.ToString(), c);
             return filled;
-        }
-
-        /// <summary>
-        /// For the Validate window: every null JamKit reference on the component, with how many
-        /// candidates exist (1 = auto-fillable, 0 = missing, 2+ = ambiguous).
-        /// </summary>
-        public static List<(string field, int candidates)> AnalyzeNulls(Component c)
-        {
-            var result = new List<(string, int)>();
-            var so = new SerializedObject(c);
-            bool inPrefabStage = PrefabStageUtility.GetPrefabStage(c.gameObject) != null;
-            foreach (var field in CandidateFields(c.GetType()))
-            {
-                var prop = so.FindProperty(field.Name);
-                if (prop == null || prop.propertyType != SerializedPropertyType.ObjectReference) continue;
-                if (prop.objectReferenceValue != null) continue;
-                var (_, count) = FindCandidate(field.FieldType, inPrefabStage);
-                result.Add((field.Name, count));
-            }
-            return result;
         }
 
         static IEnumerable<FieldInfo> CandidateFields(Type componentType)

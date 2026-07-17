@@ -3,19 +3,20 @@ using System.Collections.Generic;
 using System.IO;
 using UnityEditor;
 using UnityEngine;
-using UnityEngine.Audio;
 using UnityEngine.UIElements;
 using Object = UnityEngine.Object;
 
 namespace Metz.JamKit.Editor
 {
     /// <summary>
-    /// Jam-day insurance: one window that checks the known failure points (mixer params not
-    /// exposed, PanelSettings without a theme, scenes missing from Build Settings, no
-    /// EventSystem, unassigned service references, juice components missing their scene
-    /// counterparts) and offers a Fix button wherever the fix is unambiguous.
+    /// Jam-day insurance: one window that checks the PROJECT-SHAPE failure points (mixer params
+    /// not exposed, PanelSettings without a theme, scenes missing from Build Settings, no
+    /// EventSystem, HitStop without a TimeServiceRunner) and offers a Fix button wherever the
+    /// fix is unambiguous. Per-field null references are not scanned here anymore — [Required]
+    /// attributes surface them in the inspector and project-wide in Odin Validator, and
+    /// auto-assign fills them; the toolbar button runs that fill on demand.
     /// </summary>
-    public sealed class JamKitValidateWindow : EditorWindow
+    public sealed class JamKitDoctorWindow : EditorWindow
     {
         class Issue
         {
@@ -39,10 +40,10 @@ namespace Metz.JamKit.Editor
         /// </summary>
         public static readonly List<Action<IssueReporter>> ExtraScans = new();
 
-        [MenuItem("JamKit/Validate Setup", priority = 1)]
+        [MenuItem("JamKit/Doctor", priority = 1)]
         public static void Open()
         {
-            var window = GetWindow<JamKitValidateWindow>("JamKit Validate");
+            var window = GetWindow<JamKitDoctorWindow>("JamKit Doctor");
             window.minSize = new Vector2(420f, 240f);
             window.Scan();
         }
@@ -114,7 +115,7 @@ namespace Metz.JamKit.Editor
 
         static readonly Type[] ServiceTypes =
         {
-            typeof(AudioServiceSO), typeof(TimeServiceSO), typeof(SceneServiceSO), typeof(InputServiceSO),
+            typeof(TimeServiceSO), typeof(SceneServiceSO), typeof(InputServiceSO),
             typeof(SaveServiceSO), typeof(PoolServiceSO),
         };
 
@@ -130,6 +131,8 @@ namespace Metz.JamKit.Editor
                     "Run Wizard", JamProjectWizard.Run);
         }
 
+        // Unity-audio path only: with FMOD installed the scaffold creates no AudioServiceSO, so
+        // this loop simply finds nothing (the FMOD ExtraScan covers that backend).
         void ScanAudio()
         {
             foreach (var audio in FindAssets<AudioServiceSO>())
@@ -137,12 +140,12 @@ namespace Metz.JamKit.Editor
                 if (audio.Mixer == null)
                 {
                     Add(MessageType.Warning, $"AudioService '{audio.name}' has no mixer — volume sliders will do nothing.",
-                        "Create Mixer", () =>
+                        "Copy Template", () =>
                         {
-                            var path = AudioMixerCreator.CreateAt("Assets/_Project/Audio/Resources/JamKitMixer.mixer");
-                            if (path != null)
+                            var mixer = TemplateAssets.EnsureMixer();
+                            if (mixer != null)
                             {
-                                audio.Mixer = AssetDatabase.LoadAssetAtPath<AudioMixer>(path);
+                                audio.Mixer = mixer;
                                 EditorUtility.SetDirty(audio);
                                 AssetDatabase.SaveAssets();
                             }
@@ -157,7 +160,16 @@ namespace Metz.JamKit.Editor
                         var mixerPath = AssetDatabase.GetAssetPath(audio.Mixer);
                         Add(MessageType.Error,
                             $"Mixer '{audio.Mixer.name}' does not expose '{param}' — volume sliders will not work.",
-                            "Repair Mixer", () => AudioMixerCreator.CreateAt(mixerPath), audio.Mixer);
+                            "Repair Mixer", () =>
+                            {
+                                var repaired = TemplateAssets.RepairMixer(mixerPath);
+                                if (repaired != null)
+                                {
+                                    audio.Mixer = repaired;
+                                    EditorUtility.SetDirty(audio);
+                                    AssetDatabase.SaveAssets();
+                                }
+                            }, audio.Mixer);
                         break; // repair fixes all three at once
                     }
                 }
@@ -257,31 +269,26 @@ namespace Metz.JamKit.Editor
                         Undo.RegisterCreatedObjectUndo(es, "Create EventSystem");
                     });
 
-            bool hasHitStop = false, hasTimeRunner = Object.FindObjectsByType<TimeServiceRunner>(FindObjectsInactive.Include, FindObjectsSortMode.None).Length > 0;
+            bool hasHitStop = false;
+            bool hasTimeRunner = Object.FindObjectsByType<TimeServiceRunner>(FindObjectsInactive.Include, FindObjectsSortMode.None).Length > 0;
+            var looseObjects = new HashSet<GameObject>();
 
-            int autoFillable = 0;
-            var unresolved = new List<string>();
             foreach (var mb in JamKitAutoAssign.AllJamKitComponentsInOpenScenes())
             {
                 if (mb is HitStop) hasHitStop = true;
-
-                foreach (var (field, candidates) in JamKitAutoAssign.AnalyzeNulls(mb))
-                {
-                    if (candidates == 1) autoFillable++;
-                    else if (candidates > 1 && unresolved.Count < 12)
-                        unresolved.Add($"{mb.gameObject.name}.{mb.GetType().Name}.{field}: {candidates} candidates");
-                }
+                if (!PrefabUtility.IsPartOfPrefabInstance(mb.gameObject))
+                    looseObjects.Add(mb.gameObject);
             }
-
-            if (autoFillable > 0)
-                Add(MessageType.Warning,
-                    $"{autoFillable} empty JamKit reference(s) in open scenes have exactly one candidate.",
-                    "Auto-Assign", JamKitAutoAssign.FillOpenScenes);
-            foreach (var line in unresolved)
-                Add(MessageType.Info, $"Ambiguous reference (pick manually): {line}");
 
             if (hasHitStop && !hasTimeRunner)
                 Add(MessageType.Warning, "HitStop present but no TimeServiceRunner in the scene — freeze-frames won't run. Add a JamKitCore (wizard) or a TimeServiceRunner.");
+
+            // Pillar nudge, not an error: scenes as lists of prefab instances merge better and
+            // propagate fixes. No auto-fix — deciding what becomes a prefab is design work.
+            if (looseObjects.Count > 0)
+                Add(MessageType.Info,
+                    $"{looseObjects.Count} JamKit object(s) in open scenes are not prefab instances. " +
+                    "Consider making them prefabs (or starter variants) — scenes as prefab lists merge better (PILLARS.md).");
         }
 
         static IEnumerable<T> FindAssets<T>() where T : ScriptableObject

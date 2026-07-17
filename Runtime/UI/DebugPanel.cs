@@ -1,13 +1,15 @@
 using UnityEngine;
 using UnityEngine.InputSystem;
+using UnityEngine.SceneManagement;
 using UnityEngine.UIElements;
 
 namespace Metz.JamKit
 {
     /// <summary>
-    /// In-game debug overlay toggled by a key. Self-builds a top-sorted UIDocument and shows an FPS
-    /// readout, a time-scale slider, scene quick-jump / reload buttons, and quit. Drop it on any
-    /// GameObject (e.g. JamKitCore) and assign the services you want to poke. Strip it from release
+    /// In-game debug overlay toggled by a key — the only debug surface that exists in BUILDS
+    /// (WebGL jam testing has no inspector; see PILLARS.md). Self-builds a top-sorted UIDocument
+    /// and shows an FPS readout, a time-scale slider, quick-jump buttons for every scene in
+    /// Build Settings, reload, and quit. Lives on JamKitCore by default. Strip it from release
     /// builds by removing the component or gating with a scripting define.
     /// </summary>
     [RequireComponent(typeof(UIDocument))]
@@ -21,9 +23,6 @@ namespace Metz.JamKit
         [Tooltip("Backquote (`) by default — browsers swallow F-keys, so avoid those for WebGL jam builds.")]
         public Key ToggleKey = Key.Backquote;
         public bool VisibleAtStart = false;
-
-        [Header("Scene quick-jump")]
-        public string[] Scenes = new string[0];
 
         UIDocument _doc;
         Label _fps;
@@ -75,12 +74,12 @@ namespace Metz.JamKit
             panel.Add(ts);
 
             panel.Add(MakeButton("Reload Scene", () => SceneService?.ReloadCurrent()));
-            if (Scenes != null)
-                foreach (var s in Scenes)
-                {
-                    var sceneName = s;
-                    panel.Add(MakeButton($"Load: {sceneName}", () => SceneService?.LoadAsync(sceneName)));
-                }
+            // Every scene in Build Settings gets a jump button — no list to maintain.
+            for (int i = 0; i < SceneManager.sceneCountInBuildSettings; i++)
+            {
+                var sceneName = System.IO.Path.GetFileNameWithoutExtension(SceneUtility.GetScenePathByBuildIndex(i));
+                panel.Add(MakeButton($"Load: {sceneName}", () => SceneService?.LoadAsync(sceneName)));
+            }
             panel.Add(MakeButton("Quit", Quit));
         }
 

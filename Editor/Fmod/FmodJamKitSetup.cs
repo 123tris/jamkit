@@ -20,7 +20,7 @@ namespace Metz.JamKit.Editor
         static FmodJamKitSetup()
         {
             JamProjectWizard.PostScaffold.Add(AddFmodToProject);
-            JamKitValidateWindow.ExtraScans.Add(Scan);
+            JamKitDoctorWindow.ExtraScans.Add(Scan);
         }
 
         [MenuItem("JamKit/Setup/Add FMOD Audio Service", priority = 40)]
@@ -35,10 +35,11 @@ namespace Metz.JamKit.Editor
         }
 
         /// <summary>
-        /// The FMOD scaffold: an FmodAudioServiceSO sharing the Unity service's Ripple volume
+        /// The FMOD scaffold: an FmodAudioServiceSO wired to the project's Ripple volume
         /// variables, an FmodAudioServiceRunner on the JamKitCore prefab, and FmodMenuSounds on
-        /// the menu prefab. The Unity-audio service stays — placeholder clips keep working until
-        /// banks exist, and the runners coexist peacefully.
+        /// the menu prefab. FMOD-first: the 0.9 wizard scaffolds no Unity-audio service when FMOD
+        /// is installed, so the variables are loaded from the wizard's Variables folder directly
+        /// (falling back to a Unity service's, for projects scaffolded before FMOD).
         /// </summary>
         public static void AddFmodToProject()
         {
@@ -46,21 +47,29 @@ namespace Metz.JamKit.Editor
             if (service == null)
             {
                 service = ScriptableObject.CreateInstance<FmodAudioServiceSO>();
-                // Share the volume variables the wizard wired into the Unity-audio service, so
-                // one set of menu sliders drives whichever backend is live.
-                var unityAudio = FindSingle<AudioServiceSO>();
-                if (unityAudio != null)
-                {
-                    service.MasterVolume = unityAudio.MasterVolume;
-                    service.MusicVolume = unityAudio.MusicVolume;
-                    service.SfxVolume = unityAudio.SfxVolume;
-                }
+                service.MasterVolume = FindVolumeVariable("MasterVolume");
+                service.MusicVolume = FindVolumeVariable("MusicVolume");
+                service.SfxVolume = FindVolumeVariable("SfxVolume");
                 Directory.CreateDirectory(Path.GetDirectoryName(ServiceAssetPath));
                 AssetDatabase.CreateAsset(service, ServiceAssetPath);
             }
 
             AddToPrefab<FmodAudioServiceRunner>(JamProjectWizard.CorePrefabPath, r => r.Service = service);
             AddToPrefab<FmodMenuSounds>(JamProjectWizard.MenuPrefabPath, m => m.AudioService = service);
+        }
+
+        static Ripple.FloatVariableSO FindVolumeVariable(string name)
+        {
+            var direct = AssetDatabase.LoadAssetAtPath<Ripple.FloatVariableSO>($"Assets/_Project/Variables/{name}.asset");
+            if (direct != null) return direct;
+            var unityAudio = FindSingle<AudioServiceSO>();
+            if (unityAudio == null) return null;
+            return name switch
+            {
+                "MasterVolume" => unityAudio.MasterVolume,
+                "MusicVolume" => unityAudio.MusicVolume,
+                _ => unityAudio.SfxVolume,
+            };
         }
 
         static void AddToPrefab<T>(string prefabPath, System.Action<T> configure) where T : Component
@@ -91,7 +100,7 @@ namespace Metz.JamKit.Editor
 
         // ------------------------------------------------------------------ validate checks
 
-        static void Scan(JamKitValidateWindow.IssueReporter report)
+        static void Scan(JamKitDoctorWindow.IssueReporter report)
         {
             var settings = FMODUnity.Settings.Instance;
             if (settings != null && settings.HasSourceProject && string.IsNullOrEmpty(settings.SourceProjectPath))
@@ -104,7 +113,7 @@ namespace Metz.JamKit.Editor
             if (service == null)
             {
                 report(MessageType.Warning,
-                    "FMOD is installed but there is no FmodAudioServiceSO — JamKit audio still routes through Unity audio only.",
+                    "FMOD is installed but there is no FmodAudioServiceSO — JamKit has no audio backend on the FMOD-first scaffold.",
                     "Add FMOD Service", AddFmodToProjectMenu);
                 return;
             }
