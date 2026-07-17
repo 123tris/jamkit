@@ -21,6 +21,12 @@
         "ULTEVENTS",
         "ODIN_INSPECTOR"
     ],
-    "versionDefines": [],
+    "versionDefines": [
+        {
+            "name": "com.kybernetik.ultevents",
+            "expression": "0",
+            "define": "ULTEVENTS"
+        }
+    ],
     "noEngineReferences": false
 }
