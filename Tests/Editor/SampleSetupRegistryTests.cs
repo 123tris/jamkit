@@ -5,10 +5,9 @@ using NUnit.Framework;
 namespace Metz.JamKit.Tests.Editor
 {
     /// <summary>
-    /// Registry ↔ Samples~ ↔ package.json consistency. The one-click setup finds demos by type
-    /// name and scenes by folder name, so a sample rename that skips one of the three places
-    /// silently breaks it — these tests make that a red bar instead. (Demo *types* can't be
-    /// checked here: Samples~ never compiles inside the package project.)
+    /// Registry ↔ Samples~ ↔ package.json consistency. The one-click setup finds samples by the
+    /// "&lt;Name&gt;/&lt;Name&gt;.unity" scene convention, so a rename that skips one of the three
+    /// places silently breaks it — these tests make that a red bar instead.
     /// </summary>
     public class SampleSetupRegistryTests
     {
@@ -16,18 +15,19 @@ namespace Metz.JamKit.Tests.Editor
         static string SamplesRoot => Path.Combine(PackageRoot, "Samples~");
 
         [Test]
-        public void EverySpecHasFolderDemoScriptAndReadme()
+        public void EverySpecHasFolderSceneAndReadme()
         {
             foreach (var spec in JamKitSampleSetup.Specs)
             {
                 var dir = Path.Combine(SamplesRoot, spec.Name);
                 Assert.IsTrue(Directory.Exists(dir), $"Missing sample folder: {dir}");
-
-                var script = spec.TypeName.Substring(spec.TypeName.LastIndexOf('.') + 1) + ".cs";
-                Assert.IsTrue(File.Exists(Path.Combine(dir, script)),
-                    $"{spec.Name}: expected {script} (setup locates the sample by this script).");
+                Assert.IsTrue(File.Exists(Path.Combine(dir, spec.Name + ".unity")),
+                    $"{spec.Name}: expected {spec.Name}.unity (setup locates the sample by this scene).");
                 Assert.IsTrue(File.Exists(Path.Combine(dir, "README.md")),
                     $"{spec.Name}: expected README.md.");
+                if (spec.InGameScene)
+                    Assert.IsTrue(File.Exists(Path.Combine(dir, "Prefabs", spec.ArenaPrefab + ".prefab")),
+                        $"{spec.Name}: expected Prefabs/{spec.ArenaPrefab}.prefab (dropped into Game.unity by setup).");
             }
         }
 
@@ -52,14 +52,6 @@ namespace Metz.JamKit.Tests.Editor
             foreach (var spec in JamKitSampleSetup.Specs)
                 StringAssert.Contains($"\"displayName\": \"{spec.Name}\"", json,
                     $"package.json samples[] is missing '{spec.Name}'.");
-        }
-
-        [Test]
-        public void SpecTypesLiveInTheSamplesNamespace()
-        {
-            // WarnIfOtherDemoPresent keys off this namespace; a demo outside it would dodge the warning.
-            foreach (var spec in JamKitSampleSetup.Specs)
-                StringAssert.StartsWith("Metz.JamKit.Samples.", spec.TypeName);
         }
     }
 }

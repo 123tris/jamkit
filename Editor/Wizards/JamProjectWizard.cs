@@ -11,12 +11,15 @@ using UnityEngine.UIElements;
 namespace Metz.JamKit.Editor
 {
     /// <summary>
-    /// One-click jam scaffold. Creates the SO service assets (Audio / Time / Scene / Input / Save /
-    /// Pool), the Ripple variables (score + high score + timer as plain variables — no service;
-    /// volume + high score marked persistent), the AudioMixer + PanelSettings, and three scenes
-    /// (Bootstrap / Game / GameOver). Every scene gets a self-contained JamKitCore (all runners) plus
-    /// an EventSystem, so audio/pause/input/transitions work in each scene without a persistent root
-    /// or any singletons — the runners simply register with the shared service SOs on load.
+    /// One-click jam scaffold. Creates the SO service assets (Time / Scene / Input / Save / Pool,
+    /// plus Unity-mixer Audio only when FMOD is absent — with FMOD installed the audio path is
+    /// FMOD-first and the PostScaffold hook wires it), the Ripple variables (score + high score +
+    /// timer as plain variables — no service; volume + high score marked persistent), the template
+    /// PanelSettings (+ mixer on the Unity-audio path), the starter prefab library, and three
+    /// scenes (Bootstrap / Game / GameOver). Every scene gets a self-contained JamKitCore (all
+    /// runners + HighScoreTracker + DebugPanel) plus an EventSystem, so audio/pause/input/
+    /// transitions work in each scene without a persistent root or any singletons — the runners
+    /// simply register with the shared service SOs on load.
     /// </summary>
     public static class JamProjectWizard
     {
@@ -75,11 +78,10 @@ namespace Metz.JamKit.Editor
 
             OfferFastPlayMode();
 
-            EditorUtility.DisplayDialog("JamKit",
-                "Setup complete.\n\n" +
-                "Service SOs live in Assets/_Project/Services; JamKitCore + JamKitMenu prefabs in Assets/_Project/Prefabs\n" +
-                "(edit the prefab once, every scene updates).\n\n" +
-                "Press Play: Start → Settings → Game (pause with Esc) → GameOver all work end-to-end.", "OK");
+            Debug.Log("[JamKit] Setup complete. Services in Assets/_Project/Services; JamKitCore + JamKitMenu " +
+                      "prefabs and the starter library in Assets/_Project/Prefabs (edit a prefab once, every scene " +
+                      "updates — customize starters as prefab VARIANTS). Press Play: Start → Settings → Game " +
+                      "(Esc pauses) → GameOver all work end-to-end.");
         }
 
         /// <summary>
@@ -92,11 +94,7 @@ namespace Metz.JamKit.Editor
         {
             EnsureFolders();
 
-            var mixerPath = $"{ProjectRoot}/Audio/Resources/JamKitMixer.mixer";
-            AudioMixerCreator.CreateAt(mixerPath);
-            var mixer = AssetDatabase.LoadAssetAtPath<UnityEngine.Audio.AudioMixer>(mixerPath);
-
-            var panelSettings = PanelSettingsCreator.CreateAt($"{PanelSettingsCreator.DefaultDir}/{PanelSettingsCreator.DefaultName}.asset");
+            var panelSettings = TemplateAssets.EnsurePanelSettings();
 
             // Ripple variables: volumes (persistent — settings survive restarts), score/high-score
             // (high score persistent), and a timer readout for HUD binding. State lives here, not
@@ -106,16 +104,23 @@ namespace Metz.JamKit.Editor
             var sfx    = CreateOrLoadFloatVar($"{VariablesDir}/SfxVolume.asset", persist: true);
             var scoreVar = CreateOrLoadFloatVar($"{VariablesDir}/Score.asset", 0f, 999999f, 0f);
             var highVar  = CreateOrLoadFloatVar($"{VariablesDir}/HighScore.asset", 0f, 999999f, 0f, persist: true);
-            var timeVar  = CreateOrLoadFloatVar($"{VariablesDir}/Timer.asset", 0f, 999999f, 0f);
+            CreateOrLoadFloatVar($"{VariablesDir}/Timer.asset", 0f, 999999f, 0f);
 
             // Service SOs — services wrap behavior only (scene loads, timescale, input, pooling, IO).
-            var audio = CreateOrLoadSO<AudioServiceSO>($"{ServicesDir}/AudioService.asset", a =>
+            // Audio is FMOD-first: with FMOD installed, no mixer and no Unity AudioService are
+            // scaffolded — the FMOD PostScaffold step creates FmodAudioService, puts its runner on
+            // the core prefab, and the menu sliders drive FMOD buses through the same variables.
+            AudioServiceSO audio = null;
+#if !JAMKIT_FMOD
+            var mixer = TemplateAssets.EnsureMixer();
+            audio = CreateOrLoadSO<AudioServiceSO>($"{ServicesDir}/AudioService.asset", a =>
             {
                 a.Mixer = mixer;
                 a.MasterVolume = master;
                 a.MusicVolume = music;
                 a.SfxVolume = sfx;
             });
+#endif
             var time  = CreateOrLoadSO<TimeServiceSO>($"{ServicesDir}/TimeService.asset");
             var scene = CreateOrLoadSO<SceneServiceSO>($"{ServicesDir}/SceneService.asset");
             CreateOrLoadSO<SaveServiceSO>($"{ServicesDir}/SaveService.asset");
@@ -131,7 +136,16 @@ namespace Metz.JamKit.Editor
             // scene so the user's scene never gets temp objects; we open Bootstrap at the end.
             EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
             var corePrefab = CreateOrLoadCorePrefab(audio, time, scene, pool, scoreVar, highVar);
-            var menuPrefab = CreateOrLoadMenuPrefab(audio, time, scene, input);
+            var menuPrefab = CreateOrLoadMenuPrefab(audio, time, scene, input, panelSettings, master, music, sfx);
+
+            // Starter prefab assets — the Lego bricks designers variant and drop into scenes.
+            StarterPrefabLibrary.EnsureAll(new StarterPrefabLibrary.Context
+            {
+                Input = input,
+                Time = time,
+                Pool = pool,
+                Score = scoreVar,
+            });
 
             // Bootstrap is built last so it's the scene left open for the user.
             if (overwriteScenes || !File.Exists(GameScenePath))
@@ -241,9 +255,11 @@ namespace Metz.JamKit.Editor
         // -------------------- shared scene pieces --------------------
 
         /// <summary>
-        /// The JamKitCore prefab: every service runner + fade overlay + the score tracker, plus
-        /// the Toast child (it hosts its own UIDocument at runtime). Load-or-create so user
-        /// customizations survive re-running.
+        /// The JamKitCore prefab: every service runner + fade overlay + the score tracker +
+        /// the DebugPanel (Backquote — the only debug surface that exists in builds), plus the
+        /// Toast child (it hosts its own UIDocument at runtime). Load-or-create so user
+        /// customizations survive re-running. On the FMOD path <paramref name="audio"/> is null
+        /// and the FMOD PostScaffold step injects its runner instead.
         /// </summary>
         static GameObject CreateOrLoadCorePrefab(AudioServiceSO audio, TimeServiceSO time, SceneServiceSO scene, PoolServiceSO pool,
             FloatVariableSO scoreVar, FloatVariableSO highVar)
@@ -253,7 +269,7 @@ namespace Metz.JamKit.Editor
             if (existing != null) return existing;
 
             var core = new GameObject("JamKitCore");
-            core.AddComponent<AudioServiceRunner>().Service = audio;
+            if (audio != null) core.AddComponent<AudioServiceRunner>().Service = audio;
             core.AddComponent<TimeServiceRunner>().Service = time;
             core.AddComponent<PoolServiceRunner>().Service = pool;
             var fade = core.AddComponent<FadeOverlay>();
@@ -268,29 +284,54 @@ namespace Metz.JamKit.Editor
             toast.transform.SetParent(core.transform, false);
             toast.AddComponent<Toast>();
 
+            var debug = new GameObject("DebugPanel");
+            debug.transform.SetParent(core.transform, false);
+            var panel = debug.AddComponent<DebugPanel>();
+            panel.TimeService = time;
+            panel.SceneService = scene;
+
             Directory.CreateDirectory(PrefabsDir);
             var prefab = PrefabUtility.SaveAsPrefabAsset(core, path);
             Object.DestroyImmediate(core);
             return prefab;
         }
 
-        /// <summary>Menu prefab wired to the services; scenes instance it and override InitialView.</summary>
-        static GameObject CreateOrLoadMenuPrefab(AudioServiceSO audio, TimeServiceSO time, SceneServiceSO scene, InputServiceSO input)
+        /// <summary>
+        /// Menu prefab wired to the services; scenes instance it and override InitialView. The
+        /// volume-override variables are set explicitly so the sliders bind with EITHER audio
+        /// backend (under FMOD there is no AudioServiceSO to fall back to).
+        /// </summary>
+        static GameObject CreateOrLoadMenuPrefab(AudioServiceSO audio, TimeServiceSO time, SceneServiceSO scene, InputServiceSO input,
+            PanelSettings panelSettings, FloatVariableSO master, FloatVariableSO music, FloatVariableSO sfx)
         {
             string path = MenuPrefabPath;
             var existing = AssetDatabase.LoadAssetAtPath<GameObject>(path);
             if (existing != null) return existing;
 
-            var refs = MenuCanvasBuilder.Build();
-            refs.Controller.AudioService = audio;
-            refs.Controller.TimeService = time;
-            refs.Controller.SceneService = scene;
-            refs.Controller.InputService = input;
-            refs.Controller.InitialView = MenuController.View.Start;
+            var root = new GameObject("JamKitMenu");
+            var doc = root.AddComponent<UIDocument>();
+            var controller = root.AddComponent<MenuController>();
+
+            var uxml = Resources.Load<VisualTreeAsset>("JamKitMenu");
+            if (uxml != null)
+            {
+                doc.visualTreeAsset = uxml;
+                controller.MenuUxml = uxml;
+            }
+            if (panelSettings != null) doc.panelSettings = panelSettings;
+
+            controller.AudioService = audio; // null on the FMOD path — FmodMenuSounds covers menu SFX
+            controller.TimeService = time;
+            controller.SceneService = scene;
+            controller.InputService = input;
+            controller.MasterVolumeOverride = master;
+            controller.MusicVolumeOverride = music;
+            controller.SfxVolumeOverride = sfx;
+            controller.InitialView = MenuController.View.Start;
 
             Directory.CreateDirectory(PrefabsDir);
-            var prefab = PrefabUtility.SaveAsPrefabAsset(refs.Root, path);
-            Object.DestroyImmediate(refs.Root);
+            var prefab = PrefabUtility.SaveAsPrefabAsset(root, path);
+            Object.DestroyImmediate(root);
             return prefab;
         }
 
