@@ -65,14 +65,16 @@ build_asm () {
 # when FMOD is available), so the base builds exclude them.
 build_asm "$PROJ/Metz.JamKit.Runtime.csproj" "$PKG/Runtime" "$OUT/Metz.JamKit.Runtime.dll" "" "*/Fmod/*" || exit 1
 build_asm "$PROJ/Metz.JamKit.Editor.csproj" "$PKG/Editor" "$OUT/Metz.JamKit.Editor.dll" "$OUT/Metz.JamKit.Runtime.dll" "*/Fmod/*" || exit 1
-# The tests asmdefs reference Ripple + UltEvents (0.9); csprojs generated before that change
-# don't list them, so stage the dlls into $OUT (extra_ref paths must be space-free).
+# Tests legs: batch-generated tests csprojs are referenceless stubs (test assemblies don't
+# compile without the test runner active), so the RUNTIME csproj is the reference source and
+# the test-framework dlls are staged into $OUT alongside Ripple/UltEvents (extra_ref paths
+# must be space-free).
 cp -f "$PROJ/Library/ScriptAssemblies/Metz.Ripple.Runtime.dll" "$PROJ/Library/ScriptAssemblies/Kybernetik.UltEvents.dll" "$OUT/" 2>/dev/null
-build_asm "$PROJ/Metz.JamKit.Tests.csproj" "$PKG/Tests/Runtime" "$OUT/Metz.JamKit.Tests.dll" "$OUT/Metz.JamKit.Runtime.dll $OUT/Metz.Ripple.Runtime.dll $OUT/Kybernetik.UltEvents.dll" || exit 1
-# Editor tests borrow the runtime-tests reference set (nunit + full Unity incl. UnityEditor):
-# Metz.JamKit.EditorTests.csproj stays a referenceless stub until Unity regenerates it with
-# scripts present, so it can't be trusted as the reference source.
-build_asm "$PROJ/Metz.JamKit.Tests.csproj" "$PKG/Tests/Editor" "$OUT/Metz.JamKit.EditorTests.dll" "$OUT/Metz.JamKit.Runtime.dll $OUT/Metz.JamKit.Editor.dll $OUT/Metz.Ripple.Runtime.dll $OUT/Kybernetik.UltEvents.dll" || exit 1
+find "$PROJ/Library/PackageCache" -name "nunit.framework.dll" -path "*unity-custom*" 2>/dev/null | head -1 | while read -r f; do cp -f "$f" "$OUT/"; done
+cp -f "$PROJ/Library/ScriptAssemblies/UnityEngine.TestRunner.dll" "$PROJ/Library/ScriptAssemblies/UnityEditor.TestRunner.dll" "$OUT/" 2>/dev/null
+TESTREFS="$OUT/Metz.Ripple.Runtime.dll $OUT/Kybernetik.UltEvents.dll $OUT/nunit.framework.dll $OUT/UnityEngine.TestRunner.dll $OUT/UnityEditor.TestRunner.dll"
+build_asm "$PROJ/Metz.JamKit.Runtime.csproj" "$PKG/Tests/Runtime" "$OUT/Metz.JamKit.Tests.dll" "$OUT/Metz.JamKit.Runtime.dll $TESTREFS" || exit 1
+build_asm "$PROJ/Metz.JamKit.Runtime.csproj" "$PKG/Tests/Editor" "$OUT/Metz.JamKit.EditorTests.dll" "$OUT/Metz.JamKit.Runtime.dll $OUT/Metz.JamKit.Editor.dll $TESTREFS" || exit 1
 # Samples~ is invisible to Unity until imported, so this is the ONLY compile coverage sample
 # code gets. Same reference set as Runtime + the fresh Runtime dll. The Feel Showcase sample
 # is excluded: it references the Feel asset (MoreMountains), which only exists in consumer
