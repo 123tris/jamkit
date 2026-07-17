@@ -1,0 +1,21 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 32
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 16feee2d91670544a827f92da9482500, type: 3}
+  m_Name: CrateCaught
+  m_EditorClassIdentifier: 
+  _developerNotes: 
+  disableLogging: 0
+  disableStackTrace: 0
+  _scanPrefabs: 1
+  clearListenersOnPlaymode: 0
+  gameEvent:
+    _PersistentCalls: []

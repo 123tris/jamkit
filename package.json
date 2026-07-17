@@ -35,39 +35,29 @@
   },
   "samples": [
     {
-      "displayName": "00 Bootstrap",
-      "description": "Service injection, Pool spawning, Ripple event firing.",
-      "path": "Samples~/00 Bootstrap"
+      "displayName": "00 Hour Zero",
+      "description": "The kit tour with zero scripts: Spawner + Pool + TriggerZone + Ripple variable + Toast, all prefabs, all inspector wiring.",
+      "path": "Samples~/00 Hour Zero"
     },
     {
-      "displayName": "01 2D Platformer Mini",
-      "description": "Mover2D + Cinemachine 2D + Health with Ripple events.",
-      "path": "Samples~/01 2D Platformer Mini"
+      "displayName": "01 Platformer",
+      "description": "2D pack: Mover2D, Health with visible UltEvent wiring (hit-stop, respawn, refill), patrol hazard, kill pit, goal, FollowCamera.",
+      "path": "Samples~/01 Platformer"
     },
     {
-      "displayName": "02 3D Walker Mini",
-      "description": "Mover3D + AudioServiceSO + pickup AudioClipEvent.",
-      "path": "Samples~/02 3D Walker Mini"
+      "displayName": "02 Survivor",
+      "description": "Full 3D loop in Game.unity: WaveSpawner chasers, Aimer + ProjectileShooter, pooled debris, GameTimer, and a small glue script.",
+      "path": "Samples~/02 Survivor"
     },
     {
-      "displayName": "03 UI Card Flip Mini",
-      "description": "UI Toolkit demo with SaveServiceSO-backed high score.",
-      "path": "Samples~/03 UI Card Flip Mini"
+      "displayName": "03 Feel Showcase",
+      "description": "REQUIRES FEEL. Health → FeelPlayer → MMF_Player stacks, plus the stack-safe MMF_JamKitHitStop custom feedback.",
+      "path": "Samples~/03 Feel Showcase"
     },
     {
-      "displayName": "04 Survivor Mini",
-      "description": "Full mini loop: Mover3D + Spawner/Pool + Pickup + Score/Timer services + HUD + GameOver.",
-      "path": "Samples~/04 Survivor Mini"
-    },
-    {
-      "displayName": "05 Juice Toggle",
-      "description": "The Juice Lite before/after: turret vs target, press J to flip every juice receiver on/off.",
-      "path": "Samples~/05 Juice Toggle"
-    },
-    {
-      "displayName": "06 Arcade Playground",
-      "description": "Frogger crossing + interactable lever + self-playing breakout in one scene — the any-genre kit composed.",
-      "path": "Samples~/06 Arcade Playground"
+      "displayName": "04 Arcade",
+      "description": "Breakout-pong scene of prefabs; home of the sample-local arcade components (Bouncer2D, Paddle, GridMover, ThrustMover2D, ScreenWrap2D).",
+      "path": "Samples~/04 Arcade"
     }
   ]
 }
