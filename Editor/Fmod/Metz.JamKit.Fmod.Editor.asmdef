@@ -21,6 +21,12 @@
         "ODIN_INSPECTOR",
         "JAMKIT_FMOD"
     ],
-    "versionDefines": [],
+    "versionDefines": [
+        {
+            "name": "com.kybernetik.ultevents",
+            "expression": "0",
+            "define": "ULTEVENTS"
+        }
+    ],
     "noEngineReferences": false
 }
