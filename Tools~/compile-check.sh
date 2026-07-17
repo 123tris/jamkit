@@ -74,8 +74,10 @@ build_asm "$PROJ/Metz.JamKit.Tests.csproj" "$PKG/Tests/Runtime" "$OUT/Metz.JamKi
 # scripts present, so it can't be trusted as the reference source.
 build_asm "$PROJ/Metz.JamKit.Tests.csproj" "$PKG/Tests/Editor" "$OUT/Metz.JamKit.EditorTests.dll" "$OUT/Metz.JamKit.Runtime.dll $OUT/Metz.JamKit.Editor.dll $OUT/Metz.Ripple.Runtime.dll $OUT/Kybernetik.UltEvents.dll" || exit 1
 # Samples~ is invisible to Unity until imported, so this is the ONLY compile coverage sample
-# code gets. Same reference set as Runtime + the fresh Runtime dll.
-build_asm "$PROJ/Metz.JamKit.Runtime.csproj" "$PKG/Samples~" "$OUT/Metz.JamKit.Samples.dll" "$OUT/Metz.JamKit.Runtime.dll" || exit 1
+# code gets. Same reference set as Runtime + the fresh Runtime dll. The Feel Showcase sample
+# is excluded: it references the Feel asset (MoreMountains), which only exists in consumer
+# projects — it compiles in the dev/GMTK projects instead.
+build_asm "$PROJ/Metz.JamKit.Runtime.csproj" "$PKG/Samples~" "$OUT/Metz.JamKit.Samples.dll" "$OUT/Metz.JamKit.Runtime.dll" "*/03 Feel Showcase/*" || exit 1
 
 # --- Optional FMOD integration (JAMKIT_FMOD) --------------------------------------------
 # Compiled only when the FMOD for Unity sources are reachable: the project has them imported

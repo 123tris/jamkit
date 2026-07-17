@@ -1,172 +1,178 @@
 # JamKit
 
-Rapid game-jam toolkit for Unity 6. **ScriptableObject service architecture, no singletons.** Ripple-native event/variable wiring, UI Toolkit menus, built-in Juice Lite feedback layer, genre primitives for the classic jam archetypes, and a clean graduation path to the Feel asset.
+Rapid game-jam toolkit for Unity 6 — the **glue layer** of a four-part stack. **No singletons,
+less code that works really well.** Read [PILLARS.md](PILLARS.md) first: modular, editable,
+debuggable, lean — every design decision in the kit traces back to it.
+
+| Layer | Owns |
+| --- | --- |
+| **[Ripple](https://github.com/123tris/Ripple)** | State + events: SO variables (opt-in persistence), typed events, listeners, references, runtime sets — with raise buttons and an event logger built in |
+| **[Feel](https://feel.moremountains.com/)** | Visual/physical feedback: author MMF_Player stacks, JamKit's gameplay events trigger them |
+| **[FMOD](https://www.fmod.com/)** | Audio: events, buses, adaptive music (JamKit's FMOD service is the bridge) |
+| **JamKit** | Services for *behavior* (scene flow, timescale, input, pooling, saves, audio bridge), a trimmed set of gameplay primitives, the UI Toolkit menu flow, and the editor tooling that wires it all |
 
 ## Why
 
-Every jam burns the first hours on the same scaffolding: a start menu, settings, audio mixer, scene transitions, pooling, save/load, juice. JamKit ships all of it pre-wired so you can spend hour 1 on the actual game — without inheriting a pile of singletons.
+Every jam burns the first hours on the same scaffolding: a start menu, settings, scene
+transitions, pooling, save/load, feedback plumbing. JamKit ships all of it pre-wired so hour 1
+goes to the actual game — without inheriting a pile of singletons or a framework you have to
+fight on day two.
 
 ## Architecture at a glance
 
-- **No global statics.** No `ServiceLocator`, no `Singleton<T>`, no auto-spawned root. Every system is a `ScriptableObject` (the "service") plus an optional scene `Runner` MonoBehaviour. Components hold serialized SO references — you can see exactly what each thing depends on by looking at its inspector. The *editor* auto-fills those references when there's exactly one candidate; the runtime never looks anything up.
-- **Ripple-native.** [`com.metz.ripple`](https://github.com/<you>/Ripple) (your SO Variables/Events framework) is a hard dependency. Volume sliders are bound to `FloatVariableSO`s; damage and death broadcast through `FloatEvent` / `VoidEventSO`. Designers wire reactions in the inspector with UltEvents.
-- **Two event granularities.** Ripple SO events are *global* (any listener hears every instance) — right for HUDs, stingers, screen shake. For per-instance reactions (only the hit enemy flashes), `Health` also exposes plain C# events (`Damaged` / `Healed` / `Died`), and every Juice Lite component subscribes to its sibling `Health` automatically — zero wiring.
-- **Juice Lite built-in, Feel for depth.** Screen shake, hit-stop, flashes, punches, floating text, and toasts ship in the box with zero extra dependencies. Feel remains the deluxe path: point the same triggers at an `MMF_Player.PlayFeedbacks()` and delete nothing.
+- **No global statics.** Every system is a `ServiceSO` asset plus an optional scene `Runner`
+  MonoBehaviour (one shared base handles registration and the per-session reset that makes
+  Domain-Reload-off safe). Components hold serialized SO references — the inspector shows
+  exactly what each thing depends on. The editor auto-fills those references; the runtime never
+  looks anything up.
+- **Services are for behavior, not state.** Scene loading, the timescale stack, input maps,
+  pooling, file IO, FMOD instances. Anything that is *just data* — score, volumes, HP, a timer
+  readout — is a Ripple variable. (Score and Timer used to be services; they aren't anymore.)
+- **Two event granularities, one naming rule.** Per-instance reactions use serialized UltEvents
+  named `On*` (`Health.OnDamaged` → *this* enemy's feedback player); global reactions use Ripple
+  event assets named `Broadcast*` (`Health.BroadcastDied` → any-enemy-died counters). Both are
+  visible in the inspector; there is no hidden `GetComponentInParent` magic anywhere.
+- **Feedback is Feel's job.** JamKit ships no tween/flash/shake components — wire
+  `Health.OnDamaged → MMF_Player.PlayFeedbacks()` and author the feel in Feel. The exceptions
+  are the things Feel can't do: `HitStop` (freeze-frames must route through the TimeService
+  stack — Feel's time feedbacks fight the pause menu) and the SFX bridges (Feel can't drive
+  FMOD).
+- **Scenes are clean slates.** No `DontDestroyOnLoad`. Persistent state lives in SO assets;
+  every scene instances the `JamKitCore` prefab (all runners + score tracker + debug panel) and
+  works cold.
 
 ## Requirements
 
-- Unity 6 (6000.0+)
-- URP 17+, Cinemachine 3.1+, Input System 1.11+, UGUI 2.0+ (auto-resolved as UPM dependencies)
+- Unity 6 (6000.0+); URP 17+, Cinemachine 3.1+, Input System 1.11+ (auto-resolved UPM deps)
+- **Odin Inspector** (Asset Store) — required; the whole stack gates on `ODIN_INSPECTOR`
 - **Kybernetik UltEvents** (Asset Store / UPM)
-- **`com.metz.ripple`** (your local fork or UPM)
-- Optional but recommended: **MoreMountains Feel** (Asset Store) — recommended for all juice
+- **`com.metz.ripple`** — required
+- Recommended: **Feel** (feedback) and **FMOD for Unity** (audio) — both auto-detected, never
+  compile-time required by the package
 
-The asmdefs have a `ULTEVENTS` define constraint (auto-defined by the UltEvents package), so JamKit compiles once UltEvents + Ripple are present. No paid assets are required to compile.
-
-## Install
-
-Order matters: UltEvents and Ripple first, then JamKit.
-
-1. **UltEvents** — Asset Store (or UPM if you have a source copy).
-2. **Ripple** — one of:
-   ```jsonc
-   // git URL (default — note the branch pin; Ripple's main is an older API):
-   "com.metz.ripple": "https://github.com/123tris/Ripple.git#feature/abstraction+runtime-registry"
-   // local checkout (for developing Ripple itself):
-   "com.metz.ripple": "file:C:/Repos/Ripple"
-   ```
-3. **JamKit**:
-   ```jsonc
-   "com.metz.jamkit": "file:/absolute/path/to/Packages/com.metz.jamkit"
-   ```
-   Or `Window > Package Manager > + > Add package from disk`.
+Install order: Odin → UltEvents → Ripple → JamKit. All JamKit assemblies carry
+`ODIN_INSPECTOR` + `ULTEVENTS` define constraints, so a missing dependency is a clean assembly
+skip, not an error wall.
 
 ## Quickstart
 
 1. Install JamKit.
-2. Open `JamKit > New Jam Project`. The wizard creates:
-   - `Assets/_Project/Services/` — eight SO assets (Audio, Time, Scene, Input, Save, Pool, Score, Timer)
-   - `Assets/_Project/Variables/` — Ripple `FloatVariableSO`s for Master / Music / SFX and Score / HighScore / Timer
-   - `Assets/_Project/Audio/Resources/JamKitMixer.mixer` — audio mixer
-   - `Assets/_Project/UI/Resources/JamKitPanelSettings.asset` — UI Toolkit panel settings
-   - `Assets/_Project/Scenes/Bootstrap.unity`, `Game.unity`, `GameOver.unity` — each with a self-contained `JamKitCore` (all runners) and an `EventSystem` for gamepad/keyboard nav
-3. Press Play. Start menu → Settings → Game (Esc to pause) → GameOver works end-to-end, gamepad included.
+2. `JamKit > New Jam Project`. One click creates:
+   - `Assets/_Project/Services/` — the service SOs (Time, Scene, Input, Save, Pool; plus the
+     Unity-mixer Audio service *or* — with FMOD installed — the FMOD audio service instead)
+   - `Assets/_Project/Variables/` — Ripple variables: Master/Music/Sfx volume (persistent),
+     Score, HighScore (persistent), Timer
+   - `Assets/_Project/Prefabs/` — `JamKitCore` + `JamKitMenu`, and `Starters/` (see below)
+   - `Bootstrap.unity`, `Game.unity`, `GameOver.unity` — each a list of prefab instances
+3. Press Play. Start → Settings → Game (Esc pauses) → GameOver → Retry works end-to-end,
+   gamepad included. Backquote (`) toggles the DebugPanel — in builds too.
 
-To add JamKit functionality in your own scenes: reference the service SOs in your components' inspectors. The wizard makes them all easy to find under `Assets/_Project/Services/`.
+## Starter prefabs (the Lego bricks)
+
+The wizard scaffolds `Assets/_Project/Prefabs/Starters/`: Player2D (platformer/top-down),
+Player3D, chaser enemies (2D/3D), Pickup, Spawner, KillZones, FollowCams — each pre-wired to
+your service assets, with visible UltEvent trigger wiring (players: `OnDamaged → HitStop`;
+enemies: `OnDied → SpawnBurst`). With Feel installed, Health starters also carry an
+`MMF_Player` with `OnDamaged → PlayFeedbacks()` already connected — author the feel, the
+trigger is done.
+
+**Customize by making prefab VARIANTS** (right-click starter → Create > Prefab Variant), never
+by editing scenes object-by-object: scenes stay lists of prefab instances, check-ins happen at
+the prefab level, and a starter fix propagates everywhere. `GameObject > JamKit > …` places
+starter instances.
 
 ## Service SOs
 
-Each service is a `ScriptableObject` you can drop into any component's inspector. They expose plain methods — no static accessors.
-
-| Service | Type | What it does | Needs a scene Runner? |
+| Service | Type | What it does | Scene runner? |
 | --- | --- | --- | --- |
-| Audio  | `AudioServiceSO`  | `PlaySfx(clip)`, `PlayMusic(clip)`. Routes through an AudioMixer; volume is Ripple-bound. | Yes — `AudioServiceRunner` (audio sources). |
-| Audio (FMOD) | `FmodAudioServiceSO` | Exists when FMOD for Unity is installed (see [FMOD integration](#fmod-integration)). `PlaySfx(event)`, `PlayMusic(event)`, `SetMusicParameter(name, v)`, stingers/ducking; volume drives FMOD buses through the same Ripple variables. | Yes — `FmodAudioServiceRunner`. |
-| Time   | `TimeServiceSO`   | `Pause()`, `Resume()`, `Push(scale)`, `Pop()`. Stack composes pause + freeze + slow-mo. | Only for `FreezeForSeconds` (needs a coroutine driver). |
-| Scenes | `SceneServiceSO`  | `LoadAsync(name)`, `ReloadCurrent()`. Optional Ripple `VoidEventSO`s announce load start/end. | Yes — `SceneServiceRunner` (coroutine + fade). |
-| Input  | `InputServiceSO`  | Exposes Move / Look / Jump / Attack / Pause from a configured `InputActionAsset`. | No — but call `SwitchToGameplay()` / `SwitchToUI()` to switch maps. |
-| Save   | `SaveServiceSO`   | `Write(key, T)` / `Read<T>(key, fallback)`. JSON to `persistentDataPath`. | No. |
-| Pool   | `PoolServiceSO`   | `Spawn(prefab, pos, rot)`, `Despawn(go)`. One pool per prefab. | Optional — `PoolServiceRunner` provides a clean parent transform. |
-| Score  | `ScoreServiceSO`  | `Add(n)`, `Set(n)`, `ResetScore()`. High score persists via `SaveService`; mirrors to Ripple variables for HUD binding. | No. |
-| Timer  | `TimerServiceSO`  | `StartTimer(seconds)`, `Pause()`, `Resume()`, count down or up. Fires `OnTimerComplete`. | Yes — `TimerServiceRunner` advances it. |
+| Audio (FMOD) | `FmodAudioServiceSO` | The primary audio path when FMOD is installed: `PlaySfx(event)`, `PlayMusic` (survives scene loads), `SetMusicParameter`, stingers/ducking. Volume drives FMOD buses through the persistent Ripple variables. | Yes |
+| Audio (Unity) | `AudioServiceSO` | Fallback backend without FMOD: mixer + pooled one-shots + crossfade music. Same variable-driven volume. | Yes |
+| Time | `TimeServiceSO` | `Pause/Resume`, `Push(scale)/Pop`, `FreezeForSeconds`. The stack composes pause + hit-stop + slow-mo — and it is the ONLY thing allowed to touch `Time.timeScale`. | For `FreezeForSeconds` |
+| Scenes | `SceneServiceSO` | `LoadAsync(name)`, `ReloadCurrent()` with fade. Broadcast events on load start/end. | Yes |
+| Input | `InputServiceSO` | Move/Look/Jump/Attack/Pause from an `InputActionAsset`; `SwitchToUI/Gameplay()`. | No |
+| Save | `SaveServiceSO` | `Write/Read<T>` JSON to `persistentDataPath` — for game saves. Settings persistence belongs to Ripple persistent variables, not here. | No |
+| Pool | `PoolServiceSO` | `Spawn/Despawn/Prewarm`, one pool per prefab. | Optional |
 
-## Components
+Select any service asset **during play** — its Debug foldout shows live state (timescale stack
+depth, pool counts, music state) and its `[Button]`s poke the real thing.
 
-Drop-in MonoBehaviours that reference service SOs in their inspector — never a static lookup.
+## Components (the trimmed catalog)
 
-- **Movement / camera:** `Mover2D` (platformer/top-down, per-axis lock for paddles), `Mover3D`, `GridMover` (frogger/sokoban stepping), `ThrustMover2D` (asteroids/lander), `ChaseMover` (2D+3D pursuit, find-by-tag), `PatrolMover` (waypoints, ping-pong/loop/conveyor), `Bouncer2D` (constant-speed arcade ball; add the `Paddle` marker to anything that should bend bounces by hit offset), `Aimer` (mouse/right-stick aiming), `ScreenWrap2D`, `CinemachineFollow2D`, `CinemachineFollow3D`.
-- **Combat:** `Health` (Ripple + per-instance C# events, pool-aware refill), `Damager` / `Damager2D` (pool-aware), `Hitbox` + `Hurtbox` (weak points, one hit per swing), `Knockback`, `Respawner` (checkpoints, death respawn).
-- **Spawning:** `Spawner` (interval, concurrent `MaxAlive`), `WaveSpawner` (sequenced waves), `ProjectileShooter` (pooled firing), `SpawnBurst` (death explosions / asteroid splits / loot drops), `AutoDespawn` (pool-aware lifetime), `Pickup` (trigger → score/event/despawn), `TriggerZone` (kill pit / goal / score gate / level exit in one component).
-- **Interaction:** `Interactor` (on the player: nearest-target probe, 2D+3D, allocation-free) + `Interactable` ("press E" targets with a zero-plumbing prompt visual).
-- **Juice Lite** (all trigger from sibling `Health`, Ripple events, or a public `Play()` — see below): `CameraShake`, `HitStop`, `SpriteFlash`, `MaterialFlash`, `PunchScale`, `ParticleBurst`, `SfxOnEvent` (`FmodSfxOnEvent` when FMOD is installed), `FloatingText` (+ scene `FloatingTextLayer`), `Toast`.
-- **UI / HUD:** `MenuController` (Start/Settings/Pause), `PauseController`, `GameOverController`, `FadeOverlay`, `DebugPanel`, and the bindings `LabelBinding` / `BarBinding` that drive a UI Toolkit label/bar from a `FloatVariableSO` with no code.
-- **Utilities:** `Timer` / `Stopwatch` / `Cooldown` structs, `FSM<TState>`, `ObjectPool<T>`, `RandomBag<T>`, and the `MathX` / `VectorX` / `ColorX` / `GizmoX` extension helpers.
+A component earns its place by appearing in 3+ genres (see ROADMAP's archetype matrix); the
+rest live in samples as hackable copies.
 
-## Juice Lite
+- **Movement/camera:** `Mover2D`, `Mover3D`, `ChaseMover` (runtime-set targeting via
+  `RuntimeSetMember`, tag fallback), `PatrolMover`, `FollowCamera` (2D+3D, impulse-listener
+  equipped for Feel shakes).
+- **Combat:** `Health` (the hub — see below), `Damager` (2D+3D in one, projectiles/contact/
+  melee via `OncePerTarget`), `Respawner` (pure teleporter — death/refill wired visibly),
+  `HitStop`.
+- **Spawning/scoring:** `Spawner`, `SpawnBurst`, `ProjectileShooter`, `AutoDespawn`, `Pickup`,
+  `TriggerZone` (kill pit / goal / score gate / level exit in one), `GameTimer` (scene-owned
+  round clock), `HighScoreTracker` (the only score logic — score itself is a Ripple variable).
+- **Interaction:** `Interactor` + `Interactable`.
+- **Audio glue:** `SfxOnEvent` / `FmodSfxOnEvent` — one-shots triggered per-instance
+  (`Health.OnDamaged → Play`) or globally (Ripple `PlayOn` slot).
+- **UI/HUD:** `MenuController` (Start/Settings/Pause), `PauseController`,
+  `GameOverController`, `FadeOverlay`, `Toast`, `DebugPanel`, `LabelBinding` / `BarBinding`.
+- **Utilities:** `Timer` / `Cooldown` structs, `GameObjectPool` + `IPoolable`, `RandomBag<T>`,
+  `MathX` / `VectorX` / `ColorX`.
 
-Every jam game should feel good without paid assets. Each juice component is small and orthogonal, and triggers three ways (combinable):
+## Health — the hub
 
-1. **Sibling `Health`** — drop `SpriteFlash` + `PunchScale` on an enemy prefab and it flashes/pops on damage. No wiring at all.
-2. **Ripple events** — point `CameraShake.PlayOn` at a shared event for global reactions.
-3. **`Play()` / `Play(strength)`** — call from UltEvents, UnityEvents, or code.
+```
+Per-instance (UltEvents, THE wiring surface):   OnDamaged(float) · OnHealed(float) · OnDied
+Global (Ripple assets):                          CurrentVariable · BroadcastDamaged · BroadcastDied
+```
 
-Recipe for a juicy enemy in ~10 seconds: `GameObject > JamKit > 3D > Enemy (Chaser)` — it lands with chase movement, health, damage, flash, punch, and a death `SpawnBurst` pre-wired.
+Wire feedbacks (`MMF_Player.PlayFeedbacks`), reactions (`Respawner.RespawnAfterDelay`,
+`SpawnBurst.Burst`), or game code onto the per-instance slots; bind HUDs and global logic to
+the Ripple side. The inspector's Debug buttons (Damage 1 / Heal 1 / Kill / Reset) fire the
+*real* chain — that's the feature-done test from PILLARS.md.
 
-## Archetype coverage
+## Feel integration
 
-The kit is genre-neutral; these compositions are the proof (each is minutes, not hours):
-
-| Game | Composition |
-| --- | --- |
-| Pong / Breakout | `Paddle` preset + `Ball` preset (`Bouncer2D`) + `TriggerZone` goals + `Respawner` serve — two players via the bundled `Gameplay1`/`Gameplay2` keyboard-split maps ([walkthrough](Documentation~/pong-in-60-seconds.md)) |
-| Frogger | `GridMover` player + `PatrolMover` cars (TeleportToStart) + `TriggerZone` water/goal + `Respawner` |
-| Space Invaders | `Mover2D` (AxisScale 1,0) + `ProjectileShooter` + `Spawner`/`WaveSpawner` + `TriggerZone` bottom |
-| Asteroids | `Ship` preset (`ThrustMover2D` + `ScreenWrap2D` + shooter) + `SpawnBurst` splits |
-| Platformer | `Mover2D` + `PatrolMover` platforms + `TriggerZone` pits + `Respawner` checkpoints |
-| Survivor / twin-stick | `Mover3D`/`Mover2D` + `Aimer` + `ChaseMover` enemies + waves/pickups/score (Sample 04) |
-
-## Ripple integration
-
-JamKit is built on Ripple. Default uses:
-
-- `AudioServiceSO.MasterVolume / MusicVolume / SfxVolume` are `FloatVariableSO`s — bind UI sliders to them, listeners react automatically.
-- `Health.OnDamaged` is a `FloatEvent`, `Health.OnDied` is a `VoidEventSO`. Wire them to your HUD or to Feel.
-- `Health.CurrentVariable` is an optional `FloatVariableSO` — bind your HP bar to it.
-- `WaveSpawner.OnWaveStarted` / `OnWaveEnded` are `IntEvent`s, `OnAllWavesDone` is a `VoidEventSO`.
-- `SceneServiceSO.OnSceneLoadStarted / OnSceneLoadCompleted` are `VoidEventSO`s.
-- `Spawner` and `WaveSpawner` reuse Ripple events for designer wiring.
-
-## Graduating to Feel
-
-Juice Lite is the 80%; Feel is the deluxe path on the exact same triggers:
-
-1. Add an `MMF_Player` GameObject and configure feedbacks (Camera Shake, Sprite Flicker, Freeze Frame, Floating Text…).
-2. In your Ripple event asset (e.g. `Health.OnDamaged`), add a persistent UltEvent call to `MyMMFPlayer.PlayFeedbacks()`.
-3. Remove (or keep!) the Juice Lite components — nothing else changes.
-
-No compile-time coupling between JamKit and Feel; designers tune feedbacks without touching code.
-
-## Editor tooling
-
-- **Auto-assign.** Adding any JamKit component auto-fills its null JamKit-typed references (service SOs from the project, scene components like `FloatingTextLayer`) — but only when exactly one candidate exists; anything ambiguous is left for you and surfaced by Validate. `JamKit > Auto-Assign References In Open Scenes` re-runs the pass.
-- **`GameObject > JamKit > …` presets.** Pre-composed archetypes: 2D platformer/top-down/grid players, asteroids ship, chaser enemies (2D+3D), ball, paddle, patrol hazard, kill zones, follow cameras, spawner, pickup, floating-text layer, toast. Placeholder art, real wiring.
-- **`JamKit > Validate Setup`.** Jam-day insurance: checks mixer exposure, PanelSettings themes, Build Settings, EventSystem, unassigned references, missing runners/layers — each with a Fix button where the fix is unambiguous.
-- **`JamKit > Build > WebGL (itch.io)`.** One-click browser build with itch-safe settings (gzip + decompression fallback), then reveals the folder to zip.
-- `JamKit > New Jam Project` — one-click full setup (see Quickstart). Output is **prefab-first**: `JamKitCore` (runners + fade + FloatingTextLayer + Toast) and `JamKitMenu` are prefabs instanced into every scene — edit once, all scenes update. Also offers fast enter-play-mode (domain reload off; JamKit's services are built for it).
-- `JamKit > Create Bootstrap Scene Only` — drops the bootstrap scene + services into an existing project.
-- `JamKit > Create Menu Prefab` — saves a reusable `JamKitMenu.prefab` (assign services after dragging in).
-- `JamKit > Setup > Create Audio Mixer` / `Create Panel Settings` — re-creates the assets if you deleted them.
-- `JamKit > Setup > Add FMOD Audio Service` — retrofits the FMOD service/runner/menu-sounds into an already-scaffolded project (menu exists only when FMOD is installed).
-
-## Sound polish
-
-- `MenuController` takes optional hover/click clips — hover covers gamepad focus too.
-- `AudioServiceSO.PlayStinger(clip)` ducks the music under a one-shot; `SfxOnEvent` has a `DuckMusic` toggle for the same thing, no code.
-- Two-player keyboard input ships in `JamKitInput`: maps `Gameplay1` (WASD) and `Gameplay2` (arrows). Make a second `InputServiceSO` pointing at `Gameplay2`, tick `AutoEnableGameplay`, assign it to player 2's mover — see [Pong in 60 seconds](Documentation~/pong-in-60-seconds.md).
+See [Documentation~/feel-integration.md](Documentation~/feel-integration.md) for the coverage
+map (what replaced each old Juice Lite component) and the timescale rule. Short version: add an
+`MMF_Player`, wire `Health.OnDamaged → PlayFeedbacks()` (starters come pre-wired), author
+feedbacks in Feel. For damage-scaled intensity use the `FeelPlayer` shim from sample 03; for
+freeze-frames use `HitStop` or the sample's `MMF_JamKitHitStop` — never Feel's time feedbacks.
 
 ## FMOD integration
 
-Install [FMOD for Unity](https://assetstore.unity.com/packages/tools/audio/fmod-for-unity-161631) and JamKit grows an FMOD backend — no setup flags, no manual defines:
+Automatic: an editor probe toggles `JAMKIT_FMOD` with FMOD's presence. With FMOD installed the
+wizard scaffolds **FMOD-first** — no Unity mixer, no Unity audio service; `FmodAudioService`
+rides `JamKitCore`, `FmodMenuSounds` covers menu hover/click, and the settings sliders drive
+`bus:/Music` + `bus:/SFX` through the same persistent variables. Music survives scene loads
+(the EventInstance lives on the SO). Retrofit any time via `JamKit > Setup > Add FMOD Audio
+Service`; the Doctor checks the FMOD side too.
 
-- **Detection is automatic.** An editor probe toggles the `JAMKIT_FMOD` scripting define with the FMODUnity assembly's presence; the `Metz.JamKit.Fmod` assemblies compile in when FMOD exists and vanish (instead of breaking the build) when it doesn't.
-- **`FmodAudioServiceSO` + `FmodAudioServiceRunner`** mirror the Unity-audio service: `PlaySfx(EventReference)` (positional + attached variants), `PlayMusic` / `StopMusic` with code-driven fades, `DuckMusic` / `PlayStinger`, and the FMOD-only superpowers `SetMusicParameter(name, value)` (intensity layers you authored in Studio) and `SetGlobalParameter`. Volume flows through the **same Ripple variables and PlayerPrefs keys** as the Unity path, so the menu sliders drive FMOD buses with zero changes — and the music `EventInstance` lives on the SO, so **music survives scene loads**.
-- **`FmodSfxOnEvent`** is the Juice Lite receiver (same three triggers); randomization/pitch variation belong on the event in Studio. **`FmodMenuSounds`** sits next to `MenuController` for hover/click events.
-- **Scaffolding knows about it.** With FMOD installed, `New Jam Project` (and one-click sample setup) also creates `FmodAudioService.asset` and puts the runner on `JamKitCore` + `FmodMenuSounds` on the menu prefab. Already scaffolded? `JamKit > Setup > Add FMOD Audio Service` retrofits the same, idempotently. `JamKit > Validate Setup` checks the FMOD side too (project linked, service present, runner on the core prefab).
-- **Conventions:** group buses `bus:/Music` and `bus:/SFX` in your Studio project's mixer (paths configurable on the SO; a missing bus warns once and skips that channel). The Unity-audio service stays functional alongside — placeholder clips keep working until your banks exist.
+## Editor tooling
+
+- **Auto-assign** — adding any JamKit component (or dragging in a prefab) fills its null
+  JamKit-typed references when exactly one candidate exists. Ambiguity is never guessed.
+  Ripple slots are deliberately excluded: which event something listens to is design, not
+  plumbing.
+- **`JamKit > New Jam Project`** — the one-click scaffold (see Quickstart).
+- **`JamKit > Doctor`** — project-shape checks with Fix buttons (mixer params, themes, Build
+  Settings, EventSystem, HitStop↔TimeRunner pairing) plus the scenes-as-prefab-lists nudge.
+  Per-field misconfiguration is [Required]'s job — red in the inspector, listed project-wide in
+  **Odin Validator**.
+- **`JamKit > Build > WebGL (itch.io)`** — one-click itch-safe browser build.
+- **`GameObject > JamKit > …`** — places starter prefab instances.
+- Debugging & runtime tuning: [Documentation~/debugging-and-tuning.md](Documentation~/debugging-and-tuning.md).
 
 ## Samples
 
-Open `Window > Package Manager > JamKit > Samples` and import:
+`Window > Package Manager > JamKit > Samples` — each is a scene of prefab instances (no
+build-the-world-in-code), and importing offers one-click setup that wires the sample's prefabs
+to *your* service assets:
 
-- **00 Bootstrap** — Pool spawning, AudioServiceSO injection, Ripple click event.
-- **01 2D Platformer Mini** — Mover2D + Cinemachine 2D + Health with Ripple events. Wire OnDamaged to a Feel MMF_Player for juice.
-- **02 3D Walker Mini** — Mover3D + AudioServiceSO + pickup `AudioClipEvent`.
-- **03 UI Card Flip Mini** — UI Toolkit demo with SaveServiceSO-backed persistent high score.
-- **04 Survivor Mini** — a full tiny loop: Mover3D + Spawner/Pool + Pickup + Score/Timer services + HUD + GameOver, using only primitive meshes.
-- **05 Juice Toggle** — the Juice Lite before/after: turret vs target, press J to flip every receiver at once (synthesized SFX, zero assets).
-- **06 Arcade Playground** — frogger crossing + interactable lever + self-playing breakout in one scene: the any-genre kit composed.
-
-Importing offers one-click setup, and `JamKit > Samples > Set Up <sample>` does the same any time: project scaffold if missing, a ready-to-play scene with a JamKitCore, the demo component with services assigned. Each sample README keeps the manual steps (they document what the button does) plus the Feel wiring to try.
+- **00 Hour Zero** — the kit tour, zero scripts, zero input.
+- **01 Platformer** — the 2D pack + the visible-wiring lesson on the Player prefab.
+- **02 Survivor** — the full loop in `Game.unity`; home of `WaveSpawner`/`Aimer`/`Knockback`.
+- **03 Feel Showcase** — *requires Feel*; the trigger chain + `MMF_JamKitHitStop`.
+- **04 Arcade** — breakout-pong; home of `Bouncer2D`/`Paddle`/`GridMover`/`ThrustMover2D`/`ScreenWrap2D`.
 
 ## License
 

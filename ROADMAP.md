@@ -6,13 +6,16 @@ Three goals, in tension with each other:
 2. **Juice** — JamKit games should *feel* good by default, because juice is what jam ratings reward.
 3. **Flexibility** — nothing in the kit may assume a genre. Platformer, survivor, puzzle, card game: all first-class.
 
-## Design principles (the contract every feature must pass)
+## Design principles
 
-- **Explicit wiring, zero-friction defaults.** Components keep serialized SO references (no runtime lookup, no singletons) — the *editor* auto-fills them when the answer is unambiguous (exactly one candidate; never a guess). Convenience at edit time, transparency at runtime. *(Shipped in 0.5.0 — keep every new component compatible: public fields, JamKit-typed references.)*
-- **Two event granularities — pick deliberately.** Ripple SO events are global (HUD, stingers, any-X-died). Per-instance reactions go through plain C# events on the component (`Health.Damaged`) that siblings subscribe to automatically. A feature that wires per-instance feedback through a shared SO event is a bug (every enemy flashes when one is hit).
-- **Juice = receivers with three triggers.** Sibling Health (zero wiring), Ripple slots (global), public `Play(strength)` (UltEvents/Feel/code). JamKit ships the lightweight 80% with zero new dependencies; Feel is the deluxe path on the same triggers. Hard cap: ~100 lines per juice component, no sequencers, no curve editors.
-- **Small orthogonal components, not frameworks.** Flexibility comes from composition. The measure of a new primitive is how many archetype rows it unlocks (see matrix below), not how complete it is.
-- **Nothing ships unverified.** Every milestone ends with a clean compile (Roslyn script or Unity), the Validate window green, and the samples compiling.
+**The contract lives in [PILLARS.md](PILLARS.md)** — modular / editable / debuggable / lean —
+since 0.9. The roadmap-specific corollaries:
+
+- **Explicit wiring, zero-friction defaults.** Components keep serialized SO references (no runtime lookup, no singletons) — the *editor* auto-fills them when the answer is unambiguous (exactly one candidate; never a guess). Convenience at edit time, transparency at runtime.
+- **Two event granularities — pick deliberately.** Per-instance reactions are serialized UltEvents named `On*` on the component (`Health.OnDamaged` — only *this* instance reacts); global reactions are Ripple event assets named `Broadcast*`. A feature that wires per-instance feedback through a shared SO event is a bug (every enemy flashes when one is hit).
+- **Feedback belongs to Feel; audio to FMOD; state to Ripple.** JamKit ships the trigger surface and the bridges the stack can't provide (HitStop through the timescale stack, SFX-on-event), never a parallel implementation of a layer another tool owns.
+- **Small orthogonal components, not frameworks.** Flexibility comes from composition. The measure of a new primitive is how many archetype rows it unlocks (see matrix below), not how complete it is. 1–2 rows = it lives in a sample as a hackable copy.
+- **Nothing ships unverified.** Every milestone ends with a clean compile (Roslyn script or Unity), the Doctor green, and the samples compiling.
 
 ## The archetype matrix (the evaluation tool)
 
@@ -21,20 +24,23 @@ When considering a new primitive, check it against the classics. A primitive tha
 | Primitive | Pong | Breakout | Frogger | Invaders | Asteroids | Flappy | Platformer | Survivor | Status |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
 | Input mover | ✓ | ✓ | | ✓ | | ✓ | ✓ | ✓ | ✅ Mover2D/3D |
-| Ball bounce | ✓ | ✓ | | | | | | | ✅ Bouncer2D |
-| Grid step | | | ✓ | | | | | | ✅ GridMover |
-| Rotate+thrust | | | | | ✓ | | | | ✅ ThrustMover2D |
+| Ball bounce | ✓ | ✓ | | | | | | | 📦 sample 04 (Bouncer2D) |
+| Grid step | | | ✓ | | | | | | 📦 sample 04 (GridMover) |
+| Rotate+thrust | | | | | ✓ | | | | 📦 sample 04 (ThrustMover2D) |
 | Chase target | | | | | | | ✓ | ✓ | ✅ ChaseMover |
 | Patrol/conveyor | | | ✓ | ~ | | ✓ | ✓ | | ✅ PatrolMover |
-| Screen wrap | | | | | ✓ | | | | ✅ ScreenWrap2D |
+| Screen wrap | | | | | ✓ | | | | 📦 sample 04 (ScreenWrap2D) |
 | Zones (kill/goal/score) | ✓ | ✓ | ✓ | ✓ | | ✓ | ✓ | | ✅ TriggerZone |
-| Aim cursor/stick | | | | | | | | ✓ | ✅ Aimer |
+| Aim cursor/stick | | | | | | | | ✓ | 📦 sample 02 (Aimer) |
 | Spawn on death | | ✓ | | ✓ | ✓ | | | ✓ | ✅ SpawnBurst |
 | Respawn/checkpoint | ✓ | ✓ | ✓ | | ✓ | | ✓ | | ✅ Respawner |
 | Press-E interact | | | | | | | ✓ | ✓ | ✅ Interactor/-able |
 | Shoot | | | | ✓ | ✓ | | ✓ | ✓ | ✅ ProjectileShooter |
-| HP/damage/waves/pickups/score/menus | — | — | — | — | — | — | — | — | ✅ since 0.4 |
-| Juice (shake/stop/flash/pop/burst/sfx/text/toast) | all | all | all | all | all | all | all | all | ✅ Juice Lite 0.5 |
+| Sequenced waves | | | | ✓ | | | | ✓ | 📦 sample 02 (WaveSpawner) |
+| HP/damage/pickups/score/menus | — | — | — | — | — | — | — | — | ✅ core |
+| Feedback (shake/flash/pop/text) | all | all | all | all | all | all | all | all | 🎨 Feel (see feel-integration.md) |
+
+📦 = ships as a sample-local script (1–2 rows — the aggressive-trim rule); ✅ = kit component.
 
 Genres still thin: **card/board** (drag-drop, hand layout), **puzzle-match** (grid queries beyond movement), **rhythm** (beat clock). Add rows when a jam demands them.
 

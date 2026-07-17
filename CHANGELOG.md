@@ -2,6 +2,35 @@
 
 All notable changes to JamKit are documented here. Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the package uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.9.0] - 2026-07-17
+
+Theme: the pillar redesign — **modular / editable / debuggable / lean** ([PILLARS.md](PILLARS.md) is new and governs everything). JamKit is now explicitly the glue layer of a four-part stack: Ripple owns state + events, Feel owns feedback, FMOD owns audio, JamKit owns behavior services, primitives, menus, and editor tooling. Less code that works really well.
+
+### Breaking — the headline cuts
+- **Juice Lite is gone.** `JuiceBehaviour` (and its hidden `GetComponentInParent<Health>()` sibling-trigger magic), `PunchScale`, `MaterialFlash`, `SpriteFlash`, `CameraShake`, `ParticleBurst`, `FloatingText` + `FloatingTextLayer` — all deleted. Feel covers every one (coverage map in `Documentation~/feel-integration.md`). Survivors, as plain components with no base class: `HitStop` (freeze-frames must route through the TimeService stack; Feel's time feedbacks fight the pause menu — hard rule), `SfxOnEvent` (moved to `Runtime/Audio/`), `FmodSfxOnEvent` (audio glue — Feel can't drive FMOD).
+- **`ScoreServiceSO` and `TimerServiceSO` (+ runner) deleted** — services are for *behavior*, state belongs to Ripple. Score/HighScore are plain `FloatVariableSO`s (HighScore persistent) plus a 35-line `HighScoreTracker` on JamKitCore; the round clock is the new scene-owned `GameTimer` component (a round timer is scene state — clean-slates pillar). Fixes the domain-reload-off score leak by deletion.
+- **Health redesigned as the hub.** Per-instance surface is now serialized UltEvents — `OnDamaged(float)` / `OnHealed(float)` / `OnDied` — replacing the C# events; wire feedback players, respawners, bursts, or code onto the same visible slots. Global Ripple slots renamed `Broadcast*` (`BroadcastDamaged`, `BroadcastDied`; the global heal slot is cut) so global-vs-instance is unmissable. Kit-wide naming rule: `On*` = per-instance UltEvent, `Broadcast*` = global Ripple asset (also applied to `Pickup`, `TriggerZone`, `Respawner`, `Interactable`, `ProjectileShooter`).
+- **Catalog trim (the archetype-matrix rule, enforced).** Merged: `Damager2D` → `Damager` (2D+3D callbacks in one, plus `OncePerTarget` absorbed from the deleted `Hitbox`/`Hurtbox`); `CinemachineFollow2D/3D` → `FollowCamera`. Moved to samples as hackable local scripts: `WaveSpawner`, `Aimer`, `Knockback` (02 Survivor); `Bouncer2D`, `Paddle`, `GridMover`, `ThrustMover2D`, `ScreenWrap2D` (04 Arcade). Cut: `FSM`, `ObjectPool<T>`, `GizmoX`, `Stopwatch`. `Respawner` is now a pure teleporter — death-trigger and refill are visible UltEvent wiring, pre-wired on starters.
+- **Requires Odin Inspector.** All assemblies gate on `ODIN_INSPECTOR` (the stack already did — Ripple requires it); a missing Odin is a clean assembly skip.
+
+### Added
+- **`PILLARS.md`** — the engineering contract (modular / editable / debuggable / lean) with the layer-ownership table and the feature-done checklist.
+- **`ServiceSO` / `ServiceSO<TRunner>` / `ServiceRunner<TService,TRunner>`** — one base for every service: registration, null-safe no-op routing, `HasRunner` debug, and the play-session `ResetState` contract (ExitingEditMode hook — domain-reload-off safe). Kills eight hand-rolled copies. The FMOD service overrides the runner-registration reset so music survives scene loads — the opt-out proving the hook.
+- **Ripple persistent variables power all settings persistence** — volume + HighScore variables ship with Persist on; both audio runners lost their PlayerPrefs blocks. One persistence mechanism for the whole stack (requires Ripple with the 0.9 persistence feature).
+- **Starter prefab library** — the wizard scaffolds `Assets/_Project/Prefabs/Starters/` (11 archetypes) pre-wired to the project's services, with visible UltEvent trigger wiring (players: `OnDamaged → HitStop.Play`; enemies: `OnDied → SpawnBurst.Burst`); with Feel installed, Health starters also carry an `MMF_Player` with `OnDamaged → PlayFeedbacks()` already connected. `GameObject > JamKit > …` now places starter instances — composition lives in prefab assets, scenes stay lists of prefab instances, designers customize via prefab variants.
+- **FMOD-first scaffold** — with FMOD installed the wizard creates no mixer and no Unity audio service; `FmodAudioService` rides JamKitCore and the menu sliders drive buses through the persistent variables. The Unity-mixer backend remains the FMOD-less fallback.
+- **Template assets** — authored `JamKitMixer.mixer` + `JamKitPanelSettings.asset` ship in `Editor/Templates/` and are copied on scaffold, replacing ~270 lines of reflection-based builders.
+- **Odin-powered debuggability** — `Debug` foldouts with live state on every stateful service/component, `[Button]` debug actions that exercise the real wiring (Health Damage/Heal/Kill/Reset replaces the custom `HealthInspector`), `[Required]` on load-bearing refs (surfaced by Odin Validator). `DebugPanel` auto-populates scene buttons from Build Settings and ships on JamKitCore (Backquote — works in WebGL builds).
+- **`RuntimeSetMember`** + `ChaseMover.Targets` — data-driven targeting through Ripple runtime sets (`GameObjectListSO`); the tag scan remains as fallback.
+- **Auto-assign upgrades** — an `ObjectChangeEvents` hook fills references when a prefab is dragged into a scene; `FillPrefabAsset` wires imported sample prefabs at the asset level.
+- **Docs**: `feel-integration.md`, `debugging-and-tuning.md`; README rewritten around the stack; `Tools~/SampleAuthoring/` holds the batch-mode script that (re)builds all sample content.
+
+### Changed
+- **Samples rebuilt prefab-first (7 → 5):** 00 Hour Zero, 01 Platformer, 02 Survivor, 03 Feel Showcase (requires Feel; ships `MMF_JamKitHitStop` + `FeelPlayer`), 04 Arcade. Each is a shipped scene of prefab instances — the build-the-world-in-`Awake` demo pattern is dead. One-click setup now wires the imported prefab *assets* to your service assets and drops the project's JamKitCore into the shipped scene.
+- **`JamKit > Validate Setup` → `JamKit > Doctor`** — per-field null scanning removed (`[Required]` + Odin Validator own it); keeps project-shape checks with Fix buttons; adds the scenes-as-prefab-lists nudge.
+- `MenuCanvasBuilder` / `MenuCanvasPrefabCreator` / `AudioMixerCreator` / `PanelSettingsCreator` deleted (wizard + templates absorbed them).
+- `compile-check.sh`: Windows-path fix, empty-source-leg skip, staged test references, Feel-sample exclusion.
+
 ## [0.8.0] - 2026-07-12
 
 Theme: FMOD as a first-class audio backend. Install FMOD for Unity and the kit grows an FMOD service, juice receiver, and menu sounds — remove it and they vanish instead of breaking the compile.
