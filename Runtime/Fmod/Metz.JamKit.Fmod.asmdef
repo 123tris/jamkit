@@ -4,7 +4,8 @@
     "references": [
         "Metz.JamKit.Runtime",
         "Metz.Ripple.Runtime",
-        "FMODUnity"
+        "FMODUnity",
+        "Kybernetik.UltEvents"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],

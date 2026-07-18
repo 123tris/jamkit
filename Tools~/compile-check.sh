@@ -89,8 +89,18 @@ build_asm "$PROJ/Metz.JamKit.Runtime.csproj" "$PKG/Samples~" "$OUT/Metz.JamKit.S
 # UNITY_*_EXIST defines mirror what its asmdef versionDefines would activate in these projects).
 FMOD_SRC="${FMOD_SRC:-$PROJ/Assets/Plugins/FMOD}"
 if [ -d "$FMOD_SRC" ]; then
-  build_asm "$PROJ/Metz.JamKit.Runtime.csproj" "$FMOD_SRC" "$OUT/FMODUnity.dll" "" "*/Editor/*" \
-    "UNITY_PHYSICS_EXIST;UNITY_PHYSICS2D_EXIST" || exit 1
+  # Timeline mirrors the asmdef versionDefines too: without UNITY_TIMELINE_EXIST the gate
+  # builds an FMODUnity.dll that lacks FMODUnity.STOP_MODE, hiding ambiguities (CS0104) that
+  # the consumer projects (which have com.unity.timeline) would hit. Staged into $OUT because
+  # extra_ref paths must be space-free.
+  TIMELINE_REF="" TIMELINE_DEF=""
+  if [ -f "$PROJ/Library/ScriptAssemblies/Unity.Timeline.dll" ]; then
+    cp -f "$PROJ/Library/ScriptAssemblies/Unity.Timeline.dll" "$OUT/"
+    TIMELINE_REF="$OUT/Unity.Timeline.dll"
+    TIMELINE_DEF=";UNITY_TIMELINE_EXIST"
+  fi
+  build_asm "$PROJ/Metz.JamKit.Runtime.csproj" "$FMOD_SRC" "$OUT/FMODUnity.dll" "$TIMELINE_REF" "*/Editor/*" \
+    "UNITY_PHYSICS_EXIST;UNITY_PHYSICS2D_EXIST$TIMELINE_DEF" || exit 1
   build_asm "$PROJ/Metz.JamKit.Runtime.csproj" "$PKG/Runtime/Fmod" "$OUT/Metz.JamKit.Fmod.dll" \
     "$OUT/Metz.JamKit.Runtime.dll $OUT/FMODUnity.dll" "" "JAMKIT_FMOD" || exit 1
   build_asm "$PROJ/Metz.JamKit.Editor.csproj" "$PKG/Editor/Fmod" "$OUT/Metz.JamKit.Fmod.Editor.dll" \

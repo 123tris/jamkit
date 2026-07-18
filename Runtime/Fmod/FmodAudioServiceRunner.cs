@@ -2,6 +2,9 @@ using System.Collections;
 using FMOD.Studio;
 using FMODUnity;
 using UnityEngine;
+// FMODUnity also declares a STOP_MODE (FMODEventPlayable, present when Timeline is installed),
+// so the FMOD.Studio one must be pinned explicitly.
+using STOP_MODE = FMOD.Studio.STOP_MODE;
 
 namespace Metz.JamKit
 {
