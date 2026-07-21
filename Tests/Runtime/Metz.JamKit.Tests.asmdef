@@ -5,6 +5,7 @@
         "Metz.JamKit.Runtime",
         "Metz.Ripple.Runtime",
         "Kybernetik.UltEvents",
+        "Unity.InputSystem",
         "UnityEngine.TestRunner",
         "UnityEditor.TestRunner"
     ],
