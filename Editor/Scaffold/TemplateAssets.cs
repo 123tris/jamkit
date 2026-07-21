@@ -16,6 +16,8 @@ namespace Metz.JamKit.Editor
         const string TemplateDir = "Packages/com.metz.jamkit/Editor/Templates";
         public const string MixerDest = "Assets/_Project/Audio/Resources/JamKitMixer.mixer";
         public const string PanelSettingsDest = "Assets/_Project/UI/Resources/JamKitPanelSettings.asset";
+        public const string MenuUxmlDest = "Assets/_Project/UI/Resources/JamKitMenu.uxml";
+        public const string MenuUssDest = "Assets/_Project/UI/Resources/JamKitMenu.uss";
 
         /// <summary>Master/Music/SFX groups with MasterVol/MusicVol/SfxVol exposed. Unity-audio path only.</summary>
         public static AudioMixer EnsureMixer()
@@ -41,6 +43,19 @@ namespace Metz.JamKit.Editor
                 AssetDatabase.SaveAssets();
             }
             return ps;
+        }
+
+        /// <summary>
+        /// The menu markup + styles, copied into the project so the designer owns them: these are a
+        /// starting point to build off, not package internals. Edits live in the project and are never
+        /// overwritten (EnsureCopy is load-or-copy), so re-running the wizard is safe.
+        /// The USS goes first — the UXML's &lt;Style src="JamKitMenu.uss"&gt; is relative, so it only
+        /// resolves if its sibling stylesheet is already imported.
+        /// </summary>
+        public static VisualTreeAsset EnsureMenuDocument()
+        {
+            EnsureCopy<StyleSheet>($"{TemplateDir}/JamKitMenu.uss", MenuUssDest);
+            return EnsureCopy<VisualTreeAsset>($"{TemplateDir}/JamKitMenu.uxml", MenuUxmlDest);
         }
 
         static T EnsureCopy<T>(string templatePath, string destPath) where T : Object

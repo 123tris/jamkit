@@ -2,6 +2,12 @@
 
 All notable changes to JamKit are documented here. Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the package uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.9.1] - 2026-07-21
+
+### Changed
+- **The menu markup is now a project-owned template.** `JamKitMenu.uxml` + `.uss` moved out of the package's `Runtime/UI/Resources/` into `Editor/Templates/`, and `JamKit > New Jam Project` copies them into `Assets/_Project/UI/Resources/` — the same flow the mixer and PanelSettings already used. Designers edit the real menu in UI Builder instead of read-only files in `Library/PackageCache`, and the copies are never overwritten on re-scaffold. The UXML's `<Style>` is now a relative `src="JamKitMenu.uss"`, so template and copy each bind to their own sibling stylesheet with no GUID rewriting.
+- **Existing projects migrate by re-running the wizard** — `JamKit > New Jam Project` re-points an already-scaffolded `JamKitMenu.prefab` (`UIDocument.visualTreeAsset` + `MenuController.MenuUxml`) from the package asset to the project copy. `JamKitDefaultTheme.tss` stays package-side; it's plumbing, not designer content.
+
 ## [0.9.0] - 2026-07-17
 
 Theme: the pillar redesign — **modular / editable / debuggable / lean** ([PILLARS.md](PILLARS.md) is new and governs everything). JamKit is now explicitly the glue layer of a four-part stack: Ripple owns state + events, Feel owns feedback, FMOD owns audio, JamKit owns behavior services, primitives, menus, and editor tooling. Less code that works really well.

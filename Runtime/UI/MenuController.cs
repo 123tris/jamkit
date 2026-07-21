@@ -27,9 +27,9 @@ namespace Metz.JamKit
         }
 
         [Header("Resources")]
-        [Tooltip("UXML asset. If left empty, MenuController loads Resources/JamKitMenu.uxml.")]
+        [Tooltip("UXML asset. If left empty, MenuController loads JamKitMenu.uxml from Resources (the wizard scaffolds an editable copy to Assets/_Project/UI/Resources).")]
         public VisualTreeAsset MenuUxml;
-        [Tooltip("Optional USS to layer on top of the bundled stylesheet.")]
+        [Tooltip("Optional USS to layer on top of the menu stylesheet.")]
         public StyleSheet ExtraStyles;
 
         [Header("Services")]
@@ -78,7 +78,11 @@ namespace Metz.JamKit
         void Awake()
         {
             _doc = GetComponent<UIDocument>();
+            // The markup is project-owned (scaffolded to Assets/_Project/UI/Resources), so the
+            // fallback finds the designer's copy — not a package asset they can't edit.
             if (MenuUxml == null) MenuUxml = Resources.Load<VisualTreeAsset>("JamKitMenu");
+            if (MenuUxml == null)
+                Debug.LogWarning("[JamKit] No JamKitMenu.uxml found in Resources. Run JamKit > New Jam Project to scaffold the menu template, or assign MenuUxml manually.", this);
             if (_doc.visualTreeAsset == null && MenuUxml != null) _doc.visualTreeAsset = MenuUxml;
             if (_doc.panelSettings == null) _doc.panelSettings = JamKitUI.LoadOrCreateMenuPanelSettings();
             else JamKitUI.ApplyDefaultTheme(_doc.panelSettings);
@@ -212,10 +216,10 @@ namespace Metz.JamKit
 
         void EnsureStylesheet()
         {
-            // The bundled JamKitMenu.uxml references JamKitMenu.uss via <Style>, so the stylesheet is
-            // applied when the UXML loads — we don't re-add it here (that would be a second source of
-            // truth for the same asset). If you point MenuUxml at a custom UXML, reference your
-            // stylesheet from that UXML, or layer one via ExtraStyles below.
+            // JamKitMenu.uxml references its sibling JamKitMenu.uss via a relative <Style>, so the
+            // stylesheet is applied when the UXML loads — we don't re-add it here (that would be a
+            // second source of truth for the same asset). If you point MenuUxml at a custom UXML,
+            // reference your stylesheet from that UXML, or layer one via ExtraStyles below.
             if (ExtraStyles != null && !_root.styleSheets.Contains(ExtraStyles))
                 _root.styleSheets.Add(ExtraStyles);
         }

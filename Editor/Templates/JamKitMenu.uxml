@@ -1,5 +1,5 @@
 <ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" editor-extension-mode="False">
-    <Style src="project://database/Packages/com.metz.jamkit/Runtime/UI/Resources/JamKitMenu.uss?fileID=7433441132597879392&amp;guid=371331472e6abdf40a030190961768fe&amp;type=3#JamKitMenu" />
+    <Style src="JamKitMenu.uss" />
     <ui:VisualElement name="root" picking-mode="Ignore" class="jk-root">
         <ui:VisualElement name="start-menu" class="jk-view jk-view--start">
             <ui:Label text="JAM TITLE" name="start-title" class="jk-title" />

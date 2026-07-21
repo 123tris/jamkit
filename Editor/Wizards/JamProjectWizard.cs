@@ -95,6 +95,7 @@ namespace Metz.JamKit.Editor
             EnsureFolders();
 
             var panelSettings = TemplateAssets.EnsurePanelSettings();
+            var menuUxml = TemplateAssets.EnsureMenuDocument();
 
             // Ripple variables: volumes (persistent — settings survive restarts), score/high-score
             // (high score persistent), and a timer readout for HUD binding. State lives here, not
@@ -136,7 +137,7 @@ namespace Metz.JamKit.Editor
             // scene so the user's scene never gets temp objects; we open Bootstrap at the end.
             EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
             var corePrefab = CreateOrLoadCorePrefab(audio, time, scene, pool, scoreVar, highVar);
-            var menuPrefab = CreateOrLoadMenuPrefab(audio, time, scene, input, panelSettings, master, music, sfx);
+            var menuPrefab = CreateOrLoadMenuPrefab(audio, time, scene, input, panelSettings, menuUxml, master, music, sfx);
 
             // Starter prefab assets — the Lego bricks designers variant and drop into scenes.
             StarterPrefabLibrary.EnsureAll(new StarterPrefabLibrary.Context
@@ -302,21 +303,20 @@ namespace Metz.JamKit.Editor
         /// backend (under FMOD there is no AudioServiceSO to fall back to).
         /// </summary>
         static GameObject CreateOrLoadMenuPrefab(AudioServiceSO audio, TimeServiceSO time, SceneServiceSO scene, InputServiceSO input,
-            PanelSettings panelSettings, FloatVariableSO master, FloatVariableSO music, FloatVariableSO sfx)
+            PanelSettings panelSettings, VisualTreeAsset menuUxml, FloatVariableSO master, FloatVariableSO music, FloatVariableSO sfx)
         {
             string path = MenuPrefabPath;
             var existing = AssetDatabase.LoadAssetAtPath<GameObject>(path);
-            if (existing != null) return existing;
+            if (existing != null) return RepointMenuUxml(existing, path, menuUxml);
 
             var root = new GameObject("JamKitMenu");
             var doc = root.AddComponent<UIDocument>();
             var controller = root.AddComponent<MenuController>();
 
-            var uxml = Resources.Load<VisualTreeAsset>("JamKitMenu");
-            if (uxml != null)
+            if (menuUxml != null)
             {
-                doc.visualTreeAsset = uxml;
-                controller.MenuUxml = uxml;
+                doc.visualTreeAsset = menuUxml;
+                controller.MenuUxml = menuUxml;
             }
             if (panelSettings != null) doc.panelSettings = panelSettings;
 
@@ -333,6 +333,36 @@ namespace Metz.JamKit.Editor
             var prefab = PrefabUtility.SaveAsPrefabAsset(root, path);
             Object.DestroyImmediate(root);
             return prefab;
+        }
+
+        /// <summary>
+        /// Point an already-scaffolded menu prefab at the project's UXML copy. Projects scaffolded
+        /// before the markup became a project-owned template still reference the package asset (which
+        /// lives in the read-only package cache); re-running the wizard migrates them. No-op once the
+        /// reference is already local, so this stays idempotent.
+        /// </summary>
+        static GameObject RepointMenuUxml(GameObject prefab, string path, VisualTreeAsset menuUxml)
+        {
+            if (menuUxml == null) return prefab;
+
+            var root = PrefabUtility.LoadPrefabContents(path);
+            try
+            {
+                var doc = root.GetComponent<UIDocument>();
+                var controller = root.GetComponent<MenuController>();
+
+                bool changed = false;
+                if (doc != null && doc.visualTreeAsset != menuUxml) { doc.visualTreeAsset = menuUxml; changed = true; }
+                if (controller != null && controller.MenuUxml != menuUxml) { controller.MenuUxml = menuUxml; changed = true; }
+                if (!changed) return prefab;
+
+                PrefabUtility.SaveAsPrefabAsset(root, path);
+            }
+            finally
+            {
+                PrefabUtility.UnloadPrefabContents(root);
+            }
+            return AssetDatabase.LoadAssetAtPath<GameObject>(path);
         }
 
         static GameObject Instance(GameObject prefab, string name = null)

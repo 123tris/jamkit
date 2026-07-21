@@ -2,18 +2,23 @@
 
 JamKit's menu system is **UI Toolkit** (UXML + USS) driven by a single `MenuController` MonoBehaviour. Audio volume sliders bind directly to **Ripple `FloatVariableSO`s** so any other UI or system in the project can read or write the same volume state without going through the menu.
 
-## Three ways to get a working menu
+## The markup is yours to edit
 
-1. **One-click setup:** `JamKit > New Jam Project` builds the Bootstrap scene with `JamKitCore` (hosting every Runner) and `JamKitMenu` (UIDocument + MenuController with all service SOs assigned).
-2. **Reusable prefab:** `JamKit > Create Menu Prefab` saves a `JamKitMenu.prefab` with empty service slots — drag into any scene, assign the SOs from `Assets/_Project/Services/`.
-3. **Manual:** Add `UIDocument` + `MenuController` yourself. Leave UXML blank — `MenuController` auto-loads `Resources/JamKitMenu.uxml`. Assign the four service SOs (`AudioService`, `TimeService`, `SceneService`, `InputService`).
+`JamKit > New Jam Project` copies `JamKitMenu.uxml` + `JamKitMenu.uss` out of the package and into **`Assets/_Project/UI/Resources/`**. Those copies are the real menu — the package keeps only the pristine template, so open them in UI Builder and restyle freely. Nothing you change there propagates back to the package, and re-running the wizard never overwrites them.
+
+Both files must stay siblings and keep the name `JamKitMenu`: the UXML pulls its stylesheet via a relative `<Style src="JamKitMenu.uss" />`, and `MenuController` / `GameOverController` fall back to `Resources.Load("JamKitMenu")` when no asset is assigned. Renaming is fine if you assign the result to `MenuUxml` explicitly and fix the `<Style>` reference.
+
+## Two ways to get a working menu
+
+1. **One-click setup:** `JamKit > New Jam Project` builds the Bootstrap scene with `JamKitCore` (hosting every Runner) and `JamKitMenu` (UIDocument + MenuController with all service SOs assigned), pointed at your project's UXML copy.
+2. **Manual:** Add `UIDocument` + `MenuController` yourself. Leave UXML blank — `MenuController` auto-loads `JamKitMenu.uxml` from Resources. Assign the four service SOs (`AudioService`, `TimeService`, `SceneService`, `InputService`).
 
 ## MenuController inspector fields
 
 | Field | Purpose |
 | --- | --- |
-| `MenuUxml` | UXML asset. Leave blank to use bundled `Resources/JamKitMenu.uxml`. |
-| `ExtraStyles` | Optional USS layered on top of the bundled stylesheet. |
+| `MenuUxml` | UXML asset. Leave blank to load `JamKitMenu.uxml` from Resources (your scaffolded copy). |
+| `ExtraStyles` | Optional USS layered on top of the menu stylesheet. |
 | `AudioService` | `AudioServiceSO` — used to find the master/music/sfx Ripple variables for sliders. |
 | `TimeService` | `TimeServiceSO` — used for pause/resume around the Pause menu. |
 | `SceneService` | `SceneServiceSO` — used to load scenes when buttons fire. |
@@ -60,7 +65,9 @@ JamKit's menu system is **UI Toolkit** (UXML + USS) driven by a single `MenuCont
 
 The scene-transition fade is **not** part of this UXML. `FadeOverlay` (on `JamKitCore`) builds its own UIDocument with a high sorting order so it always covers this menu — see `Runtime/Scenes/FadeOverlay.cs`.
 
-Class hooks live in `JamKitMenu.uss`: `.jk-root`, `.jk-view`, `.jk-panel`, `.jk-button`, `.jk-title`, `.jk-row`, `.jk-section`, `.jk-dim`.
+Class hooks live in `JamKitMenu.uss`: `.jk-root`, `.jk-view`, `.jk-panel`, `.jk-button`, `.jk-title`, `.jk-row`, `.jk-section`, `.jk-dim`. The Game Over screen is built in code (`GameOverController`) but reuses these same classes, so restyling the USS restyles it too.
+
+Element **names** (`#start-play`, `#settings-master`, …) are the contract between the UXML and the controllers — restyle and rearrange freely, but keep the names on the elements you keep, or their buttons and sliders go dead.
 
 ## How settings persist
 
@@ -71,7 +78,7 @@ Class hooks live in `JamKitMenu.uss`: `.jk-root`, `.jk-view`, `.jk-panel`, `.jk-
 
 The MenuController is `sealed` on purpose. To extend:
 
-1. Add new elements to your own UXML override (point `MenuUxml` at it).
+1. Add new elements to your project's `Assets/_Project/UI/Resources/JamKitMenu.uxml` (or a separate UXML you point `MenuUxml` at).
 2. Add a sibling MonoBehaviour on the same GameObject that takes a reference to `MenuController`, queries `MenuController.Root` for the new elements, and wires `RegisterValueChangedCallback` / `clicked` callbacks.
 
 ## Theme
