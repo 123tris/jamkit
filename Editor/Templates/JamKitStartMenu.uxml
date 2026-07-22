@@ -1,0 +1,11 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" editor-extension-mode="False">
+    <Style src="JamKitMenu.uss" />
+    <ui:VisualElement name="start-menu" class="jk-view jk-view--start">
+        <ui:Label text="JAM TITLE" name="start-title" class="jk-title" />
+        <ui:VisualElement class="jk-button-column">
+            <ui:Button text="Play" name="start-play" class="jk-button" />
+            <ui:Button text="Settings" name="start-settings" class="jk-button" />
+            <ui:Button text="Quit" name="start-quit" class="jk-button" />
+        </ui:VisualElement>
+    </ui:VisualElement>
+</ui:UXML>

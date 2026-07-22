@@ -1,0 +1,15 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" editor-extension-mode="False">
+    <Style src="JamKitMenu.uss" />
+    <ui:VisualElement name="pause-menu" class="jk-view jk-view--pause" style="display: none;">
+        <ui:VisualElement picking-mode="Ignore" class="jk-dim" />
+        <ui:VisualElement class="jk-panel">
+            <ui:Label text="Paused" class="jk-title jk-title--small" />
+            <ui:VisualElement class="jk-button-column">
+                <ui:Button text="Resume" name="pause-resume" class="jk-button" />
+                <ui:Button text="Settings" name="pause-settings" class="jk-button" />
+                <ui:Button text="Restart" name="pause-restart" class="jk-button" />
+                <ui:Button text="Main Menu" name="pause-mainmenu" class="jk-button" />
+            </ui:VisualElement>
+        </ui:VisualElement>
+    </ui:VisualElement>
+</ui:UXML>

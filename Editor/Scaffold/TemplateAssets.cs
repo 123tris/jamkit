@@ -17,6 +17,9 @@ namespace Metz.JamKit.Editor
         public const string MixerDest = "Assets/_Project/Audio/Resources/JamKitMixer.mixer";
         public const string PanelSettingsDest = "Assets/_Project/UI/Resources/JamKitPanelSettings.asset";
         public const string MenuUxmlDest = "Assets/_Project/UI/Resources/JamKitMenu.uxml";
+        public const string StartUxmlDest = "Assets/_Project/UI/Resources/JamKitStartMenu.uxml";
+        public const string PauseUxmlDest = "Assets/_Project/UI/Resources/JamKitPauseMenu.uxml";
+        public const string SettingsUxmlDest = "Assets/_Project/UI/Resources/JamKitSettingsMenu.uxml";
         public const string MenuUssDest = "Assets/_Project/UI/Resources/JamKitMenu.uss";
 
         /// <summary>Master/Music/SFX groups with MasterVol/MusicVol/SfxVol exposed. Unity-audio path only.</summary>
@@ -49,12 +52,17 @@ namespace Metz.JamKit.Editor
         /// The menu markup + styles, copied into the project so the designer owns them: these are a
         /// starting point to build off, not package internals. Edits live in the project and are never
         /// overwritten (EnsureCopy is load-or-copy), so re-running the wizard is safe.
-        /// The USS goes first — the UXML's &lt;Style src="JamKitMenu.uss"&gt; is relative, so it only
-        /// resolves if its sibling stylesheet is already imported.
+        /// Copy order matters because every reference is a relative &lt;... src&gt;, resolved at import:
+        /// the USS first (the UXMLs' &lt;Style src="JamKitMenu.uss"&gt;), then the three per-view
+        /// documents, then JamKitMenu.uxml — the composition root that instances them via
+        /// &lt;ui:Template src="JamKit{Start,Pause,Settings}Menu.uxml"&gt;.
         /// </summary>
         public static VisualTreeAsset EnsureMenuDocument()
         {
             EnsureCopy<StyleSheet>($"{TemplateDir}/JamKitMenu.uss", MenuUssDest);
+            EnsureCopy<VisualTreeAsset>($"{TemplateDir}/JamKitStartMenu.uxml", StartUxmlDest);
+            EnsureCopy<VisualTreeAsset>($"{TemplateDir}/JamKitPauseMenu.uxml", PauseUxmlDest);
+            EnsureCopy<VisualTreeAsset>($"{TemplateDir}/JamKitSettingsMenu.uxml", SettingsUxmlDest);
             return EnsureCopy<VisualTreeAsset>($"{TemplateDir}/JamKitMenu.uxml", MenuUxmlDest);
         }
 

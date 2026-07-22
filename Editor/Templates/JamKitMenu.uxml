@@ -1,66 +1,11 @@
 <ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" editor-extension-mode="False">
     <Style src="JamKitMenu.uss" />
+    <ui:Template name="JamKitStartMenu" src="JamKitStartMenu.uxml" />
+    <ui:Template name="JamKitPauseMenu" src="JamKitPauseMenu.uxml" />
+    <ui:Template name="JamKitSettingsMenu" src="JamKitSettingsMenu.uxml" />
     <ui:VisualElement name="root" picking-mode="Ignore" class="jk-root">
-        <ui:VisualElement name="start-menu" class="jk-view jk-view--start">
-            <ui:Label text="JAM TITLE" name="start-title" class="jk-title" />
-            <ui:VisualElement class="jk-button-column">
-                <ui:Button text="Play" name="start-play" class="jk-button" />
-                <ui:Button text="Settings" name="start-settings" class="jk-button" />
-                <ui:Button text="Quit" name="start-quit" class="jk-button" />
-            </ui:VisualElement>
-        </ui:VisualElement>
-        <ui:VisualElement name="pause-menu" class="jk-view jk-view--pause" style="display: none;">
-            <ui:VisualElement picking-mode="Ignore" class="jk-dim" />
-            <ui:VisualElement class="jk-panel">
-                <ui:Label text="Paused" class="jk-title jk-title--small" />
-                <ui:VisualElement class="jk-button-column">
-                    <ui:Button text="Resume" name="pause-resume" class="jk-button" />
-                    <ui:Button text="Settings" name="pause-settings" class="jk-button" />
-                    <ui:Button text="Restart" name="pause-restart" class="jk-button" />
-                    <ui:Button text="Main Menu" name="pause-mainmenu" class="jk-button" />
-                </ui:VisualElement>
-            </ui:VisualElement>
-        </ui:VisualElement>
-        <ui:VisualElement name="settings-menu" class="jk-view jk-view--settings" style="display: none;">
-            <ui:VisualElement picking-mode="Ignore" class="jk-dim" />
-            <ui:VisualElement class="jk-panel jk-panel--wide">
-                <ui:Label text="Settings" class="jk-title jk-title--small" />
-                <ui:VisualElement class="jk-section">
-                    <ui:Label text="Audio" class="jk-section-title" />
-                    <ui:VisualElement class="jk-row">
-                        <ui:Label text="Master" class="jk-row-label" />
-                        <ui:Slider name="settings-master" low-value="0" high-value="1" value="1" class="jk-row-control" />
-                    </ui:VisualElement>
-                    <ui:VisualElement class="jk-row">
-                        <ui:Label text="Music" class="jk-row-label" />
-                        <ui:Slider name="settings-music" low-value="0" high-value="1" value="1" class="jk-row-control" />
-                    </ui:VisualElement>
-                    <ui:VisualElement class="jk-row">
-                        <ui:Label text="SFX" class="jk-row-label" />
-                        <ui:Slider name="settings-sfx" low-value="0" high-value="1" value="1" class="jk-row-control" />
-                    </ui:VisualElement>
-                </ui:VisualElement>
-                <ui:VisualElement class="jk-section">
-                    <ui:Label text="Graphics" class="jk-section-title" />
-                    <ui:VisualElement class="jk-row">
-                        <ui:Label text="Quality" class="jk-row-label" />
-                        <ui:DropdownField name="settings-quality" class="jk-row-control" />
-                    </ui:VisualElement>
-                    <ui:VisualElement class="jk-row">
-                        <ui:Label text="Resolution" class="jk-row-label" />
-                        <ui:DropdownField name="settings-resolution" class="jk-row-control" />
-                    </ui:VisualElement>
-                    <ui:VisualElement class="jk-row">
-                        <ui:Label text="Fullscreen" class="jk-row-label" />
-                        <ui:Toggle name="settings-fullscreen" class="jk-row-control" />
-                    </ui:VisualElement>
-                    <ui:VisualElement class="jk-row">
-                        <ui:Label text="VSync" class="jk-row-label" />
-                        <ui:Toggle name="settings-vsync" class="jk-row-control" />
-                    </ui:VisualElement>
-                </ui:VisualElement>
-                <ui:Button text="Back" name="settings-back" class="jk-button jk-button--back" />
-            </ui:VisualElement>
-        </ui:VisualElement>
+        <ui:Instance template="JamKitStartMenu" name="start-instance" picking-mode="Ignore" class="jk-instance" />
+        <ui:Instance template="JamKitPauseMenu" name="pause-instance" picking-mode="Ignore" class="jk-instance" />
+        <ui:Instance template="JamKitSettingsMenu" name="settings-instance" picking-mode="Ignore" class="jk-instance" />
     </ui:VisualElement>
 </ui:UXML>

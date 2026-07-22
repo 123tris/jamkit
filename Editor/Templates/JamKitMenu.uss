@@ -10,6 +10,20 @@
     color: rgb(240, 240, 240);
 }
 
+/* --------- split-view instances ---------
+   Each view (start / pause / settings) lives in its own UXML, pulled into
+   JamKitMenu.uxml via <ui:Instance>. The generated container must fill jk-root
+   so each .jk-view's absolute fill has a full-size parent. The instances also
+   set picking-mode="Ignore" so the always-present containers never swallow
+   clicks meant for the active view. */
+.jk-instance {
+    position: absolute;
+    left: 0;
+    top: 0;
+    right: 0;
+    bottom: 0;
+}
+
 /* --------- view containers --------- */
 .jk-view {
     position: absolute;

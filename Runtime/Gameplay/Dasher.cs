@@ -31,6 +31,15 @@ namespace Metz.JamKit
         [Tooltip("3D only: keep vertical velocity during the dash (horizontal dash). Off = full-vector override.")]
         public bool PreserveVertical = true;
 
+        [Header("Double-tap dash")]
+        [Tooltip("Also dash by quickly tapping a movement direction twice, in addition to the Dash input.")]
+        public bool DoubleTapToDash = true;
+        [Tooltip("Longest gap between the two taps that still counts as a double-tap.")]
+        public FloatReference DoubleTapWindow = new(0.28f);
+        [Range(0.1f, 0.99f)]
+        [Tooltip("How far a Move axis must deflect to register as a tap. Higher = harder to trigger by accident (stick drift, diagonals).")]
+        public float TapThreshold = 0.5f;
+
         [FoldoutGroup("Events (this instance)")]
         [Tooltip("This instance dashed. Wire feedbacks here: MMF_Player.PlayFeedbacks(), trail toggles, SFX...")]
         public UltEvent OnDashed;
@@ -45,6 +54,11 @@ namespace Metz.JamKit
         float _dashUntil;
         Cooldown _cooldown;
 
+        // Per-cardinal-direction held-state + last-press timestamp for double-tap detection.
+        const int DirRight = 0, DirLeft = 1, DirForward = 2, DirBack = 3;
+        readonly bool[] _dirHeld = new bool[4];
+        readonly float[] _dirLastTap = new float[4];
+
         [ShowInInspector, ReadOnly, FoldoutGroup("Debug")] public bool IsDashing => Time.time < _dashUntil;
         [ShowInInspector, ReadOnly, FoldoutGroup("Debug")] public float CooldownRemaining => _cooldown.Remaining;
 
@@ -53,6 +67,8 @@ namespace Metz.JamKit
             _rb2d = GetComponent<Rigidbody2D>();
             _rb = GetComponent<Rigidbody>();
             if (CameraReference == null && Camera.main != null) CameraReference = Camera.main.transform;
+            // Far in the past so the first tap of the session can never pair with the (0f) default.
+            for (int i = 0; i < _dirLastTap.Length; i++) _dirLastTap[i] = float.NegativeInfinity;
         }
 
         void Update()
@@ -60,6 +76,8 @@ namespace Metz.JamKit
             if (InputService == null) return;
             var dash = InputService.Dash;
             if (dash != null && dash.WasPressedThisFrame()) TryDash();
+
+            if (DoubleTapToDash) DetectDoubleTapDash();
         }
 
         void FixedUpdate()
@@ -119,6 +137,47 @@ namespace Metz.JamKit
                 dir.y = 0f;
             }
             return dir.normalized;
+        }
+
+        // -------------------- double-tap --------------------
+
+        /// <summary>
+        /// Watches the Move axes for a quick second tap of the same cardinal direction and dashes on
+        /// it. Runs alongside the Dash input (both call <see cref="TryDash"/>, so the cooldown gates
+        /// them together). The dash still aims along the current Move input, so a forward double-tap
+        /// dashes forward.
+        /// </summary>
+        void DetectDoubleTapDash()
+        {
+            if (InputService.Move == null) return;
+            Vector2 m = InputService.Move.ReadValue<Vector2>();
+            CheckDir(DirRight,    m.x);
+            CheckDir(DirLeft,    -m.x);
+            CheckDir(DirForward,  m.y);
+            CheckDir(DirBack,    -m.y);
+        }
+
+        // Edge-detects one direction. Hysteresis (press at TapThreshold, release at 60% of it) keeps
+        // a stick resting near the line from chattering out phantom taps; holding a direction only
+        // ever fires one rising edge, so a hold never dashes.
+        void CheckDir(int dir, float amount)
+        {
+            bool held = _dirHeld[dir];
+            bool pressed = held ? amount > TapThreshold * 0.6f : amount > TapThreshold;
+
+            if (pressed && !held)
+            {
+                if (Time.time - _dirLastTap[dir] <= DoubleTapWindow.Value)
+                {
+                    TryDash();                                  // cooldown-gated
+                    _dirLastTap[dir] = float.NegativeInfinity;  // consume the pair; a 3rd tap must re-arm
+                }
+                else
+                {
+                    _dirLastTap[dir] = Time.time;               // first tap — arm the window
+                }
+            }
+            _dirHeld[dir] = pressed;
         }
     }
 }

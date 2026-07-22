@@ -4,9 +4,11 @@ JamKit's menu system is **UI Toolkit** (UXML + USS) driven by a single `MenuCont
 
 ## The markup is yours to edit
 
-`JamKit > New Jam Project` copies `JamKitMenu.uxml` + `JamKitMenu.uss` out of the package and into **`Assets/_Project/UI/Resources/`**. Those copies are the real menu — the package keeps only the pristine template, so open them in UI Builder and restyle freely. Nothing you change there propagates back to the package, and re-running the wizard never overwrites them.
+`JamKit > New Jam Project` copies the menu documents + `JamKitMenu.uss` out of the package and into **`Assets/_Project/UI/Resources/`**. Those copies are the real menu — the package keeps only the pristine templates, so open them in UI Builder and restyle freely. Nothing you change there propagates back to the package, and re-running the wizard never overwrites them.
 
-Both files must stay siblings and keep the name `JamKitMenu`: the UXML pulls its stylesheet via a relative `<Style src="JamKitMenu.uss" />`, and `MenuController` / `GameOverController` fall back to `Resources.Load("JamKitMenu")` when no asset is assigned. Renaming is fine if you assign the result to `MenuUxml` explicitly and fix the `<Style>` reference.
+`JamKitMenu.uxml` is a thin **composition root**: it instances one document per view — `JamKitStartMenu.uxml`, `JamKitPauseMenu.uxml`, `JamKitSettingsMenu.uxml` — so each view can be edited on its own in UI Builder. Every reference is relative (`<ui:Template src="JamKitStartMenu.uxml" />`, `<Style src="JamKitMenu.uss" />`), so all five files must stay siblings in the same folder. Keep the name `JamKitMenu` on the root: `MenuController` / `GameOverController` fall back to `Resources.Load("JamKitMenu")` when no asset is assigned. Renaming the root is fine if you assign the result to `MenuUxml` explicitly.
+
+`MenuController` is unchanged by the split — it still reads one `VisualTreeAsset` and finds each view by name (`start-menu`, `pause-menu`, `settings-menu`) with a recursive query, so the extra `<ui:Instance>` container between the root and each view is transparent to it.
 
 ## Two ways to get a working menu
 
@@ -29,6 +31,8 @@ Both files must stay siblings and keep the name `JamKitMenu`: the UXML pulls its
 | `InitialView` | Which view shows on enable (Start / Settings / Pause / None). |
 
 ## UXML structure
+
+The runtime tree (each `#…-menu` view comes from its own file — `JamKitStartMenu.uxml`, `JamKitPauseMenu.uxml`, `JamKitSettingsMenu.uxml` — wrapped in a `.jk-instance` container by `<ui:Instance>`):
 
 ```
 #root .jk-root
