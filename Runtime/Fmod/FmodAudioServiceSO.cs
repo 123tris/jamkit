@@ -22,11 +22,14 @@ namespace Metz.JamKit
     public sealed class FmodAudioServiceSO : ServiceSO<FmodAudioServiceRunner>
     {
         [Header("Buses")]
+        [ParamRef]
         [Tooltip("Master bus path. 'bus:/' is FMOD's root bus and always exists.")]
         public string MasterBusPath = "bus:/";
         [Tooltip("Group bus for music, as authored in FMOD Studio's mixer. Missing bus = volume control skipped (warned once).")]
+        [ParamRef]
         public string MusicBusPath = "bus:/Music";
         [Tooltip("Group bus for sound effects, as authored in FMOD Studio's mixer.")]
+        [ParamRef]
         public string SfxBusPath = "bus:/SFX";
 
         [Header("Volume State (Ripple)")]
