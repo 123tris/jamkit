@@ -28,7 +28,7 @@ namespace Metz.JamKit
         InputActionAsset _cachedAsset;
         string _cachedUIName, _cachedGameplayName;
         InputActionMap _uiMap, _gameplayMap;
-        InputAction _move, _look, _jump, _attack, _interact, _pause, _uiSubmit, _uiCancel, _uiNavigate;
+        InputAction _move, _look, _jump, _attack, _dash, _interact, _pause, _uiSubmit, _uiCancel, _uiNavigate;
 
         void EnsureCache()
         {
@@ -44,6 +44,7 @@ namespace Metz.JamKit
             _look     = _gameplayMap?.FindAction("Look");
             _jump     = _gameplayMap?.FindAction("Jump");
             _attack   = _gameplayMap?.FindAction("Attack");
+            _dash     = _gameplayMap?.FindAction("Dash");
             _interact = _gameplayMap?.FindAction("Interact");
             _pause    = _gameplayMap?.FindAction("Pause");
 
@@ -62,6 +63,7 @@ namespace Metz.JamKit
         public InputAction Look     { get { EnsureCache(); return _look; } }
         public InputAction Jump     { get { EnsureCache(); return _jump; } }
         public InputAction Attack   { get { EnsureCache(); return _attack; } }
+        public InputAction Dash     { get { EnsureCache(); return _dash; } }
         public InputAction Interact { get { EnsureCache(); return _interact; } }
         public InputAction Pause    { get { EnsureCache(); return _pause; } }
 

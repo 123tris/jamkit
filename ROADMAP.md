@@ -21,26 +21,34 @@ since 0.9. The roadmap-specific corollaries:
 
 When considering a new primitive, check it against the classics. A primitive that appears in 3+ columns is kit material; 1 column = game code, leave it out.
 
-| Primitive | Pong | Breakout | Frogger | Invaders | Asteroids | Flappy | Platformer | Survivor | Status |
-| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| Input mover | ✓ | ✓ | | ✓ | | ✓ | ✓ | ✓ | ✅ Mover2D/3D |
-| Ball bounce | ✓ | ✓ | | | | | | | 📦 sample 04 (Bouncer2D) |
-| Grid step | | | ✓ | | | | | | 📦 sample 04 (GridMover) |
-| Rotate+thrust | | | | | ✓ | | | | 📦 sample 04 (ThrustMover2D) |
-| Chase target | | | | | | | ✓ | ✓ | ✅ ChaseMover |
-| Patrol/conveyor | | | ✓ | ~ | | ✓ | ✓ | | ✅ PatrolMover |
-| Screen wrap | | | | | ✓ | | | | 📦 sample 04 (ScreenWrap2D) |
-| Zones (kill/goal/score) | ✓ | ✓ | ✓ | ✓ | | ✓ | ✓ | | ✅ TriggerZone |
-| Aim cursor/stick | | | | | | | | ✓ | 📦 sample 02 (Aimer) |
-| Spawn on death | | ✓ | | ✓ | ✓ | | | ✓ | ✅ SpawnBurst |
-| Respawn/checkpoint | ✓ | ✓ | ✓ | | ✓ | | ✓ | | ✅ Respawner |
-| Press-E interact | | | | | | | ✓ | ✓ | ✅ Interactor/-able |
-| Shoot | | | | ✓ | ✓ | | ✓ | ✓ | ✅ ProjectileShooter |
-| Sequenced waves | | | | ✓ | | | | ✓ | 📦 sample 02 (WaveSpawner) |
-| HP/damage/pickups/score/menus | — | — | — | — | — | — | — | — | ✅ core |
-| Feedback (shake/flash/pop/text) | all | all | all | all | all | all | all | all | 🎨 Feel (see feel-integration.md) |
+| Primitive | Pong | Breakout | Frogger | Invaders | Asteroids | Flappy | Platformer | Survivor | FPS¹ | Status |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| Input mover | ✓ | ✓ | | ✓ | | ✓ | ✓ | ✓ | ✓ | ✅ Mover2D/3D |
+| First-person look | | | | | | | | | ✓ | ✅ FirstPersonLook |
+| Dash/dodge | | | | | | | ✓ | ✓ | ✓ | ✅ Dasher |
+| Ball bounce | ✓ | ✓ | | | | | | | | 📦 sample 04 (Bouncer2D) |
+| Grid step | | | ✓ | | | | | | | 📦 sample 04 (GridMover) |
+| Rotate+thrust | | | | | ✓ | | | | | 📦 sample 04 (ThrustMover2D) |
+| Chase target | | | | | | | ✓ | ✓ | ✓ | ✅ ChaseMover |
+| Patrol/conveyor | | | ✓ | ~ | | ✓ | ✓ | | ✓ | ✅ PatrolMover |
+| Screen wrap | | | | | ✓ | | | | | 📦 sample 04 (ScreenWrap2D) |
+| Zones (kill/goal/score) | ✓ | ✓ | ✓ | ✓ | | ✓ | ✓ | | ✓ | ✅ TriggerZone |
+| Aim cursor/stick | | | | | | | | ✓ | | 📦 sample 02 (Aimer) |
+| Spawn on death | | ✓ | | ✓ | ✓ | | | ✓ | ✓ | ✅ SpawnBurst |
+| Respawn/checkpoint | ✓ | ✓ | ✓ | | ✓ | | ✓ | | ✓ | ✅ Respawner |
+| Press-E interact | | | | | | | ✓ | ✓ | ✓ | ✅ Interactor/-able |
+| Shoot (visible projectile) | | | | ✓ | ✓ | | ✓ | ✓ | ✓ | ✅ ProjectileShooter |
+| Shoot (hitscan) | | | | ~ | | | | ✓ | ✓ | ✅ HitscanShooter |
+| Health-as-timer drain | | | | | | | ~ | ✓ | ✓ | ✅ HealthDrain |
+| Sequenced waves | | | | ✓ | | | | ✓ | ✓ | 📦 sample 02 (WaveSpawner) |
+| HP/damage/pickups/score/menus | — | — | — | — | — | — | — | — | — | ✅ core |
+| Feedback (shake/flash/pop/text) | all | all | all | all | all | all | all | all | all | 🎨 Feel (see feel-integration.md) |
 
 📦 = ships as a sample-local script (1–2 rows — the aggressive-trim rule); ✅ = kit component.
+
+¹ The FPS column stands in for every first-person genre (boomer shooter, horror, walking sim,
+immersive sim) — they share the same rig, so `FirstPersonLook` earns its slot despite the
+single column. Added for GMTK 2026.
 
 Genres still thin: **card/board** (drag-drop, hand layout), **puzzle-match** (grid queries beyond movement), **rhythm** (beat clock). Add rows when a jam demands them.
 

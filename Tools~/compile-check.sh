@@ -9,7 +9,10 @@ set -u
 PROJ="${1:-$(cd "$(dirname "$0")/../../.." && pwd)}"
 # csc.dll is a Windows process: /c/... paths from Git Bash's pwd/find don't resolve there.
 PROJ="$(cygpath -m "$PROJ" 2>/dev/null || echo "$PROJ")"
-PKG="$PROJ/Packages/com.metz.jamkit"
+# The package folder may be embedded under any name (com.metz.jamkit, jamkit, …) — derive it
+# from this script's own location (Tools~ always sits directly inside the package).
+PKG="$(cd "$(dirname "$0")/.." && pwd)"
+PKG="$(cygpath -m "$PKG" 2>/dev/null || echo "$PKG")"
 # Windows-style path so the native compiler can write to it (Git Bash /tmp is not C:\tmp).
 OUT="$(cygpath -m "${TEMP:-/tmp}" 2>/dev/null || echo /tmp)/jamkit-compile-check"
 mkdir -p "$OUT"

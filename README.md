@@ -89,7 +89,7 @@ starter instances.
 | Audio (Unity) | `AudioServiceSO` | Fallback backend without FMOD: mixer + pooled one-shots + crossfade music. Same variable-driven volume. | Yes |
 | Time | `TimeServiceSO` | `Pause/Resume`, `Push(scale)/Pop`, `FreezeForSeconds`. The stack composes pause + hit-stop + slow-mo — and it is the ONLY thing allowed to touch `Time.timeScale`. | For `FreezeForSeconds` |
 | Scenes | `SceneServiceSO` | `LoadAsync(name)`, `ReloadCurrent()` with fade. Broadcast events on load start/end. | Yes |
-| Input | `InputServiceSO` | Move/Look/Jump/Attack/Pause from an `InputActionAsset`; `SwitchToUI/Gameplay()`. | No |
+| Input | `InputServiceSO` | Move/Look/Jump/Attack/Dash/Interact/Pause from an `InputActionAsset`; `SwitchToUI/Gameplay()`. | No |
 | Save | `SaveServiceSO` | `Write/Read<T>` JSON to `persistentDataPath` — for game saves. Settings persistence belongs to Ripple persistent variables, not here. | No |
 | Pool | `PoolServiceSO` | `Spawn/Despawn/Prewarm`, one pool per prefab. | Optional |
 
@@ -101,12 +101,15 @@ depth, pool counts, music state) and its `[Button]`s poke the real thing.
 A component earns its place by appearing in 3+ genres (see ROADMAP's archetype matrix); the
 rest live in samples as hackable copies.
 
-- **Movement/camera:** `Mover2D`, `Mover3D`, `ChaseMover` (runtime-set targeting via
-  `RuntimeSetMember`, tag fallback), `PatrolMover`, `FollowCamera` (2D+3D, impulse-listener
-  equipped for Feel shakes).
-- **Combat:** `Health` (the hub — see below), `Damager` (2D+3D in one, projectiles/contact/
-  melee via `OncePerTarget`), `Respawner` (pure teleporter — death/refill wired visibly),
-  `HitStop`.
+- **Movement/camera:** `Mover2D`, `Mover3D`, `FirstPersonLook` (FPS look — body yaw + camera
+  pitch, cursor lock follows the Gameplay↔UI map switch), `Dasher` (2D+3D burst move on the
+  Dash action), `ChaseMover` (runtime-set targeting via `RuntimeSetMember`, tag fallback),
+  `PatrolMover`, `FollowCamera` (2D+3D, impulse-listener equipped for Feel shakes).
+- **Combat:** `Health` (the hub — see below), `HealthDrain` (health as a life-timer: silent
+  per-tick drain through `SetCurrent`, so no feedback spam — death and the HUD mirror still
+  fire), `Damager` (2D+3D in one, projectiles/contact/melee via `OncePerTarget`),
+  `HitscanShooter` (raycast gun — the FPS counterpart to `ProjectileShooter`), `Respawner`
+  (pure teleporter — death/refill wired visibly), `HitStop`.
 - **Spawning/scoring:** `Spawner`, `SpawnBurst`, `ProjectileShooter`, `AutoDespawn`, `Pickup`,
   `TriggerZone` (kill pit / goal / score gate / level exit in one), `GameTimer` (scene-owned
   round clock), `HighScoreTracker` (the only score logic — score itself is a Ripple variable).

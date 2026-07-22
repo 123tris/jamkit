@@ -19,6 +19,11 @@ Theme: an object-oriented review pass (*The Object Oriented Way*, Okhravi) — k
 - **One-shot misconfiguration warnings** where `[Required]` can't reach (it guards objects, not strings): `LabelBinding`/`BarBinding` unresolved element name, `SceneServiceSO` load with no runner, `MenuController` dead button.
 - **`Health.SetCurrent(float)` + `Health.MaxValue`** — set current HP directly (clamped to `[0, Max]`, fires `OnDied` at zero) for checkpoints, cheats, and revives; `MaxValue` resolves the `Max` reference for gameplay/HUD code. With the two-way `CurrentVariable`, a `BarBinding`/`LabelBinding` HUD and any gameplay system can now both read *and* edit current HP through one shared asset.
 - Tests: `MotorTests`, `SceneRefTests`, and `SaveServiceSOTests` extended (missing-vs-corrupt, path-traversal rejection).
+- **The FPS pack** (GMTK 2026 — the archetype matrix gained a first-person column):
+  - **`FirstPersonLook`** — body yaw + camera pitch from the Look action; mouse deltas apply per-unit, sticks per-second, so both feel right with one component. Cursor lock follows the input map (Gameplay locks, UI releases — pausing just works). Warns once if a sibling `Mover3D` still has `RotateToFaceMove` on.
+  - **`Dasher`** — 2D+3D burst move on the new **Dash** action (Left Shift / gamepad East in `JamKitInput`; cached on `InputServiceSO` like its siblings). Camera-relative input direction with facing fallback, cooldown, `OnDashed` + `BroadcastDashed`. Runs at execution order 50 so its velocity write wins over `Mover2D/3D` during the dash window.
+  - **`HitscanShooter`** — raycast gun with pooled impact prefabs, `OnFired`/`OnHit(float)` UltEvents and `BroadcastFired`; damages `Health` on self-or-parent like `Damager`. `ProjectileShooter` stays the tool for visible, dodgeable shots.
+  - **`HealthDrain`** — health as a life-timer: drains `Health` through `SetCurrent`, so the per-tick bleed is silent (no `OnDamaged` feedback spam every frame) while death, the two-way `CurrentVariable` HUD mirror, and `Heal`-to-add-seconds all keep working. Scaled time — pause/hit-stop stop the bleeding. Tests: `HealthDrainTests`.
 
 ## [0.9.1] - 2026-07-21
 
