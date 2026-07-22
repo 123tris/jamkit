@@ -21,8 +21,8 @@ namespace Metz.JamKit
         public Ripple.FloatVariableSO HighScoreVariable;
 
         [Header("Behaviour")]
-        public string RetrySceneName = "Game";
-        public string MainMenuSceneName = "Bootstrap";
+        public SceneRef RetryScene = new("Game");
+        public SceneRef MainMenuScene = new("Bootstrap");
         public string TitleText = "Game Over";
 
         UIDocument _doc;
@@ -72,11 +72,11 @@ namespace Metz.JamKit
             column.AddToClassList("jk-button-column");
             panel.Add(column);
 
-            var retry = new Button(() => SceneService?.LoadAsync(RetrySceneName)) { text = "Retry" };
+            var retry = new Button(() => SceneService?.LoadAsync(RetryScene)) { text = "Retry" };
             retry.AddToClassList("jk-button");
             column.Add(retry);
 
-            var menu = new Button(() => SceneService?.LoadAsync(MainMenuSceneName)) { text = "Main Menu" };
+            var menu = new Button(() => SceneService?.LoadAsync(MainMenuScene)) { text = "Main Menu" };
             menu.AddToClassList("jk-button");
             column.Add(menu);
 

@@ -58,10 +58,7 @@ namespace Metz.JamKit
                 Vector3 dir = offset.sqrMagnitude > 0.0001f
                     ? offset.normalized
                     : (Is2D ? (Vector3)Random.insideUnitCircle.normalized : Random.onUnitSphere);
-                var rb2d = go.GetComponent<Rigidbody2D>();
-                if (rb2d != null) { rb2d.linearVelocity = dir * LaunchSpeed; continue; }
-                var rb = go.GetComponent<Rigidbody>();
-                if (rb != null) rb.linearVelocity = dir * LaunchSpeed;
+                Motor.LaunchBody(go, dir * LaunchSpeed);
             }
         }
     }

@@ -459,8 +459,8 @@ namespace Metz.JamKit.Editor
             over.SceneService = scene;
             over.ScoreVariable = scoreVar;
             over.HighScoreVariable = highVar;
-            over.RetrySceneName = "Game";
-            over.MainMenuSceneName = "Bootstrap";
+            over.RetryScene = new SceneRef("Game");
+            over.MainMenuScene = new SceneRef("Bootstrap");
 
             CreateEventSystem();
 

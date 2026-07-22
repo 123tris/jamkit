@@ -19,7 +19,7 @@ namespace Metz.JamKit.Samples
         [Tooltip("OPTIONAL: drag Assets/_Project/Variables/Score here so kills feed the project score and the GameOver screen.")]
         public FloatVariableSO Score;
         [Min(0f)] public float ScorePerKill = 10f;
-        public string GameOverScene = "GameOver";
+        public SceneRef GameOverScene = new("GameOver");
 
         void OnEnable() { if (EnemyDied != null) EnemyDied.AddListener(OnEnemyDied); }
         void OnDisable() { if (EnemyDied != null) EnemyDied.RemoveListener(OnEnemyDied); }

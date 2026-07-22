@@ -1,29 +1,91 @@
+using System;
 using UnityEngine;
 
 namespace Metz.JamKit
 {
     /// <summary>
     /// Constant-speed movement along waypoints defined as offsets from the spawn position —
-    /// frogger cars and logs (<see cref="EndMode.TeleportToStart"/> makes a conveyor), moving
-    /// platforms and elevators (PingPong), patrol loops. Offsets-from-start means one prefab
-    /// works anywhere you drop or spawn it. Uses Rigidbody(2D).MovePosition when present (make
-    /// it kinematic) so platforms and triggers behave; falls back to the transform.
+    /// frogger cars and logs (<see cref="TeleportToStart"/> makes a conveyor), moving platforms
+    /// and elevators (PingPong), patrol loops. Offsets-from-start means one prefab works anywhere
+    /// you drop or spawn it. Uses Rigidbody(2D).MovePosition when present (make it kinematic) so
+    /// platforms and triggers behave; falls back to the transform.
     /// </summary>
     [DisallowMultipleComponent]
     public sealed class PatrolMover : MonoBehaviour, IPoolable
     {
-        public enum EndMode { PingPong, Loop, Stop, TeleportToStart }
+        /// <summary>
+        /// What happens when the path runs out of waypoints. A strategy object, not an enum + switch,
+        /// so a new end behavior is a new class rather than another branch (§11.5, replace conditional
+        /// with polymorphism). Pick one from the inspector — <c>[SerializeReference]</c> gives a type
+        /// dropdown.
+        /// </summary>
+        [Serializable]
+        public abstract class PathEndBehavior
+        {
+            /// <summary>
+            /// The next candidate index has run off the end of the path. Return the index to head to
+            /// next; set <paramref name="stop"/> true to halt. Use <paramref name="mover"/> for the
+            /// moves a behavior needs (flip direction, teleport to start).
+            /// </summary>
+            public abstract int OnPathEnd(PatrolMover mover, int index, int last, out bool stop);
+        }
+
+        /// <summary>Reverse at each end — moving platforms, elevators, back-and-forth patrols.</summary>
+        [Serializable]
+        public sealed class PingPong : PathEndBehavior
+        {
+            public override int OnPathEnd(PatrolMover mover, int index, int last, out bool stop)
+            {
+                stop = false;
+                mover._direction = -mover._direction;
+                return index + mover._direction;
+            }
+        }
+
+        /// <summary>Snap back to waypoint 0 and run the path again.</summary>
+        [Serializable]
+        public sealed class Loop : PathEndBehavior
+        {
+            public override int OnPathEnd(PatrolMover mover, int index, int last, out bool stop)
+            {
+                stop = false;
+                return 0;
+            }
+        }
+
+        /// <summary>Halt at the far end and stay there.</summary>
+        [Serializable]
+        public sealed class Stop : PathEndBehavior
+        {
+            public override int OnPathEnd(PatrolMover mover, int index, int last, out bool stop)
+            {
+                stop = true;
+                return index;
+            }
+        }
+
+        /// <summary>Teleport back to the start and continue — a conveyor (frogger logs, scrolling hazards).</summary>
+        [Serializable]
+        public sealed class TeleportToStart : PathEndBehavior
+        {
+            public override int OnPathEnd(PatrolMover mover, int index, int last, out bool stop)
+            {
+                stop = false;
+                mover.Teleport(mover._start);
+                return last >= 1 ? 1 : 0;
+            }
+        }
 
         [Header("Path")]
         [Tooltip("Waypoints as offsets from the position at enable/spawn. The start itself is waypoint 0.")]
         public Vector3[] PathOffsets = { new(4f, 0f, 0f) };
         [Min(0f)] public float Speed = 2f;
-        public EndMode Mode = EndMode.PingPong;
+        [SerializeReference, Tooltip("What happens at the end of the path.")]
+        public PathEndBehavior Mode = new PingPong();
         [Tooltip("Seconds to wait at each waypoint.")]
         [Min(0f)] public float WaitAtPoints = 0f;
 
-        Rigidbody2D _rb2d;
-        Rigidbody _rb;
+        IMotor _motor;
         Vector3 _start;
         int _index;      // waypoint we are heading to (0 = start)
         int _direction = 1;
@@ -32,8 +94,8 @@ namespace Metz.JamKit
 
         void Awake()
         {
-            _rb2d = GetComponent<Rigidbody2D>();
-            _rb = GetComponent<Rigidbody>();
+            _motor = Motor.Resolve(gameObject);
+            Mode ??= new PingPong();   // legacy enum data / empty reference → the old default
         }
 
         // Capture the start at every enable, not just Awake — spawned/pooled copies begin
@@ -66,46 +128,21 @@ namespace Metz.JamKit
 
             if ((next - target).sqrMagnitude > 0.0001f) return;
 
-            // Arrived — pick the next waypoint per mode.
+            // Arrived — the strategy decides what happens at a path end.
             if (WaitAtPoints > 0f) _waitUntil = Time.time + WaitAtPoints;
             int last = LastIndex;
             int candidate = _index + _direction;
             if (candidate > last || candidate < 0)
             {
-                switch (Mode)
-                {
-                    case EndMode.PingPong:
-                        _direction = -_direction;
-                        candidate = _index + _direction;
-                        break;
-                    case EndMode.Loop:
-                        candidate = 0;
-                        break;
-                    case EndMode.Stop:
-                        _stopped = true;
-                        return;
-                    case EndMode.TeleportToStart:
-                        Teleport(_start);
-                        candidate = last >= 1 ? 1 : 0;
-                        break;
-                }
+                candidate = Mode.OnPathEnd(this, _index, last, out bool stop);
+                if (stop) { _stopped = true; return; }
             }
             _index = candidate;
         }
 
-        void Move(Vector3 p)
-        {
-            if (_rb2d != null) _rb2d.MovePosition(p);
-            else if (_rb != null) _rb.MovePosition(p);
-            else transform.position = p;
-        }
+        void Move(Vector3 p) => _motor.MoveTo(p);
 
-        void Teleport(Vector3 p)
-        {
-            if (_rb2d != null) _rb2d.position = p;
-            else if (_rb != null) _rb.position = p;
-            transform.position = p;
-        }
+        void Teleport(Vector3 p) => _motor.Teleport(p);
 
         void OnDrawGizmosSelected()
         {

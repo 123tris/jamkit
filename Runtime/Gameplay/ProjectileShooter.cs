@@ -53,19 +53,10 @@ namespace Metz.JamKit
                 ? PoolService.Spawn(ProjectilePrefab, muzzle.position, muzzle.rotation)
                 : Instantiate(ProjectilePrefab, muzzle.position, muzzle.rotation);
 
+            // Is2D picks the facing axis (muzzle.right vs muzzle.forward); the motor applies it to
+            // whichever body the projectile has.
             if (go != null)
-            {
-                if (Is2D)
-                {
-                    var rb = go.GetComponent<Rigidbody2D>();
-                    if (rb != null) rb.linearVelocity = (Vector2)muzzle.right * Speed;
-                }
-                else
-                {
-                    var rb = go.GetComponent<Rigidbody>();
-                    if (rb != null) rb.linearVelocity = muzzle.forward * Speed;
-                }
-            }
+                Motor.LaunchBody(go, (Is2D ? muzzle.right : muzzle.forward) * Speed);
 
             if (BroadcastFired != null) BroadcastFired.Invoke();
             return go;

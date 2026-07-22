@@ -81,6 +81,43 @@ namespace Metz.JamKit.Tests.Editor
         }
 
         [Test]
+        public void TryReadReturnsTrueWithValueOnSuccess()
+        {
+            _save.Write("slot", new SaveBlob { Level = 3, Name = "x" });
+            Assert.IsTrue(_save.TryRead<SaveBlob>("slot", out var blob));
+            Assert.AreEqual(3, blob.Level);
+            Assert.AreEqual("x", blob.Name);
+        }
+
+        [Test]
+        public void TryReadReturnsFalseForMissingKeyWithoutLogging()
+        {
+            // No log expected — a missing save is not an error. (An unexpected LogError would fail the test.)
+            Assert.IsFalse(_save.TryRead<SaveBlob>("nope", out var blob));
+            Assert.IsNull(blob);
+        }
+
+        [Test]
+        public void TryReadReturnsFalseAndLogsForCorruptFile()
+        {
+            Directory.CreateDirectory(_root);
+            File.WriteAllText(Path.Combine(_root, "bad.json"), "{ this is not json");
+
+            LogAssert.Expect(LogType.Error, new Regex(@"\[JamKit\] Save\.Read 'bad' failed — the file is corrupt"));
+            Assert.IsFalse(_save.TryRead<SaveBlob>("bad", out var blob));
+            Assert.IsNull(blob);
+        }
+
+        [Test]
+        public void WriteRejectsPathTraversalKey()
+        {
+            LogAssert.Expect(LogType.Error, new Regex(@"\[JamKit\] Save\.Write '\.\./evil' failed — invalid key"));
+            _save.Write("../evil", 1);
+            // Refused before touching the filesystem — nothing escaped the save folder.
+            Assert.IsFalse(_save.Has("../evil"));
+        }
+
+        [Test]
         public void HasDeleteAndDeleteAllManageFiles()
         {
             _save.Write("a", 1);

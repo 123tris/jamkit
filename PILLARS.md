@@ -36,6 +36,14 @@ strengthens one pillar without wounding another, do it. If it serves none, it do
 - **Options over assumptions.** Prefer a serialized field with a good default over a
   constant, and a `FloatReference` (constant-or-variable) over a bare float where sharing
   is plausible.
+- **Behavior a designer picks is a strategy object, not a switch.** When a component's
+  variation is *behavioral* (a different algorithm at run time — how a patrol ends, how a
+  spawn scatters), model it as a `[SerializeReference]` field of an abstract base with one
+  concrete class per behavior; Odin renders the type picker, so it stays a dropdown in the
+  inspector. This is the "replace conditional with polymorphism" refactor — a new behavior is
+  a new class, not another `case`. But only for behavior: variation that is *data* (a speed, a
+  colour, a name) stays a serialized field or a ScriptableObject, never a subclass. See
+  `Documentation~/object-oriented-review.md`.
 
 ## 3. DEBUGGABLE — a feature isn't done until you can watch it work
 
@@ -46,6 +54,12 @@ strengthens one pillar without wounding another, do it. If it serves none, it do
   Clicking the button must exercise the *real* wiring, not a shortcut.
 - **Builds are debuggable too.** The DebugPanel ships in every scaffolded scene (Backquote)
   because WebGL jam builds have no inspector.
+- **A silent no-op is a bug.** `[Required]` guards object references, but it can't guard a
+  *string* — a mistyped UI element name or scene name resolves to nothing and the feature just
+  fails quietly. Where a component looks something up by an inspector-authored string, a miss
+  must warn once (guarded `bool`/`HashSet`, `[JamKit] <what> — <consequence>. <fix>.`), never
+  return in silence. Loud at edit time stays the goal; this is the runtime backstop for the
+  cases the editor can't catch.
 - **The feature-done checklist:** live state visible · trigger pressable from the
   inspector · misconfiguration caught by `[Required]`/Doctor · one sentence in the README.
 

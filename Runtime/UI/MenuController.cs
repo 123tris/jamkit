@@ -46,8 +46,8 @@ namespace Metz.JamKit
         public FloatVariableSO SfxVolumeOverride;
 
         [Header("Behaviour")]
-        public string GameSceneName = "Game";
-        public string MainMenuSceneName = "Bootstrap";
+        public SceneRef GameScene = new("Game");
+        public SceneRef MainMenuScene = new("Bootstrap");
         [Tooltip("Which view is shown on Enable. None hides the canvas until you call ShowStart().")]
         public View InitialView = View.Start;
 
@@ -228,7 +228,7 @@ namespace Metz.JamKit
 
         void WireButtons()
         {
-            Bind(N.StartPlay,     () => SceneService?.LoadAsync(GameSceneName));
+            Bind(N.StartPlay,     () => SceneService?.LoadAsync(GameScene));
             Bind(N.StartSettings, ShowSettings);
             Bind(N.StartQuit,     QuitGame);
 
@@ -237,7 +237,7 @@ namespace Metz.JamKit
             Bind(N.PauseResume,   TogglePause);
             Bind(N.PauseSettings, ShowSettings);
             Bind(N.PauseRestart,  () => { ResumeIfPaused(); SceneService?.ReloadCurrent(); });
-            Bind(N.PauseMainMenu, () => { ResumeIfPaused(); SceneService?.LoadAsync(MainMenuSceneName); });
+            Bind(N.PauseMainMenu, () => { ResumeIfPaused(); SceneService?.LoadAsync(MainMenuScene); });
 
             // Quit is meaningless in a browser; hide it so WebGL jam builds don't ship a dead button.
             if (Application.platform == RuntimePlatform.WebGLPlayer)
@@ -247,10 +247,20 @@ namespace Metz.JamKit
             }
         }
 
+        readonly HashSet<string> _warnedButtons = new();
+
         void Bind(string elementName, System.Action action)
         {
             var btn = _root.Q<Button>(elementName);
-            if (btn == null) return;
+            if (btn == null)
+            {
+                // A name that doesn't match the UXML binds nothing — a dead control, silently. Warn
+                // once per name (survives re-enable) so UXML/const drift is visible.
+                if (_warnedButtons.Add(elementName))
+                    Debug.LogWarning($"[JamKit] MenuController: no button '{elementName}' in the menu UXML — that control does nothing. " +
+                                     "Check JamKitMenu.uxml has an element with this name, or that MenuUxml points at the right asset.", this);
+                return;
+            }
             btn.clicked += action;
         }
 

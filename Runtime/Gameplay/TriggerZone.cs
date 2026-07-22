@@ -39,9 +39,9 @@ namespace Metz.JamKit
         public PoolServiceSO PoolService;
 
         [Header("Scene (optional)")]
-        [Tooltip("Loaded after everything else. Empty = stay.")]
+        [Tooltip("Loaded after everything else. Leave unset = stay.")]
         public SceneServiceSO SceneService;
-        public string LoadScene = "";
+        public SceneRef LoadScene;
 
         [FoldoutGroup("Events (this instance)")]
         [Tooltip("This exact zone was entered, with the enterer — wire respawns, gates, feedbacks here.")]
@@ -86,7 +86,7 @@ namespace Metz.JamKit
                 else Destroy(other);
             }
 
-            if (SceneService != null && !string.IsNullOrEmpty(LoadScene))
+            if (SceneService != null && LoadScene.HasValue)
                 SceneService.LoadAsync(LoadScene);
         }
     }

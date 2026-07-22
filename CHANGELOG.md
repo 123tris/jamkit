@@ -2,6 +2,21 @@
 
 All notable changes to JamKit are documented here. Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the package uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+Theme: an object-oriented review pass (*The Object Oriented Way*, Okhravi) — kill conditionals re-run in the core, move string failures from run-time to edit-time. Rationale and the full validated/rejected map live in [Documentation~/object-oriented-review.md](Documentation~/object-oriented-review.md); PILLARS.md gained a strategy-object rule (2) and a silent-no-op rule (3).
+
+### Breaking — serialized fields changed shape
+- **Scene names are now `SceneRef`, not `string`.** `MenuController.GameSceneName`/`MainMenuSceneName` → `GameScene`/`MainMenuScene`; `GameOverController.RetrySceneName`/`MainMenuSceneName` → `RetryScene`/`MainMenuScene`; `TriggerZone.LoadScene` and the sample `SurvivorLoop.GameOverScene` keep their names but change type. `SceneRef` is picked from a Build Settings dropdown, so a misspelled scene is caught at edit time instead of returning null at run time. **Migration:** the shipped samples are migrated; in your own scenes/prefabs, defaults (`"Game"`/`"Bootstrap"`) reapply and any *customized* scene name must be re-picked from the dropdown. `SceneServiceSO.LoadAsync(string)` is unchanged (`SceneRef` converts implicitly), so game code passing raw strings still compiles.
+- **`PatrolMover.Mode` is a `[SerializeReference]` strategy, not an enum.** The `EndMode` enum + `switch` became `PathEndBehavior` with `PingPong`/`Loop`/`Stop`/`TeleportToStart` classes, picked from the inspector's type dropdown. **Migration:** legacy `Mode` values reset to `PingPong` (the old default); re-pick if a mover used Loop/Stop/TeleportToStart.
+
+### Added
+- **`SceneRef`** (`Runtime/Scenes/`) + Build Settings dropdown drawer (`Editor/Drawers/`).
+- **`IMotor` + `Motor`** (`Runtime/Gameplay/Motor.cs`) — the single home of the `Rigidbody2D`/`Rigidbody`/`Transform` branch, resolved once at `Awake` (or one-shot via `Motor.LaunchBody`). Collapses that branch out of `PatrolMover`, `Respawner`, `SpawnBurst`, `ProjectileShooter` — the per-frame conditional is gone. (`ChaseMover` keeps its branch: its 2D/3D paths differ in behavior, not just body type.)
+- **`SaveServiceSO.TryRead<T>(key, out value)`** — distinguishes "no save" (false, no log) from "unreadable/corrupt" (false, logs the cause); `Read` delegates to it. Save keys are now validated against path traversal (`..`, separators) and refused loudly.
+- **One-shot misconfiguration warnings** where `[Required]` can't reach (it guards objects, not strings): `LabelBinding`/`BarBinding` unresolved element name, `SceneServiceSO` load with no runner, `MenuController` dead button.
+- Tests: `MotorTests`, `SceneRefTests`, and `SaveServiceSOTests` extended (missing-vs-corrupt, path-traversal rejection).
+
 ## [0.9.1] - 2026-07-21
 
 ### Changed

@@ -18,6 +18,22 @@ namespace Metz.JamKit
         string Root => Path.Combine(Application.persistentDataPath, Folder);
         string PathFor(string key) => Path.Combine(Root, key + ".json");
 
+        // A key becomes a file name under Root, so a key with a separator or ".." would write
+        // outside the save folder. Reject it up front (§10.5 fail fast) — a silent escape is worse
+        // than a refused save.
+        static bool IsValidKey(string key)
+            => !string.IsNullOrEmpty(key)
+               && key.IndexOf('/') < 0 && key.IndexOf('\\') < 0
+               && !key.Contains("..")
+               && key.IndexOfAny(Path.GetInvalidFileNameChars()) < 0;
+
+        bool ValidKeyOrWarn(string key, string op)
+        {
+            if (IsValidKey(key)) return true;
+            Debug.LogError($"[JamKit] Save.{op} '{key}' failed — invalid key. A save key becomes a file name, so it can't be empty or contain '/', '\\', or '..'.");
+            return false;
+        }
+
 #if UNITY_WEBGL && !UNITY_EDITOR
         [System.Runtime.InteropServices.DllImport("__Internal")]
         static extern void JamKitSyncFiles();
@@ -33,6 +49,7 @@ namespace Metz.JamKit
 
         public void Write<T>(string key, T data)
         {
+            if (!ValidKeyOrWarn(key, "Write")) return;
             try
             {
                 Directory.CreateDirectory(Root);
@@ -46,26 +63,56 @@ namespace Metz.JamKit
             }
         }
 
-        public T Read<T>(string key, T fallback = default)
+        /// <summary>
+        /// Read a saved value, distinguishing "no save exists" (returns false, no log) from "the save
+        /// is unreadable or corrupt" (returns false, logs the cause). The old <see cref="Read{T}"/>
+        /// collapsed both into the fallback, so a corrupt save looked identical to a fresh start.
+        /// </summary>
+        public bool TryRead<T>(string key, out T value)
         {
+            value = default;
+            if (!ValidKeyOrWarn(key, "Read")) return false;
+
+            var path = PathFor(key);
+            if (!File.Exists(path)) return false;   // no save yet — not an error
+
+            string json;
             try
             {
-                var path = PathFor(key);
-                if (!File.Exists(path)) return fallback;
-                var wrap = JsonUtility.FromJson<Wrapper<T>>(File.ReadAllText(path));
-                return wrap == null ? fallback : wrap.Value;
+                json = File.ReadAllText(path);
             }
             catch (Exception e)
             {
-                Debug.LogError($"[JamKit] Save.Read '{key}' failed: {e.Message}");
-                return fallback;
+                Debug.LogError($"[JamKit] Save.Read '{key}' failed — could not read the file: {e.Message}");
+                return false;
+            }
+
+            try
+            {
+                var wrap = JsonUtility.FromJson<Wrapper<T>>(json);
+                if (wrap == null)
+                {
+                    Debug.LogError($"[JamKit] Save.Read '{key}' failed — the file is corrupt (empty or invalid JSON).");
+                    return false;
+                }
+                value = wrap.Value;
+                return true;
+            }
+            catch (Exception e)   // JsonUtility.FromJson throws on malformed JSON
+            {
+                Debug.LogError($"[JamKit] Save.Read '{key}' failed — the file is corrupt: {e.Message}");
+                return false;
             }
         }
 
-        public bool Has(string key) => File.Exists(PathFor(key));
+        public T Read<T>(string key, T fallback = default)
+            => TryRead<T>(key, out var value) ? value : fallback;
+
+        public bool Has(string key) => IsValidKey(key) && File.Exists(PathFor(key));
 
         public void Delete(string key)
         {
+            if (!ValidKeyOrWarn(key, "Delete")) return;
             var path = PathFor(key);
             if (File.Exists(path)) { File.Delete(path); FlushToDisk(); }
         }

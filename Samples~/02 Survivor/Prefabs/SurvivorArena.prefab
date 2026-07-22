@@ -141,7 +141,9 @@ MonoBehaviour:
   EnemyDied: {fileID: 11400000, guid: 31f382b10947de64daa4d82b9b2960be, type: 2}
   Score: {fileID: 0}
   ScorePerKill: 10
-  GameOverScene: GameOver
+  GameOverScene:
+    _name: GameOver
+    _guid:
 --- !u!1 &7597994978173495524
 GameObject:
   m_ObjectHideFlags: 0

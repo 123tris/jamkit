@@ -149,7 +149,9 @@ MonoBehaviour:
   RemoveEnterer: 0
   PoolService: {fileID: 0}
   SceneService: {fileID: 0}
-  LoadScene: 
+  LoadScene:
+    _name:
+    _guid:
   OnEntered:
     _PersistentCalls: []
   BroadcastEntered: {fileID: 11400000, guid: 108d89539af3c9140ba8fd6f68aaa4a8, type: 2}

@@ -43,7 +43,9 @@ namespace Metz.JamKit
 
         protected override void Resolve()
         {
-            if (Root != null && !string.IsNullOrEmpty(FillElementName)) _fill = Root.Q<VisualElement>(FillElementName);
+            if (Root == null || string.IsNullOrEmpty(FillElementName)) return;
+            _fill = Root.Q<VisualElement>(FillElementName);
+            if (_fill == null) WarnUnresolved(FillElementName);
         }
 
         protected override void Apply()

@@ -22,17 +22,39 @@ namespace Metz.JamKit
         [Tooltip("Optional VoidEventSO raised when a scene load finishes.")]
         public VoidEventSO OnSceneLoadCompleted;
 
+        bool _warnedNoRunner;
+
+        // Reset the once-only warning each play session so a missing runner is flagged every run,
+        // not just the first after a domain reload.
+        public override void ResetState() => _warnedNoRunner = false;
+
+        // Takes a scene-name string; a SceneRef converts implicitly, so both call sites work.
         public Coroutine LoadAsync(string sceneName)
-            => Runner?.Load(sceneName, DefaultFadeSeconds, DefaultFadeColor);
+            => Runner != null ? Runner.Load(sceneName, DefaultFadeSeconds, DefaultFadeColor) : WarnNoRunner();
 
         public Coroutine LoadAsync(string sceneName, float fadeSeconds, Color fadeColor)
-            => Runner?.Load(sceneName, fadeSeconds, fadeColor);
+            => Runner != null ? Runner.Load(sceneName, fadeSeconds, fadeColor) : WarnNoRunner();
 
         [Button, DisableInEditorMode, FoldoutGroup("Debug")]
         public void ReloadCurrentScene() => ReloadCurrent();
 
-        public Coroutine ReloadCurrent() => Runner?.ReloadCurrent(DefaultFadeSeconds, DefaultFadeColor);
-        public Coroutine ReloadCurrent(float fadeSeconds, Color fadeColor) => Runner?.ReloadCurrent(fadeSeconds, fadeColor);
+        public Coroutine ReloadCurrent()
+            => Runner != null ? Runner.ReloadCurrent(DefaultFadeSeconds, DefaultFadeColor) : WarnNoRunner();
+        public Coroutine ReloadCurrent(float fadeSeconds, Color fadeColor)
+            => Runner != null ? Runner.ReloadCurrent(fadeSeconds, fadeColor) : WarnNoRunner();
+
+        // A load with no runner registered is a silent no-op otherwise — the button appears to do
+        // nothing. Warn once, naming the fix.
+        Coroutine WarnNoRunner()
+        {
+            if (!_warnedNoRunner)
+            {
+                _warnedNoRunner = true;
+                Debug.LogWarning("[JamKit] SceneService has no runner — scene loads do nothing. " +
+                                 "Add JamKitCore (or a SceneServiceRunner) to the scene.", this);
+            }
+            return null;
+        }
 
         internal void RaiseStarted() => OnSceneLoadStarted?.Invoke();
         internal void RaiseCompleted() => OnSceneLoadCompleted?.Invoke();

@@ -32,16 +32,14 @@ namespace Metz.JamKit
         [Tooltip("Optional — any respawn sharing this event (global cues, analytics).")]
         public VoidEventSO BroadcastRespawned;
 
-        Rigidbody2D _rb2d;
-        Rigidbody _rb;
+        IMotor _motor;
         Vector3 _startPos;
         Quaternion _startRot;
         float _due = -1f;
 
         void Awake()
         {
-            _rb2d = GetComponent<Rigidbody2D>();
-            _rb = GetComponent<Rigidbody>();
+            _motor = Motor.Resolve(gameObject);
             _startPos = transform.position;
             _startRot = transform.rotation;
         }
@@ -68,19 +66,9 @@ namespace Metz.JamKit
             Vector3 pos = Checkpoint != null ? Checkpoint.position : _startPos;
             Quaternion rot = Checkpoint != null ? Checkpoint.rotation : _startRot;
 
-            if (_rb2d != null)
-            {
-                _rb2d.linearVelocity = Vector2.zero;
-                _rb2d.angularVelocity = 0f;
-                _rb2d.position = pos;
-            }
-            else if (_rb != null)
-            {
-                _rb.linearVelocity = Vector3.zero;
-                _rb.angularVelocity = Vector3.zero;
-                _rb.position = pos;
-            }
-            transform.SetPositionAndRotation(pos, rot);
+            _motor.Halt();
+            _motor.Teleport(pos);
+            transform.rotation = rot;
 
             OnRespawned?.Invoke();
             if (BroadcastRespawned != null) BroadcastRespawned.Invoke();

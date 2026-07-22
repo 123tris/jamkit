@@ -179,8 +179,14 @@ MonoBehaviour:
   PathOffsets:
   - {x: 4, y: 0, z: 0}
   Speed: 3
-  Mode: 0
+  Mode:
+    rid: 4800000000000000000
   WaitAtPoints: 0
+  references:
+    version: 2
+    RefIds:
+    - rid: 4800000000000000000
+      type: {class: PatrolMover/PingPong, ns: Metz.JamKit, asm: Metz.JamKit.Runtime}
 --- !u!114 &2441648068289761244
 MonoBehaviour:
   m_ObjectHideFlags: 0
