@@ -107,7 +107,7 @@ namespace Metz.JamKit.Editor
                 col.isTrigger = true;
                 var pickup = go.AddComponent<Pickup>();
                 pickup.ScoreVariable = ctx.Score;
-                pickup.ScoreValue = 1f;
+                pickup.ScoreValue = new FloatReference(1f);
                 pickup.PoolService = ctx.Pool;
                 return go;
             }},
@@ -200,7 +200,8 @@ namespace Metz.JamKit.Editor
         static void AddEnemyHealthAndBurst(GameObject go, Context ctx, bool is2D)
         {
             var health = go.AddComponent<Health>();
-            health.Max = health.Current = 3f;
+            health.Max = new FloatReference(3f);
+            health.Current = 3f;
             health.DestroyOnDeath = true;
             var burst = go.AddComponent<SpawnBurst>();
             burst.Is2D = is2D;

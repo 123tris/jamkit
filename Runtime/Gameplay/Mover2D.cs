@@ -1,3 +1,4 @@
+using Ripple;
 using Sirenix.OdinInspector;
 using UnityEngine;
 
@@ -14,8 +15,10 @@ namespace Metz.JamKit
         [Required] public InputServiceSO InputService;
 
         [Header("Tuning")]
-        public float MoveSpeed = 6f;
-        public float JumpSpeed = 12f;
+        [Tooltip("Constant or a shared Ripple variable (speed buffs, difficulty).")]
+        public FloatReference MoveSpeed = new(6f);
+        [Tooltip("Constant or a shared Ripple variable.")]
+        public FloatReference JumpSpeed = new(12f);
         public bool TopDown = false;
         [Tooltip("Per-axis input multiplier in TopDown mode. (1,0) = horizontal-only paddle, (0,1) = vertical-only paddle.")]
         public Vector2 AxisScale = Vector2.one;
@@ -46,13 +49,13 @@ namespace Metz.JamKit
             Vector2 input = (InputService == null || InputService.Move == null) ? Vector2.zero : InputService.Move.ReadValue<Vector2>();
             if (TopDown)
             {
-                _rb.linearVelocity = Vector2.Scale(input, AxisScale) * MoveSpeed;
+                _rb.linearVelocity = Vector2.Scale(input, AxisScale) * MoveSpeed.Value;
             }
             else
             {
                 var v = _rb.linearVelocity;
-                v.x = input.x * MoveSpeed;
-                if (_wantsJump) { v.y = JumpSpeed; _wantsJump = false; }
+                v.x = input.x * MoveSpeed.Value;
+                if (_wantsJump) { v.y = JumpSpeed.Value; _wantsJump = false; }
                 _rb.linearVelocity = v;
             }
         }

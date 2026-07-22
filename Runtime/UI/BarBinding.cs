@@ -9,7 +9,7 @@ namespace Metz.JamKit
     /// HP/stamina/charge bar with no code. Point at a HUD UIDocument and name the <b>fill</b> element
     /// (a child whose width/height should track the value); this sets that element's size in percent.
     /// Normalizes against <see cref="MaxValue"/>, or <see cref="MaxVariable"/> if assigned
-    /// (e.g. mirror Health.Max so the bar scales when max HP changes).
+    /// (point it at the same shared variable a <c>Health.Max</c> references, so the bar scales when max HP changes).
     /// </summary>
     public sealed class BarBinding : UIBindingBase
     {

@@ -24,9 +24,10 @@ namespace Metz.JamKit
         [Min(0.05f)] public float RetargetInterval = 0.5f;
 
         [Header("Move")]
-        [Min(0f)] public float Speed = 3f;
-        [Tooltip("Stop when closer than this (keeps melee enemies from vibrating inside the player).")]
-        [Min(0f)] public float StopDistance = 0.6f;
+        [Tooltip("Chase speed. Constant or a shared Ripple variable (difficulty ramp).")]
+        public FloatReference Speed = new(3f);
+        [Tooltip("Stop when closer than this (keeps melee enemies from vibrating inside the player). Constant or a shared Ripple variable.")]
+        public FloatReference StopDistance = new(0.6f);
         [Tooltip("Rotate to face the move direction (3D: LookRotation, 2D: right axis toward target).")]
         public bool FaceTarget = true;
         [Tooltip("3D only: chase on the ground plane and let gravity own the Y axis.")]
@@ -59,18 +60,18 @@ namespace Metz.JamKit
             Vector3 to = Target.position - transform.position;
             if (LockY && _rb != null) to.y = 0f;
             float dist = to.magnitude;
-            if (dist <= StopDistance) { Halt(); return; }
+            if (dist <= StopDistance.Value) { Halt(); return; }
             Vector3 dir = to / dist;
 
             if (_rb2d != null)
             {
-                _rb2d.linearVelocity = (Vector2)dir * Speed;
+                _rb2d.linearVelocity = (Vector2)dir * Speed.Value;
                 if (FaceTarget)
                     _rb2d.MoveRotation(Mathf.Atan2(dir.y, dir.x) * Mathf.Rad2Deg);
             }
             else if (_rb != null)
             {
-                var v = dir * Speed;
+                var v = dir * Speed.Value;
                 if (LockY) v.y = _rb.linearVelocity.y;
                 _rb.linearVelocity = v;
                 if (FaceTarget && dir.sqrMagnitude > 0.001f)
@@ -82,7 +83,7 @@ namespace Metz.JamKit
             }
             else
             {
-                transform.position += dir * (Speed * Time.fixedDeltaTime);
+                transform.position += dir * (Speed.Value * Time.fixedDeltaTime);
                 if (FaceTarget) transform.right = dir;
             }
         }

@@ -21,8 +21,8 @@ namespace Metz.JamKit
         public Transform Checkpoint;
 
         [Header("When")]
-        [Tooltip("Seconds between RespawnAfterDelay() and the teleport.")]
-        [Min(0f)] public float Delay = 0.6f;
+        [Tooltip("Seconds between RespawnAfterDelay() and the teleport. Constant or a shared Ripple variable.")]
+        public FloatReference Delay = new(0.6f);
 
         [FoldoutGroup("Events (this instance)")]
         [Tooltip("After the teleport — wire Health.ResetFull() here, plus invulnerability windows, camera snaps, serve SFX.")]
@@ -49,7 +49,7 @@ namespace Metz.JamKit
         /// <summary>Respawn after <see cref="Delay"/> — wire Health.OnDied here.</summary>
         public void RespawnAfterDelay()
         {
-            if (_due < 0f) _due = Time.unscaledTime + Delay;
+            if (_due < 0f) _due = Time.unscaledTime + Delay.Value;
         }
 
         void Update()

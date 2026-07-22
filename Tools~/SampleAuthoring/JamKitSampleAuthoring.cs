@@ -59,7 +59,7 @@ namespace Metz.JamKitDev
             crate.name = "Crate";
             crate.transform.localScale = Vector3.one * 0.6f;
             crate.AddComponent<Rigidbody>();
-            crate.AddComponent<AutoDespawn>().Seconds = 6f;
+            crate.AddComponent<AutoDespawn>().Seconds = new FloatReference(6f);
             var cratePrefab = SavePrefab(crate, dir, "Crate");
 
             // CrateSpawner: rains crates from above (PoolService wired at sample setup).
@@ -67,7 +67,7 @@ namespace Metz.JamKitDev
             spawner.transform.position = new Vector3(0f, 6f, 0f);
             var sp = spawner.AddComponent<Spawner>();
             sp.Prefab = cratePrefab;
-            sp.Interval = 0.8f;
+            sp.Interval = new FloatReference(0.8f);
             sp.Jitter = new Vector2(2.5f, 2.5f);
             SaveInScene(spawner, dir, "CrateSpawner");
 
@@ -81,7 +81,7 @@ namespace Metz.JamKitDev
             var tz = zone.AddComponent<TriggerZone>();
             tz.RemoveEnterer = true;
             tz.ScoreVariable = score;
-            tz.ScoreValue = 1f;
+            tz.ScoreValue = new FloatReference(1f);
             tz.BroadcastEntered = caught;
             SaveInScene(zone, dir, "CatchZone");
 
@@ -115,7 +115,8 @@ namespace Metz.JamKitDev
             player.AddComponent<CapsuleCollider2D>();
             player.AddComponent<Mover2D>();
             var health = player.AddComponent<Health>();
-            health.Max = health.Current = 3f;
+            health.Max = new FloatReference(3f);
+            health.Current = 3f;
             var hitStop = player.AddComponent<HitStop>();
             var respawner = player.AddComponent<Respawner>();
             Call(ref health.OnDamaged, (Action<float>)hitStop.Play);
@@ -141,7 +142,7 @@ namespace Metz.JamKitDev
             hcol.isTrigger = true;
             var patrol = hazard.AddComponent<PatrolMover>();
             patrol.PathOffsets = new[] { new Vector3(4f, 0f, 0f) };
-            patrol.Speed = 3f;
+            patrol.Speed = new FloatReference(3f);
             var dmg = hazard.AddComponent<Damager>();
             dmg.OncePerTarget = true;
             var hazardPrefab = SavePrefab(hazard, dir, "PatrolHazard");
@@ -199,7 +200,7 @@ namespace Metz.JamKitDev
             shard.name = "Shard";
             shard.transform.localScale = Vector3.one * 0.25f;
             shard.AddComponent<Rigidbody>();
-            shard.AddComponent<AutoDespawn>().Seconds = 2f;
+            shard.AddComponent<AutoDespawn>().Seconds = new FloatReference(2f);
             var shardPrefab = SavePrefab(shard, dir, "Shard");
 
             // Enemy: chases, hurts on contact, bursts + broadcasts on death.
@@ -210,13 +211,14 @@ namespace Metz.JamKitDev
             enemy.AddComponent<ChaseMover>();
             enemy.AddComponent<Damager>();
             var eh = enemy.AddComponent<Health>();
-            eh.Max = eh.Current = 3f;
+            eh.Max = new FloatReference(3f);
+            eh.Current = 3f;
             eh.DestroyOnDeath = true;
             eh.BroadcastDied = enemyDied;
             var burst = enemy.AddComponent<SpawnBurst>();
             burst.Prefab = shardPrefab;
-            burst.Count = 4;
-            burst.LaunchSpeed = 4f;
+            burst.Count = new IntReference(4);
+            burst.LaunchSpeed = new FloatReference(4f);
             Call(ref eh.OnDied, burst.Burst);
             var enemyPrefab = SavePrefab(enemy, dir, "Enemy");
 
@@ -228,7 +230,7 @@ namespace Metz.JamKitDev
             prb.useGravity = false;
             var pdmg = projectile.AddComponent<Damager>();
             pdmg.DestroyOnHit = true;
-            projectile.AddComponent<AutoDespawn>().Seconds = 3f;
+            projectile.AddComponent<AutoDespawn>().Seconds = new FloatReference(3f);
             var projectilePrefab = SavePrefab(projectile, dir, "Projectile");
 
             // Player: mover + aimer + shooter; death ends the run (wired below on the arena).
@@ -239,7 +241,8 @@ namespace Metz.JamKitDev
             player.AddComponent<Rigidbody>();
             player.AddComponent<Mover3D>();
             var ph = player.AddComponent<Health>();
-            ph.Max = ph.Current = 5f;
+            ph.Max = new FloatReference(5f);
+            ph.Current = 5f;
             var phs = player.AddComponent<HitStop>();
             Call(ref ph.OnDamaged, (Action<float>)phs.Play);
             var pivot = new GameObject("AimPivot").transform;
@@ -297,7 +300,8 @@ namespace Metz.JamKitDev
             var target = GameObject.CreatePrimitive(PrimitiveType.Cube);
             target.name = "FeelTarget";
             var health = target.AddComponent<Health>();
-            health.Max = health.Current = 5f;
+            health.Max = new FloatReference(5f);
+            health.Current = 5f;
             var hitStop = target.AddComponent<HitStop>();
 
             var mmf = target.AddComponent<MMF_Player>();
@@ -353,7 +357,7 @@ namespace Metz.JamKitDev
             var pm = paddle.AddComponent<Mover2D>();
             pm.TopDown = true;
             pm.AxisScale = new Vector2(0f, 1f);
-            pm.MoveSpeed = 9f;
+            pm.MoveSpeed = new FloatReference(9f);
             var paddlePrefab = SavePrefab(paddle, dir, "Paddle");
             Place(paddlePrefab, new Vector3(-8f, 0f, 0f));
 
@@ -362,20 +366,21 @@ namespace Metz.JamKitDev
             shard.transform.localScale = new Vector3(0.3f, 0.15f, 1f);
             var srb = shard.AddComponent<Rigidbody2D>();
             srb.gravityScale = 1f;
-            shard.AddComponent<AutoDespawn>().Seconds = 1.5f;
+            shard.AddComponent<AutoDespawn>().Seconds = new FloatReference(1.5f);
             var shardPrefab = SavePrefab(shard, dir, "BrickShard");
 
             var brick = Sprite("Brick", new Color(0.9f, 0.5f, 0.3f), background: true);
             brick.transform.localScale = new Vector3(0.6f, 1.2f, 1f);
             brick.AddComponent<BoxCollider2D>();
             var bh = brick.AddComponent<Health>();
-            bh.Max = bh.Current = 1f;
+            bh.Max = new FloatReference(1f);
+            bh.Current = 1f;
             bh.DestroyOnDeath = true;
             var bburst = brick.AddComponent<SpawnBurst>();
             bburst.Prefab = shardPrefab;
-            bburst.Count = 3;
+            bburst.Count = new IntReference(3);
             bburst.Is2D = true;
-            bburst.LaunchSpeed = 3f;
+            bburst.LaunchSpeed = new FloatReference(3f);
             Call(ref bh.OnDied, bburst.Burst);
             var brickPrefab = SavePrefab(brick, dir, "Brick");
             for (int col = 0; col < 3; col++)
@@ -392,7 +397,7 @@ namespace Metz.JamKitDev
             var bdmg = ball.AddComponent<Damager>();
             bdmg.OncePerTarget = false;
             var ballResp = ball.AddComponent<Respawner>();
-            ballResp.Delay = 0.8f;
+            ballResp.Delay = new FloatReference(0.8f);
             // Respawn zeroes velocity, so the serve is wired right back onto the launch.
             Call(ref ballResp.OnRespawned, bouncer.Launch);
             var ballGo = SaveInScene(ball, dir, "Ball");

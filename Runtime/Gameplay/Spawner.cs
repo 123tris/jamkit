@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using Ripple;
 using Sirenix.OdinInspector;
 using UnityEngine;
 
@@ -15,10 +16,11 @@ namespace Metz.JamKit
 
         [Header("Spawn")]
         [Required] public GameObject Prefab;
-        [Min(0.01f)] public float Interval = 1f;
+        [Tooltip("Seconds between spawns. Constant or a shared Ripple variable (difficulty ramp).")]
+        public FloatReference Interval = new(1f);
         public bool AutoStart = true;
-        [Tooltip("Max instances alive at once. -1 = unlimited. Counts active spawned instances; despawned/destroyed ones free a slot.")]
-        public int MaxAlive = -1;
+        [Tooltip("Max instances alive at once. -1 = unlimited. Counts active spawned instances; despawned/destroyed ones free a slot. Constant or a shared Ripple variable.")]
+        public IntReference MaxAlive = new(-1);
         public Vector2 Jitter = Vector2.zero;
 
         float _next;
@@ -27,16 +29,16 @@ namespace Metz.JamKit
 
         void OnEnable() { if (AutoStart) Begin(); }
 
-        public void Begin() { _running = true; _next = Time.time + Interval; }
+        public void Begin() { _running = true; _next = Time.time + Interval.Value; }
         public void Stop()  { _running = false; }
 
         void Update()
         {
             if (!_running || Prefab == null) return;
             if (Time.time < _next) return;
-            if (MaxAlive >= 0 && CountAlive() >= MaxAlive) { _next = Time.time + Interval; return; }
+            if (MaxAlive.Value >= 0 && CountAlive() >= MaxAlive.Value) { _next = Time.time + Interval.Value; return; }
             SpawnOne();
-            _next = Time.time + Interval;
+            _next = Time.time + Interval.Value;
         }
 
         [Button, DisableInEditorMode, FoldoutGroup("Debug")]

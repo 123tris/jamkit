@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using Ripple;
 using UnityEngine;
 
 namespace Metz.JamKit
@@ -11,7 +12,8 @@ namespace Metz.JamKit
     /// </summary>
     public sealed class Damager : MonoBehaviour
     {
-        public float Damage = 1f;
+        [Tooltip("Damage per hit. A constant, or a shared Ripple variable so a buff/difficulty knob scales every hitter at once.")]
+        public FloatReference Damage = new(1f);
         public LayerMask TargetLayers = ~0;
         [Tooltip("Hit each Health at most once until this damager is re-enabled — melee swings, one-touch traps.")]
         public bool OncePerTarget = false;
@@ -38,7 +40,7 @@ namespace Metz.JamKit
             if (h == null) h = other.GetComponentInParent<Health>();
             if (h == null) return;
             if (OncePerTarget && !_hit.Add(h)) return;
-            h.Damage(Damage);
+            h.Damage(Damage.Value);
             if (!DestroyOnHit) return;
             if (PoolService != null) PoolService.Despawn(gameObject);
             else Destroy(gameObject);

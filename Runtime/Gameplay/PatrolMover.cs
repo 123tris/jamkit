@@ -1,4 +1,5 @@
 using System;
+using Ripple;
 using UnityEngine;
 
 namespace Metz.JamKit
@@ -79,11 +80,12 @@ namespace Metz.JamKit
         [Header("Path")]
         [Tooltip("Waypoints as offsets from the position at enable/spawn. The start itself is waypoint 0.")]
         public Vector3[] PathOffsets = { new(4f, 0f, 0f) };
-        [Min(0f)] public float Speed = 2f;
+        [Tooltip("Travel speed. Constant or a shared Ripple variable.")]
+        public FloatReference Speed = new(2f);
         [SerializeReference, Tooltip("What happens at the end of the path.")]
         public PathEndBehavior Mode = new PingPong();
-        [Tooltip("Seconds to wait at each waypoint.")]
-        [Min(0f)] public float WaitAtPoints = 0f;
+        [Tooltip("Seconds to wait at each waypoint. Constant or a shared Ripple variable.")]
+        public FloatReference WaitAtPoints = new(0f);
 
         IMotor _motor;
         Vector3 _start;
@@ -118,18 +120,18 @@ namespace Metz.JamKit
 
         void FixedUpdate()
         {
-            if (_stopped || LastIndex == 0 || Speed <= 0f) return;
+            if (_stopped || LastIndex == 0 || Speed.Value <= 0f) return;
             if (Time.time < _waitUntil) return;
 
             Vector3 target = Waypoint(_index);
             Vector3 pos = transform.position;
-            Vector3 next = Vector3.MoveTowards(pos, target, Speed * Time.fixedDeltaTime);
+            Vector3 next = Vector3.MoveTowards(pos, target, Speed.Value * Time.fixedDeltaTime);
             Move(next);
 
             if ((next - target).sqrMagnitude > 0.0001f) return;
 
             // Arrived — the strategy decides what happens at a path end.
-            if (WaitAtPoints > 0f) _waitUntil = Time.time + WaitAtPoints;
+            if (WaitAtPoints.Value > 0f) _waitUntil = Time.time + WaitAtPoints.Value;
             int last = LastIndex;
             int candidate = _index + _direction;
             if (candidate > last || candidate < 0)

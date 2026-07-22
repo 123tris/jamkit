@@ -1,3 +1,4 @@
+using Ripple;
 using UnityEngine;
 
 namespace Metz.JamKit
@@ -12,7 +13,8 @@ namespace Metz.JamKit
     {
         [Tooltip("Pool to return to. If null, the object is destroyed instead.")]
         public PoolServiceSO PoolService;
-        [Min(0f)] public float Seconds = 3f;
+        [Tooltip("Lifetime before despawn/destroy. Constant or a shared Ripple variable.")]
+        public FloatReference Seconds = new(3f);
         [Tooltip("Use unscaled time so the lifetime ignores pause/slow-mo.")]
         public bool Unscaled = false;
 
@@ -22,7 +24,7 @@ namespace Metz.JamKit
         public void OnSpawn() => Arm();
         public void OnDespawn() { }
 
-        void Arm() => _due = Now() + Seconds;
+        void Arm() => _due = Now() + Seconds.Value;
 
         void Update()
         {

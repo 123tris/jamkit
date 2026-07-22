@@ -15,5 +15,5 @@ scene — grab them from `Scripts/` when your jam calls for them.
 `JamKit > Samples > Set Up 04 Arcade`.
 
 ## Things to try
-- Duplicate the Brick prefab as a variant with `Health.Max = 3` for armored bricks.
+- Duplicate the Brick prefab as a variant with `Health.Max` set to 3 for armored bricks.
 - Put `ScreenWrap2D` on the ball and delete the walls. Chaos mode.

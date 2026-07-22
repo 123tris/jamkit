@@ -18,7 +18,8 @@ namespace Metz.JamKit
         [Required] public TimeServiceSO TimeService;
 
         [Header("Stop")]
-        [Min(0f)] public float Duration = 0.05f;
+        [Tooltip("Freeze length at strength 1. Constant or a shared Ripple variable (a global 'game feel' knob).")]
+        public FloatReference Duration = new(0.05f);
         [Tooltip("Cap so a huge strength value can't freeze the game for seconds.")]
         [Min(0f)] public float MaxDuration = 0.25f;
         [Range(0f, 1f)] public float TimeScale = 0f;
@@ -48,7 +49,7 @@ namespace Metz.JamKit
         public void Play(float strength)
         {
             if (TimeService == null) return;
-            TimeService.FreezeForSeconds(Mathf.Min(Duration * strength, MaxDuration), TimeScale);
+            TimeService.FreezeForSeconds(Mathf.Min(Duration.Value * strength, MaxDuration), TimeScale);
         }
     }
 }

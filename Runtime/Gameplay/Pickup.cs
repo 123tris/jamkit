@@ -21,7 +21,8 @@ namespace Metz.JamKit
         [Header("Score (optional)")]
         [Tooltip("Ripple variable the value is added to (the project's Score). Null = no score.")]
         public FloatVariableSO ScoreVariable;
-        public float ScoreValue = 0f;
+        [Tooltip("Amount added to ScoreVariable. Constant or a shared Ripple variable (e.g. one 'coin value' every pickup reads).")]
+        public FloatReference ScoreValue = new(0f);
 
         [Header("Despawn")]
         [Tooltip("Pool to return to on pickup. If null, the object is destroyed.")]
@@ -49,7 +50,7 @@ namespace Metz.JamKit
             if (!string.IsNullOrEmpty(RequiredTag) && !other.CompareTag(RequiredTag)) return;
 
             _collected = true;
-            if (ScoreVariable != null && ScoreValue != 0f) ScoreVariable.Add(ScoreValue);
+            if (ScoreVariable != null && ScoreValue.Value != 0f) ScoreVariable.Add(ScoreValue.Value);
             OnCollected?.Invoke();
             if (BroadcastCollected != null) BroadcastCollected.Invoke();
 

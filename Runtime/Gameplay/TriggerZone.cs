@@ -22,15 +22,16 @@ namespace Metz.JamKit
         public bool OneShot = false;
 
         [Header("Damage (optional)")]
-        [Tooltip("Damage applied to the enterer's Health. 0 = none.")]
-        [Min(0f)] public float Damage = 0f;
+        [Tooltip("Damage applied to the enterer's Health. 0 = none. Constant or a shared Ripple variable.")]
+        public FloatReference Damage = new(0f);
         [Tooltip("Kill the enterer's Health outright (death pits, lava).")]
         public bool Kill = false;
 
         [Header("Score (optional)")]
         [Tooltip("Ripple variable the value is added to (the project's Score). Null = no score.")]
         public FloatVariableSO ScoreVariable;
-        public float ScoreValue = 0f;
+        [Tooltip("Amount added to ScoreVariable. Constant or a shared Ripple variable.")]
+        public FloatReference ScoreValue = new(0f);
 
         [Header("Remove (optional)")]
         [Tooltip("Despawn/destroy the enterer (goal swallowing a ball, off-screen cleanup).")]
@@ -65,17 +66,17 @@ namespace Metz.JamKit
             if (!string.IsNullOrEmpty(RequiredTag) && !other.CompareTag(RequiredTag)) return;
             _fired = true;
 
-            if (Damage > 0f || Kill)
+            if (Damage.Value > 0f || Kill)
             {
                 var h = other.GetComponentInParent<Health>();
                 if (h != null)
                 {
                     if (Kill) h.Kill();
-                    else h.Damage(Damage);
+                    else h.Damage(Damage.Value);
                 }
             }
 
-            if (ScoreVariable != null && ScoreValue != 0f) ScoreVariable.Add(ScoreValue);
+            if (ScoreVariable != null && ScoreValue.Value != 0f) ScoreVariable.Add(ScoreValue.Value);
 
             OnEntered?.Invoke(other);
             if (BroadcastEntered != null) BroadcastEntered.Invoke();

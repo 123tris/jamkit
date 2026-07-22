@@ -96,7 +96,9 @@ Runtime UI Toolkit needs an `EventSystem` (with the Input System UI module) for 
 To show HP / score / time without writing glue, point the HUD's `FloatVariableSO`s at:
 
 - `LabelBinding` — sets a named `Label`'s text from a variable, with a format string (`"Score: {0:0}"`, `"{0:0.0}s"`).
-- `BarBinding` — sizes a named fill element (width/height %) from a variable, normalized against a max value or a max variable (e.g. `Health.Max`).
+- `BarBinding` — sizes a named fill element (width/height %) from a variable, normalized against a max value or a max variable (point `MaxVariable` at the same shared asset a `Health.Max` references, so the bar scales when max HP changes).
+
+For HP, point `BarBinding.Variable`/`LabelBinding.Variable` at a `Health.CurrentVariable`. That link is two-way: the HUD reads it, and any system that writes it (checkpoint, cheat, buff) drives the Health back.
 
 Both live on the HUD's `UIDocument` GameObject and resolve their elements once the document's tree is built.
 

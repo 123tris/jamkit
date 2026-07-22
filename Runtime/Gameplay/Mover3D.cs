@@ -1,3 +1,4 @@
+using Ripple;
 using Sirenix.OdinInspector;
 using UnityEngine;
 
@@ -15,8 +16,10 @@ namespace Metz.JamKit
         [Required] public InputServiceSO InputService;
 
         [Header("Tuning")]
-        public float MoveSpeed = 5f;
-        public float JumpSpeed = 6f;
+        [Tooltip("Constant or a shared Ripple variable (speed buffs, difficulty).")]
+        public FloatReference MoveSpeed = new(5f);
+        [Tooltip("Constant or a shared Ripple variable.")]
+        public FloatReference JumpSpeed = new(6f);
         public bool RotateToFaceMove = true;
         public Transform CameraReference;
         public LayerMask GroundLayers = ~0;
@@ -55,9 +58,9 @@ namespace Metz.JamKit
             if (dir.sqrMagnitude > 1f) dir.Normalize();
 
             var v = _rb.linearVelocity;
-            v.x = dir.x * MoveSpeed;
-            v.z = dir.z * MoveSpeed;
-            if (_wantsJump) { v.y = JumpSpeed; _wantsJump = false; }
+            v.x = dir.x * MoveSpeed.Value;
+            v.z = dir.z * MoveSpeed.Value;
+            if (_wantsJump) { v.y = JumpSpeed.Value; _wantsJump = false; }
             _rb.linearVelocity = v;
 
             if (RotateToFaceMove && dir.sqrMagnitude > 0.001f)

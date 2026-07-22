@@ -21,8 +21,10 @@ namespace Metz.JamKit
         [Required] public GameObject ProjectilePrefab;
         [Tooltip("Spawn point + direction. Defaults to this transform. 3D fires along +forward, 2D along +right.")]
         public Transform Muzzle;
-        public float Speed = 12f;
-        [Min(0.01f)] public float FireInterval = 0.2f;
+        [Tooltip("Muzzle velocity. Constant or a shared Ripple variable (weapon upgrades).")]
+        public FloatReference Speed = new(12f);
+        [Tooltip("Seconds between shots. Constant or a shared Ripple variable (fire-rate buffs).")]
+        public FloatReference FireInterval = new(0.2f);
 
         [Header("Mode")]
         [Tooltip("Fire while the Attack action is held. When false, fires automatically on the interval.")]
@@ -43,7 +45,7 @@ namespace Metz.JamKit
             if (!wantFire || ProjectilePrefab == null) return;
             if (Time.time < _next) return;
             Fire();
-            _next = Time.time + FireInterval;
+            _next = Time.time + FireInterval.Value;
         }
 
         public GameObject Fire()
@@ -56,7 +58,7 @@ namespace Metz.JamKit
             // Is2D picks the facing axis (muzzle.right vs muzzle.forward); the motor applies it to
             // whichever body the projectile has.
             if (go != null)
-                Motor.LaunchBody(go, (Is2D ? muzzle.right : muzzle.forward) * Speed);
+                Motor.LaunchBody(go, (Is2D ? muzzle.right : muzzle.forward) * Speed.Value);
 
             if (BroadcastFired != null) BroadcastFired.Invoke();
             return go;
