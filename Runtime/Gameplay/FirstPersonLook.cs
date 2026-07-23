@@ -6,10 +6,17 @@ using UnityEngine.InputSystem;
 namespace Metz.JamKit
 {
     /// <summary>
-    /// First-person look: yaws THIS transform (the body) and pitches <see cref="PitchTransform"/>
+    /// First-person look: yaws <see cref="YawTransform"/> and pitches <see cref="PitchTransform"/>
     /// (the camera) from <see cref="InputServiceSO"/>'s Look action. Mouse deltas apply per event
     /// (resolution-true); sticks apply degrees-per-second. Pair with <see cref="Mover3D"/>
     /// (RotateToFaceMove OFF — this component owns yaw) for the classic FPS rig.
+    /// <para>
+    /// <see cref="YawTransform"/> defaults to this body. If the body has an <b>interpolated</b>
+    /// <see cref="Rigidbody"/>, writing yaw straight to it every frame fights physics interpolation and
+    /// horizontal look judders — while pitch, on a plain child, stays smooth (the classic "only the
+    /// horizontal stutters" bug, and it only shows at frame rates that don't line up with the physics tick).
+    /// Fix: point <see cref="YawTransform"/> at a non-Rigidbody child pivot with the camera under it.
+    /// </para>
     /// Cursor lock follows the input map: Gameplay locks, UI (pause/menus) releases — no extra wiring.
     /// </summary>
     [DisallowMultipleComponent]
@@ -19,8 +26,11 @@ namespace Metz.JamKit
         [Required] public InputServiceSO InputService;
 
         [Header("Rig")]
-        [Required, Tooltip("Rotated up/down — the camera (or its parent) childed to this body. Yaw goes on this transform.")]
+        [Required, Tooltip("Pitched up/down — the camera (or its parent) childed to the yaw transform.")]
         public Transform PitchTransform;
+        [Tooltip("Yawed left/right. Empty = this body. Point at a non-Rigidbody child pivot (camera under it) " +
+                 "when the body has an interpolated Rigidbody, or horizontal look judders.")]
+        public Transform YawTransform;
 
         [Header("Tuning")]
         [Tooltip("Degrees per mouse-delta unit. Constant or a shared Ripple variable (a settings slider).")]
@@ -39,12 +49,14 @@ namespace Metz.JamKit
         float _pitch;
         bool _warnedRotateClash;
 
-        [ShowInInspector, ReadOnly, FoldoutGroup("Debug")] public float Yaw => transform.eulerAngles.y;
+        [ShowInInspector, ReadOnly, FoldoutGroup("Debug")] public float Yaw => (YawTransform != null ? YawTransform : transform).eulerAngles.y;
         [ShowInInspector, ReadOnly, FoldoutGroup("Debug")] public float Pitch => _pitch;
         [ShowInInspector, ReadOnly, FoldoutGroup("Debug")] public bool CursorLocked => Cursor.lockState == CursorLockMode.Locked;
 
         void Awake()
         {
+            if (YawTransform == null) YawTransform = transform;
+
             // This component owns rotation; a free-spinning Y axis would let collisions twist the body.
             _rb = GetComponent<Rigidbody>();
             if (_rb != null) _rb.freezeRotation = true;
@@ -84,7 +96,7 @@ namespace Metz.JamKit
             float yawDelta = delta.x * scale;
             float pitchDelta = delta.y * scale * (InvertY ? 1f : -1f);
 
-            transform.Rotate(0f, yawDelta, 0f, Space.World);
+            YawTransform.Rotate(0f, yawDelta, 0f, Space.World);
             _pitch = Mathf.Clamp(_pitch + pitchDelta, -PitchLimit, PitchLimit);
             var e = PitchTransform.localEulerAngles;
             PitchTransform.localEulerAngles = new Vector3(_pitch, e.y, e.z);
@@ -111,6 +123,8 @@ namespace Metz.JamKit
         {
             if (_warnedRotateClash) return;
             _warnedRotateClash = true;
+            // Only a concern when yaw lands on this body; a separate YawTransform pivot can't be fought by the mover.
+            if (YawTransform != transform) return;
             var mover = GetComponent<Mover3D>();
             if (mover != null && mover.RotateToFaceMove)
                 Debug.LogWarning("[JamKit] FirstPersonLook and Mover3D.RotateToFaceMove both rotate this body — " +
