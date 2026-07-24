@@ -1,5 +1,6 @@
 using System;
 using System.IO;
+using Sirenix.OdinInspector;
 using UnityEngine;
 
 namespace Metz.JamKit
@@ -14,7 +15,7 @@ namespace Metz.JamKit
         [Tooltip("Subfolder under persistentDataPath where saves live. Defaults to 'saves'.")]
         public string Folder = "saves";
 
-        [Sirenix.OdinInspector.ShowInInspector, Sirenix.OdinInspector.ReadOnly, Sirenix.OdinInspector.FoldoutGroup("Debug")]
+        [ShowInInspector, ReadOnly, FoldoutGroup("Debug")]
         string Root => Path.Combine(Application.persistentDataPath, Folder);
         string PathFor(string key) => Path.Combine(Root, key + ".json");
 
@@ -117,7 +118,7 @@ namespace Metz.JamKit
             if (File.Exists(path)) { File.Delete(path); FlushToDisk(); }
         }
 
-        [Sirenix.OdinInspector.Button("Delete All Saves"), Sirenix.OdinInspector.FoldoutGroup("Debug")]
+        [Button("Delete All Saves"), FoldoutGroup("Debug")]
         public void DeleteAll()
         {
             if (!Directory.Exists(Root)) return;

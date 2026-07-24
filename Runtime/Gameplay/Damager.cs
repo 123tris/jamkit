@@ -1,5 +1,8 @@
+using System;
 using System.Collections.Generic;
+using Metz.JamKit.Utils;
 using Ripple;
+using Sirenix.OdinInspector;
 using UnityEngine;
 
 namespace Metz.JamKit
@@ -20,7 +23,7 @@ namespace Metz.JamKit
         public bool DestroyOnHit = false;
         [Tooltip("Optional. When assigned, DestroyOnHit returns this object to the pool instead of destroying it.")]
         public PoolServiceSO PoolService;
-
+        
         readonly HashSet<Health> _hit = new();
 
         void OnEnable() => _hit.Clear();
@@ -35,7 +38,8 @@ namespace Metz.JamKit
 
         void TryHit(GameObject other)
         {
-            if (((1 << other.layer) & TargetLayers) == 0) return;
+            if (!TargetLayers.IsInLayerMask(other)) return;
+            
             var h = other.GetComponent<Health>();
             if (h == null) h = other.GetComponentInParent<Health>();
             if (h == null) return;

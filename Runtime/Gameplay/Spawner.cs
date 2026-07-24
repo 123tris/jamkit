@@ -35,8 +35,8 @@ namespace Metz.JamKit
         void Update()
         {
             if (!_running || Prefab == null) return;
-            if (Time.time < _next) return;
             if (MaxAlive.Value >= 0 && CountAlive() >= MaxAlive.Value) { _next = Time.time + Interval.Value; return; }
+            if (Time.time < _next) return;
             SpawnOne();
             _next = Time.time + Interval.Value;
         }

@@ -320,13 +320,12 @@ namespace Metz.JamKit.Editor
             }
             if (panelSettings != null) doc.panelSettings = panelSettings;
 
-            controller.AudioService = audio; // null on the FMOD path — menu SFX run through FMOD instead
             controller.TimeService = time;
             controller.SceneService = scene;
             controller.InputService = input;
-            controller.MasterVolumeOverride = master;
-            controller.MusicVolumeOverride = music;
-            controller.SfxVolumeOverride = sfx;
+            controller.masterVolume = master;
+            controller.musicVolume = music;
+            controller.sfxVolume = sfx;
             controller.InitialView = MenuController.View.Start;
 
             Directory.CreateDirectory(PrefabsDir);
