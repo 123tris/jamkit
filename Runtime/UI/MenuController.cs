@@ -33,7 +33,7 @@ namespace Metz.JamKit
         public StyleSheet ExtraStyles;
 
         [Header("Services")]
-        [Tooltip("Optional — Unity-audio hover/click sounds. Under the FMOD backend leave this null and use FmodMenuSounds instead.")]
+        [Tooltip("Optional — Unity-audio hover/click sounds. Under the FMOD backend leave this null and wire menu sounds through FMOD instead.")]
         public AudioServiceSO AudioService;
         public TimeServiceSO TimeService;
         [Required] public SceneServiceSO SceneService;

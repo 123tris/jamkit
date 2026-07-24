@@ -12,8 +12,8 @@ namespace Metz.JamKit.Editor
 {
     /// <summary>
     /// One-click jam scaffold. Creates the SO service assets (Time / Scene / Input / Save / Pool,
-    /// plus Unity-mixer Audio only when FMOD is absent — with FMOD installed the audio path is
-    /// FMOD-first and the PostScaffold hook wires it), the Ripple variables (score + high score +
+    /// plus Unity-mixer Audio only when FMOD is absent — with FMOD installed, audio is driven
+    /// directly through FMOD instead), the Ripple variables (score + high score +
     /// timer as plain variables — no service; volume + high score marked persistent), the template
     /// PanelSettings (+ mixer on the Unity-audio path), the starter prefab library, and three
     /// scenes (Bootstrap / Game / GameOver). Every scene gets a self-contained JamKitCore (all
@@ -109,8 +109,8 @@ namespace Metz.JamKit.Editor
 
             // Service SOs — services wrap behavior only (scene loads, timescale, input, pooling, IO).
             // Audio is FMOD-first: with FMOD installed, no mixer and no Unity AudioService are
-            // scaffolded — the FMOD PostScaffold step creates FmodAudioService, puts its runner on
-            // the core prefab, and the menu sliders drive FMOD buses through the same variables.
+            // scaffolded — audio is driven directly through FMOD, with the menu sliders writing the
+            // same Ripple volume variables that the project's FMOD glue reads.
             AudioServiceSO audio = null;
 #if !JAMKIT_FMOD
             var mixer = TemplateAssets.EnsureMixer();
@@ -260,7 +260,7 @@ namespace Metz.JamKit.Editor
         /// the DebugPanel (Backquote — the only debug surface that exists in builds), plus the
         /// Toast child (it hosts its own UIDocument at runtime). Load-or-create so user
         /// customizations survive re-running. On the FMOD path <paramref name="audio"/> is null
-        /// and the FMOD PostScaffold step injects its runner instead.
+        /// — audio runs directly through FMOD rather than a JamKit audio-service runner.
         /// </summary>
         static GameObject CreateOrLoadCorePrefab(AudioServiceSO audio, TimeServiceSO time, SceneServiceSO scene, PoolServiceSO pool,
             FloatVariableSO scoreVar, FloatVariableSO highVar)
@@ -320,7 +320,7 @@ namespace Metz.JamKit.Editor
             }
             if (panelSettings != null) doc.panelSettings = panelSettings;
 
-            controller.AudioService = audio; // null on the FMOD path — FmodMenuSounds covers menu SFX
+            controller.AudioService = audio; // null on the FMOD path — menu SFX run through FMOD instead
             controller.TimeService = time;
             controller.SceneService = scene;
             controller.InputService = input;
