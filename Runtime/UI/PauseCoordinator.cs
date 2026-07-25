@@ -2,7 +2,7 @@ using Ripple;
 
 namespace Metz.JamKit
 {
-    internal sealed class PauseCoordinator
+    public sealed class PauseCoordinator
     {
         readonly TimeServiceSO _time;
         readonly VoidEventSO _onOpened, _onClosed;
