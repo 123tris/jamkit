@@ -78,6 +78,19 @@ but only when it stays congruent with the domain, and these are two different do
 - Keys are validated against path traversal (`..`, separators) and refused loudly (§10.5) — a key
   becomes a file name, so an unchecked one could write outside the save folder.
 
+### 6. `MenuController` — trim the fat controller (§17.1)
+
+The kit's one genuine god-controller mixed view-stack navigation, pause/time, input switching, scene nav,
+quit, focus, and a dead sound path. It's now a wiring shell over three plain collaborators (the §17.1
+extract-collaborator move `MenuSettingsBinder` already models): `MenuNavigator` (the `Stack<View>` + view
+show/hide off a `Dictionary<View, VisualElement>` + focus; it resumes time on leaving Pause and syncs the
+sliders on entering Settings directly, so there's no event plumbing) and `PauseCoordinator` (time freeze +
+open/close events + the reentrancy guard). Input switching stays on the controller — it's asymmetric with
+pausing (a main-menu reset resumes time but keeps UI input). The dead `WireSounds` path (it called the
+removed `AudioService.PlaySfx`) and its `playHoverSound`/`playClickSound`/`SoundVolume` fields were deleted
+(§10.5 — don't ship a silent no-op). Button binding stayed inline as a plain `Bind` method — a separate
+class for it was tried and cut, it didn't earn a file (LEAN over pattern-completeness).
+
 ### PILLARS.md
 
 PILLAR 2 gained the strategy-object rule (behavior → `[SerializeReference]`; data → field/SO, §11.7).
