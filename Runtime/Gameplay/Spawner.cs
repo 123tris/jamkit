@@ -6,14 +6,11 @@ using UnityEngine;
 namespace Metz.JamKit
 {
     /// <summary>
-    /// Spawns a prefab at this transform on a fixed interval. Routes through a <see cref="PoolServiceSO"/>
-    /// for reuse. If no pool service is assigned, falls back to <see cref="Object.Instantiate"/> per spawn.
+    /// Spawns a prefab at this transform on a fixed interval. Pair spawns with
+    /// <see cref="AutoDespawn"/> so they clean up.
     /// </summary>
     public sealed class Spawner : MonoBehaviour
     {
-        [Header("Service")]
-        public PoolServiceSO PoolService;
-
         [Header("Spawn")]
         [Required] public GameObject Prefab;
         [Tooltip("Seconds between spawns. Constant or a shared Ripple variable (difficulty ramp).")]
@@ -45,9 +42,7 @@ namespace Metz.JamKit
         public GameObject SpawnOne()
         {
             var pos = transform.position + new Vector3(Random.Range(-Jitter.x, Jitter.x), 0f, Random.Range(-Jitter.y, Jitter.y));
-            var go = PoolService != null
-                ? PoolService.Spawn(Prefab, pos, transform.rotation)
-                : Instantiate(Prefab, pos, transform.rotation);
+            var go = Instantiate(Prefab, pos, transform.rotation);
             if (go != null) _spawned.Add(go);
             return go;
         }

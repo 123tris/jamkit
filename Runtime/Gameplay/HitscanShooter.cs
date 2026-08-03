@@ -10,15 +10,13 @@ namespace Metz.JamKit
     /// <see cref="Health"/> hit — the FPS/immersive-sim counterpart to <see cref="ProjectileShooter"/>
     /// (which stays the right tool for visible, dodgeable shots). Point <see cref="AimOrigin"/> at
     /// the first-person camera for center-screen aim; leave it null on a turret to fire along the
-    /// muzzle. Spawns <see cref="ImpactPrefab"/> at the hit (pooled when a pool is assigned —
-    /// pair it with <see cref="AutoDespawn"/>). 3D physics.
+    /// muzzle. Spawns <see cref="ImpactPrefab"/> at the hit (pair it with
+    /// <see cref="AutoDespawn"/>). 3D physics.
     /// </summary>
     [DisallowMultipleComponent]
     public sealed class HitscanShooter : MonoBehaviour
     {
         [Header("Services")]
-        [Tooltip("Optional. Impact prefabs spawn through the pool when assigned.")]
-        public PoolServiceSO PoolService;
         [Tooltip("Required only when UseAttackInput is true.")]
         public InputServiceSO InputService;
 
@@ -99,8 +97,7 @@ namespace Metz.JamKit
             if (ImpactPrefab == null) return;
             var rot = Quaternion.LookRotation(hit.normal);
             var pos = hit.point + hit.normal * 0.01f;
-            if (PoolService != null) PoolService.Spawn(ImpactPrefab, pos, rot);
-            else Instantiate(ImpactPrefab, pos, rot);
+            Instantiate(ImpactPrefab, pos, rot);
         }
     }
 }

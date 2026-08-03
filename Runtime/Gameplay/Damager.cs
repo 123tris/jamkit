@@ -7,7 +7,7 @@ namespace Metz.JamKit
     /// <summary>
     /// Deals damage to any <see cref="Health"/> on objects that collide or trigger with this one.
     /// One component for 2D and 3D — whichever physics engine fires. Covers projectiles
-    /// (DestroyOnHit + pool), contact hazards, and melee swings (<see cref="OncePerTarget"/> +
+    /// (DestroyOnHit), contact hazards, and melee swings (<see cref="OncePerTarget"/> +
     /// enable/disable the collider with the attack animation).
     /// </summary>
     public sealed class Damager : MonoBehaviour
@@ -18,8 +18,6 @@ namespace Metz.JamKit
         [Tooltip("Hit each Health at most once until this damager is re-enabled — melee swings, one-touch traps.")]
         public bool OncePerTarget = false;
         public bool DestroyOnHit = false;
-        [Tooltip("Optional. When assigned, DestroyOnHit returns this object to the pool instead of destroying it.")]
-        public PoolServiceSO PoolService;
 
         readonly HashSet<Health> _hit = new();
 
@@ -41,9 +39,7 @@ namespace Metz.JamKit
             if (h == null) return;
             if (OncePerTarget && !_hit.Add(h)) return;
             h.Damage(Damage.Value);
-            if (!DestroyOnHit) return;
-            if (PoolService != null) PoolService.Despawn(gameObject);
-            else Destroy(gameObject);
+            if (DestroyOnHit) Destroy(gameObject);
         }
     }
 }

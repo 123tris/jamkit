@@ -6,14 +6,12 @@ namespace Metz.JamKit
 {
     /// <summary>
     /// Fires a projectile prefab on an interval, either while the Attack input is held or
-    /// automatically. Spawns through a <see cref="PoolServiceSO"/> when assigned (pair the
-    /// projectile with <see cref="AutoDespawn"/> so it returns to the pool). Sets the spawned
-    /// Rigidbody's velocity along the muzzle's facing.
+    /// automatically. Pair the projectile with <see cref="AutoDespawn"/> so it cleans up.
+    /// Sets the spawned Rigidbody's velocity along the muzzle's facing.
     /// </summary>
     public sealed class ProjectileShooter : MonoBehaviour
     {
         [Header("Services")]
-        public PoolServiceSO PoolService;
         [Tooltip("Required only when UseAttackInput is true.")]
         public InputServiceSO InputService;
 
@@ -51,9 +49,7 @@ namespace Metz.JamKit
         public GameObject Fire()
         {
             var muzzle = Muzzle != null ? Muzzle : transform;
-            var go = PoolService != null
-                ? PoolService.Spawn(ProjectilePrefab, muzzle.position, muzzle.rotation)
-                : Instantiate(ProjectilePrefab, muzzle.position, muzzle.rotation);
+            var go = Instantiate(ProjectilePrefab, muzzle.position, muzzle.rotation);
 
             // Is2D picks the facing axis (muzzle.right vs muzzle.forward); the motor applies it to
             // whichever body the projectile has.

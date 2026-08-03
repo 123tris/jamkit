@@ -24,10 +24,6 @@ namespace Metz.JamKit
         [Tooltip("Amount added to ScoreVariable. Constant or a shared Ripple variable (e.g. one 'coin value' every pickup reads).")]
         public FloatReference ScoreValue = new(0f);
 
-        [Header("Despawn")]
-        [Tooltip("Pool to return to on pickup. If null, the object is destroyed.")]
-        public PoolServiceSO PoolService;
-
         [FoldoutGroup("Events (this instance)")]
         [Tooltip("This exact pickup was collected — wire feedbacks or game logic here.")]
         public UltEvent OnCollected;
@@ -54,8 +50,7 @@ namespace Metz.JamKit
             OnCollected?.Invoke();
             if (BroadcastCollected != null) BroadcastCollected.Invoke();
 
-            if (PoolService != null) PoolService.Despawn(gameObject);
-            else Destroy(gameObject);
+            Destroy(gameObject);
         }
     }
 }

@@ -34,10 +34,8 @@ namespace Metz.JamKit
         public FloatReference ScoreValue = new(0f);
 
         [Header("Remove (optional)")]
-        [Tooltip("Despawn/destroy the enterer (goal swallowing a ball, off-screen cleanup).")]
+        [Tooltip("Destroy the enterer (goal swallowing a ball, off-screen cleanup).")]
         public bool RemoveEnterer = false;
-        [Tooltip("Pool used by RemoveEnterer. Null = Destroy.")]
-        public PoolServiceSO PoolService;
 
         [Header("Scene (optional)")]
         [Tooltip("Loaded after everything else. Leave unset = stay.")]
@@ -81,11 +79,7 @@ namespace Metz.JamKit
             OnEntered?.Invoke(other);
             if (BroadcastEntered != null) BroadcastEntered.Invoke();
 
-            if (RemoveEnterer)
-            {
-                if (PoolService != null) PoolService.Despawn(other);
-                else Destroy(other);
-            }
+            if (RemoveEnterer) Destroy(other);
 
             if (SceneService != null && LoadScene.HasValue)
                 SceneService.LoadAsync(LoadScene);

@@ -78,7 +78,7 @@ strengthens one pillar without wounding another, do it. If it serves none, it do
 
 - **Services are for behavior, not state.** A service exists only where code must wrap
   engine/native machinery: scene loading + fades, the timescale stack, input map
-  switching, pooling, file IO, FMOD instances. If it's *just data* (score, volume, HP,
+  switching, file IO, FMOD instances. If it's *just data* (score, volume, HP,
   a timer readout), it's a Ripple variable, not a service.
 - **A gameplay component earns kit inclusion by appearing in 3+ genre columns** of the
   ROADMAP archetype matrix. 1–2 columns → it lives in a sample, hackable and copyable.

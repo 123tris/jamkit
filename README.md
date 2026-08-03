@@ -9,12 +9,12 @@ debuggable, lean — every design decision in the kit traces back to it.
 | **[Ripple](https://github.com/123tris/Ripple)** | State + events: SO variables (opt-in persistence), typed events, listeners, references, runtime sets — with raise buttons and an event logger built in |
 | **[Feel](https://feel.moremountains.com/)** | Visual/physical feedback: author MMF_Player stacks, JamKit's gameplay events trigger them |
 | **[FMOD](https://www.fmod.com/)** | Audio: events, buses, adaptive music (JamKit's FMOD service is the bridge) |
-| **JamKit** | Services for *behavior* (scene flow, timescale, input, pooling, saves, audio bridge), a trimmed set of gameplay primitives, the UI Toolkit menu flow, and the editor tooling that wires it all |
+| **JamKit** | Services for *behavior* (scene flow, timescale, input, saves, audio bridge), a trimmed set of gameplay primitives, the UI Toolkit menu flow, and the editor tooling that wires it all |
 
 ## Why
 
 Every jam burns the first hours on the same scaffolding: a start menu, settings, scene
-transitions, pooling, save/load, feedback plumbing. JamKit ships all of it pre-wired so hour 1
+transitions, save/load, feedback plumbing. JamKit ships all of it pre-wired so hour 1
 goes to the actual game — without inheriting a pile of singletons or a framework you have to
 fight on day two.
 
@@ -26,7 +26,7 @@ fight on day two.
   exactly what each thing depends on. The editor auto-fills those references; the runtime never
   looks anything up.
 - **Services are for behavior, not state.** Scene loading, the timescale stack, input maps,
-  pooling, file IO, FMOD instances. Anything that is *just data* — score, volumes, HP, a timer
+  file IO, FMOD instances. Anything that is *just data* — score, volumes, HP, a timer
   readout — is a Ripple variable. (Score and Timer used to be services; they aren't anymore.)
 - **Two event granularities, one naming rule.** Per-instance reactions use serialized UltEvents
   named `On*` (`Health.OnDamaged` → *this* enemy's feedback player); global reactions use Ripple
@@ -58,7 +58,7 @@ skip, not an error wall.
 
 1. Install JamKit.
 2. `JamKit > New Jam Project`. One click creates:
-   - `Assets/_Project/Services/` — the service SOs (Time, Scene, Input, Save, Pool; plus the
+   - `Assets/_Project/Services/` — the service SOs (Time, Scene, Input, Save; plus the
      Unity-mixer Audio service *or* — with FMOD installed — the FMOD audio service instead)
    - `Assets/_Project/Variables/` — Ripple variables: Master/Music/Sfx volume (persistent),
      Score, HighScore (persistent), Timer
@@ -91,10 +91,14 @@ starter instances.
 | Scenes | `SceneServiceSO` | `LoadAsync(name)`, `ReloadCurrent()` with fade. Broadcast events on load start/end. | Yes |
 | Input | `InputServiceSO` | Move/Look/Jump/Attack/Dash/Interact/Pause from an `InputActionAsset`; `SwitchToUI/Gameplay()`. | No |
 | Save | `SaveServiceSO` | `Write/Read<T>` JSON to `persistentDataPath` — for game saves. Settings persistence belongs to Ripple persistent variables, not here. | No |
-| Pool | `PoolServiceSO` | `Spawn/Despawn/Prewarm`, one pool per prefab. | Optional |
 
 Select any service asset **during play** — its Debug foldout shows live state (timescale stack
-depth, pool counts, music state) and its `[Button]`s poke the real thing.
+depth, music state) and its `[Button]`s poke the real thing.
+
+> **No pooling.** Spawners use `Instantiate`/`Destroy`; pair spawns with `AutoDespawn` so they clean
+> up. A jam-scale game does not need a pool, and the kit will not ship a duplicate of one Unity
+> already provides. If profiling ever says otherwise, use `UnityEngine.Pool.ObjectPool<T>` in game
+> code — it is a single file and it is not JamKit's job.
 
 ## Components (the trimmed catalog)
 
@@ -118,8 +122,7 @@ rest live in samples as hackable copies.
   (`Health.OnDamaged → Play`) or globally (Ripple `PlayOn` slot).
 - **UI/HUD:** `MenuController` (Start/Settings/Pause), `PauseController`,
   `GameOverController`, `FadeOverlay`, `Toast`, `DebugPanel`, `LabelBinding` / `BarBinding`.
-- **Utilities:** `Timer` / `Cooldown` structs, `GameObjectPool` + `IPoolable`, `RandomBag<T>`,
-  `MathX` / `VectorX` / `ColorX`.
+- **Utilities:** `Timer` / `Cooldown` structs, `RandomBag<T>`, `MathX` / `VectorX` / `ColorX`.
 
 ## Health — the hub
 

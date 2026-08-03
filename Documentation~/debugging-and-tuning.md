@@ -7,8 +7,7 @@ Everything below already exists — this page is the map.
 
 - **Every stateful thing has a `Debug` foldout.** Select a service *asset* during play
   (Project window → `Assets/_Project/Services/…`): TimeService shows the live timescale +
-  stack depth with Pause/Resume buttons; PoolService shows pool counts; the FMOD service shows
-  music state with Stop/Duck buttons.
+  stack depth with Pause/Resume buttons; the FMOD service shows music state with Stop/Duck buttons.
 - **Every action is a `[Button]` that fires the real wiring.** `Health` → Damage 1 / Heal 1 /
   Kill / Reset runs the entire chain — feedback players, broadcasts, death, despawn. If the
   button looks right, the game is right. Same for `Spawner.SpawnOne`, `SpawnBurst.Burst`,

@@ -54,7 +54,7 @@ namespace Metz.JamKitDev
             var caught = Asset<VoidEventSO>($"{dir}/Data/CrateCaught.asset");
             var score = FloatVar($"{dir}/Data/DemoScore.asset", 0f, 999999f, 0f);
 
-            // Crate: pooled physics debris with a lifetime — Spawner + Pool + AutoDespawn in one glance.
+            // Crate: physics debris with a lifetime — Spawner + AutoDespawn in one glance.
             var crate = GameObject.CreatePrimitive(PrimitiveType.Cube);
             crate.name = "Crate";
             crate.transform.localScale = Vector3.one * 0.6f;
@@ -62,7 +62,7 @@ namespace Metz.JamKitDev
             crate.AddComponent<AutoDespawn>().Seconds = new FloatReference(6f);
             var cratePrefab = SavePrefab(crate, dir, "Crate");
 
-            // CrateSpawner: rains crates from above (PoolService wired at sample setup).
+            // CrateSpawner: rains crates from above.
             var spawner = new GameObject("CrateSpawner");
             spawner.transform.position = new Vector3(0f, 6f, 0f);
             var sp = spawner.AddComponent<Spawner>();
@@ -222,7 +222,7 @@ namespace Metz.JamKitDev
             Call(ref eh.OnDied, burst.Burst);
             var enemyPrefab = SavePrefab(enemy, dir, "Enemy");
 
-            // Projectile: pooled, damaging, self-cleaning.
+            // Projectile: damaging, self-cleaning.
             var projectile = GameObject.CreatePrimitive(PrimitiveType.Sphere);
             projectile.name = "Projectile";
             projectile.transform.localScale = Vector3.one * 0.3f;

@@ -12,7 +12,7 @@ implies when you extend it. Pairs with [PILLARS.md](../PILLARS.md) (the rules) a
 - [5. Gameplay primitives](#5-gameplay-primitives)
 - [6. The events model](#6-the-events-model)
 - [7. Time ownership](#7-time-ownership)
-- [8. Pooling](#8-pooling)
+- [8. Spawning](#8-spawning-and-why-there-is-no-pool)
 - [9. The UI layer](#9-the-ui-layer)
 - [10. Editor tooling](#10-editor-tooling)
 - [11. Value types](#11-value-types)
@@ -91,7 +91,7 @@ design.
 ## 3. Services: the SO/Runner split
 
 A **service** exists only where behavior must wrap engine/native machinery — scene loading, the
-timescale, input maps, pooling, file IO, FMOD. If a thing is *just data* (score, volume, HP, a timer
+timescale, input maps, file IO, FMOD. If a thing is *just data* (score, volume, HP, a timer
 readout) it is a Ripple variable, **not** a service. That line is enforced socially by PILLARS and
 structurally by the base classes in [Runtime/Services/ServiceBase.cs](../Runtime/Services/ServiceBase.cs).
 
@@ -149,14 +149,13 @@ public abstract class ServiceRunner<TService, TRunner> : MonoBehaviour
 ```
 
 The mutual `where` constraints (the Curiously Recurring Template Pattern) are what let the base cast
-`this` to `TRunner` without a runtime check. `PoolServiceRunner` is a *completely empty* class — it
-exists only to be a transform and inherit registration.
+`this` to `TRunner` without a runtime check.
 
 ### The `ResetState` lifecycle contract
 
 This is the subtlest and most important part. **With Domain Reload disabled** (the jam default, for
 fast Play-mode entry), an SO's fields survive between Play sessions — a leaked timescale push or a
-stale pool would carry over. Two hooks solve it:
+stale cached input map would carry over. Two hooks solve it:
 
 - `ServiceSO.OnEnable` subscribes to `playModeStateChanged`; on `ExitingEditMode` (entering Play) it
   calls `ResetState()`. Builds get a fresh process, so no hook is needed there.
@@ -165,8 +164,7 @@ stale pool would carry over. Two hooks solve it:
   the one opt-out, so its music instance survives scene transitions.
 
 Override `ResetState()` to drop your service's play-session state. `TimeServiceSO.ResetState` clears
-the timescale stack; `PoolServiceSO.ResetState` forgets its pools; `InputServiceSO.ResetState` drops
-cached maps. If you write a stateful service and *don't* override it, stale state leaks across sessions.
+the timescale stack; `InputServiceSO.ResetState` drops cached maps. If you write a stateful service and *don't* override it, stale state leaks across sessions.
 
 ### The concrete services
 
@@ -176,7 +174,6 @@ cached maps. If you write a stateful service and *don't* override it, stale stat
 | `FmodAudioServiceSO` | `ServiceSO<FmodAudioServiceRunner>` | ✓ | FMOD (own assembly, `JAMKIT_FMOD`) | same shape, `EventReference` payloads |
 | `TimeServiceSO` | `ServiceSO<TimeServiceRunner>` | ✓ | `Time.timeScale` (push/pop stack) | `Push`/`Pop`, `Pause`/`Resume`, `FreezeForSeconds` |
 | `SceneServiceSO` | `ServiceSO<SceneServiceRunner>` | ✓ | async scene load + fade | `LoadAsync`, `ReloadCurrent` |
-| `PoolServiceSO` | `ServiceSO<PoolServiceRunner>` | ✓ | `GameObjectPool` per prefab | `Spawn`, `Despawn`, `Prewarm` |
 | `InputServiceSO` | `ServiceSO` | — | `InputActionAsset` + maps | `Move`/`Jump`/…, `SwitchToUI`/`SwitchToGameplay` |
 | `SaveServiceSO` | `ServiceSO` | — | JSON file IO | `Write`, `Read`/`TryRead`, `Has`, `Delete` |
 
@@ -215,8 +212,8 @@ sample as a copyable local script (`Bouncer2D`, `GridMover`, `WaveSpawner`, …)
 exposes **two broadcast layers** (see §6): per-instance UltEvents (`OnDamaged`/`OnHealed`/`OnDied`) for
 *this object's* reactions, and optional global Ripple assets (`CurrentVariable`, `BroadcastDamaged`,
 `BroadcastDied`) for HUDs and any-enemy counters. `Damage()` runs the whole chain — clamp, push to the
-Ripple variable, fire the instance event, fire the broadcast, then despawn/destroy on death. It's
-`IPoolable`: `OnSpawn → ResetFull()`, so a pooled enemy comes back alive.
+Ripple variable, fire the instance event, fire the broadcast, then destroy on death if
+`DestroyOnDeath` is set.
 
 ### Composition, not configuration or subtyping
 
@@ -266,12 +263,6 @@ internal static class Motor {
 body type, so folding it through `IMotor` would make the interface leak. (This is the §11.7 line again,
 applied to the abstraction itself.)
 
-### The pool-or-instantiate idiom
-
-Spawners share one idiom: `PoolService != null ? PoolService.Spawn(...) : Instantiate(...)`, and the
-mirror for despawn. The pool is always optional — a component works without one, it just doesn't pool.
-See §8.
-
 ---
 
 ## 6. The events model
@@ -320,25 +311,26 @@ off-limits** — hit-stop routes through `HitStop`/`MMF_JamKitHitStop`, which pu
 
 ---
 
-## 8. Pooling
+## 8. Spawning (and why there is no pool)
 
-[GameObjectPool.cs](../Runtime/Pool/GameObjectPool.cs) is a plain (non-generic) pool: one instance per
-prefab, an idle `Stack<GameObject>`, `maxIdle` overflow → destroy. `PoolServiceSO` holds a
-`Dictionary<GameObject, GameObjectPool>` and a reverse map so `Despawn(instance)` finds its pool.
-`PoolServiceRunner` supplies the parent transform idle instances live under (without a runner, spawns
-still work but parent to the active scene root).
+`Spawner`, `SpawnBurst`, `ProjectileShooter`, and `HitscanShooter` call `Instantiate` directly;
+`AutoDespawn`, `Pickup`, `Damager`, `TriggerZone`, and `Health` call `Destroy`. There is no
+indirection, no service, and no lifecycle callback interface. Pair anything you spawn with
+`AutoDespawn` so it cleans up.
 
-**`IPoolable`** is the kit's only interface — a two-method callback contract (`OnSpawn`/`OnDespawn`).
-The pool dispatches it via an alloc-free component scan into a shared static scratch list:
+**JamKit shipped a pooling subsystem through 0.9 and removed it.** The reasoning is worth keeping,
+because "add pooling back" is a recurring instinct:
 
-```csharp
-static readonly List<IPoolable> _scratch = new();
-static void InvokeSpawn(GameObject go) { go.GetComponents(_scratch); for (…) _scratch[i].OnSpawn(); _scratch.Clear(); }
-```
+- It **duplicated the stack** (PILLAR 4). Unity ships `UnityEngine.Pool.ObjectPool<T>` and
+  `LinkedPool<T>`.
+- The first real jam (GMTK 2026) **deleted it on day 3** and shipped a finished game without it.
+- It was the kit's **largest source of coupling**: nine components carried a `PoolServiceSO` field
+  behind an identical `pool != null ? … : …` branch, so "don't pool" was expressible only as a fork
+  of the package. Removing pooling deleted nine fields and nine conditionals with it.
 
-`Health`, `AutoDespawn`, and `PatrolMover` implement it (reset HP, restart the despawn timer, restart the
-path). **Caveat:** the static scratch buffer is not reentrancy-safe — an `OnSpawn()` that itself spawns
-another pooled object clears the outer loop's list mid-iteration. Don't spawn from a spawn callback.
+If a project genuinely needs pooling, it belongs in *game* code with `UnityEngine.Pool` — one file,
+scoped to the one prefab that profiled badly. A kit-wide optional pool costs every component an
+inspector slot and a branch to buy that.
 
 ---
 
@@ -429,8 +421,6 @@ The four pillars judge every change; internalize the ones that bite when extendi
   (instance) / Ripple broadcasts (global) only.
 - **Domain Reload is off.** Any play-session state on an SO **must** be cleared in `ResetState()`, or it
   leaks into the next session. This is the single most common way to introduce a subtle bug here.
-- **Reentrancy.** The pool's `IPoolable` dispatch uses a shared static scratch list — don't spawn from a
-  spawn callback (§8).
 - **Non-goals (the identity fence).** No tween library, no node graphs, no netcode, no ECS, no Feel
   clone. JamKit is the wiring and the 80% defaults; depth lives in the dedicated assets. A new primitive
   is measured by how many archetype rows it unlocks, not how complete it is.
@@ -446,7 +436,7 @@ Recipes, ordered from most common to most ambitious. Each follows an existing pa
 ### Add a gameplay primitive
 
 1. One `sealed` component, one responsibility, in `Runtime/Gameplay/`. Cache an `IMotor` in `Awake` if it
-   moves a body; take an optional `PoolServiceSO` if it spawns.
+   moves a body; call `Instantiate`/`Destroy` directly if it spawns.
 2. Expose reactions as `On*` UltEvents (instance) and/or `Broadcast*` Ripple events (global) — never mix
    the scopes.
 3. `[Required]` the load-bearing refs; add a `Debug` foldout with `[ShowInInspector]` live state and
@@ -531,8 +521,6 @@ polymorphism, no bare-primitive roots — hence the internal `Wrapper<T>`). For 
 
 - **Grow `IMotor`** with `SetVelocity`/rotation and fold `ChaseMover` in — worth it only if its 2D/3D
   facing logic can be expressed without leaking.
-- **A null-object `PoolServiceSO`** or `ISpawnStrategy` would erase the `pool != null ? … : …` idiom from
-  ~8 sites.
 - **`IAudioService`** over the two audio backends — *rejected* today because their payload and return
   types diverge (forcing one interface would make implementations that can't honestly satisfy it, the
   §22.6 `ICollection`/`ReadOnlyCollection` trap). Revisit only if the two APIs converge.
@@ -543,13 +531,12 @@ polymorphism, no bare-primitive roots — hence the internal `Wrapper<T>`). For 
 
 ```
 Runtime/
-  Services/    ServiceBase.cs (SO/Runner/CRTP bases) · Audio/Time/Scene/Pool/Input/Save ServiceSO + Runners
+  Services/    ServiceBase.cs (SO/Runner/CRTP bases) · Audio/Time/Scene/Input/Save ServiceSO + Runners
   Gameplay/    Health, Motor, Mover2D/3D, ChaseMover, PatrolMover, ProjectileShooter, SpawnBurst, Spawner,
                Damager, Respawner, Pickup, Interactor/Interactable, TriggerZone, GameTimer, HighScoreTracker,
                AutoDespawn, RuntimeSetMember, HitStop
   UI/          UIBindingBase, LabelBinding, BarBinding, MenuController, MenuSettingsBinder, PauseController,
                GameOverController, Toast, DebugPanel, JamKitUI
-  Pool/        GameObjectPool, IPoolable
   Scenes/      SceneRef, FadeOverlay
   Time/        Timer, Cooldown (+ UnscaledCooldown)
   Audio/       SfxOnEvent

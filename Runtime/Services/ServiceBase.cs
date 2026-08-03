@@ -5,7 +5,7 @@ namespace Metz.JamKit
 {
     /// <summary>
     /// Base for every JamKit service asset. A service exists only where behavior must wrap
-    /// engine/native machinery (scene loads, the timescale stack, input maps, pooling, file IO,
+    /// engine/native machinery (scene loads, the timescale stack, input maps, file IO,
     /// FMOD instances) — plain data belongs in Ripple variables instead (see PILLARS.md).
     /// Owns the play-session reset contract: <see cref="ResetState"/> runs right before the
     /// editor enters play mode (ExitingEditMode), which is correct with Domain Reload disabled.
@@ -64,7 +64,7 @@ namespace Metz.JamKit
 
         /// <summary>
         /// Called when a runner (re)enables — i.e. at every scene load that contains one.
-        /// Defaults to <see cref="ServiceSO.ResetState"/>: a leaked timescale push or stale pool
+        /// Defaults to <see cref="ServiceSO.ResetState"/>: a leaked timescale push or stale cache
         /// is a worse jam-day bug than a restarted service. Override empty to keep state across
         /// scene loads (the FMOD music instance does).
         /// </summary>

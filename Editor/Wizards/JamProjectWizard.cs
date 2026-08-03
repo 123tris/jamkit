@@ -11,7 +11,7 @@ using UnityEngine.UIElements;
 namespace Metz.JamKit.Editor
 {
     /// <summary>
-    /// One-click jam scaffold. Creates the SO service assets (Time / Scene / Input / Save / Pool,
+    /// One-click jam scaffold. Creates the SO service assets (Time / Scene / Input / Save,
     /// plus Unity-mixer Audio only when FMOD is absent — with FMOD installed the audio path is
     /// FMOD-first and the PostScaffold hook wires it), the Ripple variables (score + high score +
     /// timer as plain variables — no service; volume + high score marked persistent), the template
@@ -107,7 +107,7 @@ namespace Metz.JamKit.Editor
             var highVar  = CreateOrLoadFloatVar($"{VariablesDir}/HighScore.asset", 0f, 999999f, 0f, persist: true);
             CreateOrLoadFloatVar($"{VariablesDir}/Timer.asset", 0f, 999999f, 0f);
 
-            // Service SOs — services wrap behavior only (scene loads, timescale, input, pooling, IO).
+            // Service SOs — services wrap behavior only (scene loads, timescale, input, IO).
             // Audio is FMOD-first: with FMOD installed, no mixer and no Unity AudioService are
             // scaffolded — the FMOD PostScaffold step creates FmodAudioService, puts its runner on
             // the core prefab, and the menu sliders drive FMOD buses through the same variables.
@@ -125,7 +125,6 @@ namespace Metz.JamKit.Editor
             var time  = CreateOrLoadSO<TimeServiceSO>($"{ServicesDir}/TimeService.asset");
             var scene = CreateOrLoadSO<SceneServiceSO>($"{ServicesDir}/SceneService.asset");
             CreateOrLoadSO<SaveServiceSO>($"{ServicesDir}/SaveService.asset");
-            var pool  = CreateOrLoadSO<PoolServiceSO>($"{ServicesDir}/PoolService.asset");
 
             var actions = Resources.Load<InputActionAsset>("JamKitInput");
             var input = CreateOrLoadSO<InputServiceSO>($"{ServicesDir}/InputService.asset", i => { i.Actions = actions; });
@@ -136,7 +135,7 @@ namespace Metz.JamKit.Editor
             // later fix or addition propagates everywhere at once. Built in a throwaway empty
             // scene so the user's scene never gets temp objects; we open Bootstrap at the end.
             EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
-            var corePrefab = CreateOrLoadCorePrefab(audio, time, scene, pool, scoreVar, highVar);
+            var corePrefab = CreateOrLoadCorePrefab(audio, time, scene, scoreVar, highVar);
             var menuPrefab = CreateOrLoadMenuPrefab(audio, time, scene, input, panelSettings, menuUxml, master, music, sfx);
 
             // Starter prefab assets — the Lego bricks designers variant and drop into scenes.
@@ -144,7 +143,6 @@ namespace Metz.JamKit.Editor
             {
                 Input = input,
                 Time = time,
-                Pool = pool,
                 Score = scoreVar,
             });
 
@@ -262,7 +260,7 @@ namespace Metz.JamKit.Editor
         /// customizations survive re-running. On the FMOD path <paramref name="audio"/> is null
         /// and the FMOD PostScaffold step injects its runner instead.
         /// </summary>
-        static GameObject CreateOrLoadCorePrefab(AudioServiceSO audio, TimeServiceSO time, SceneServiceSO scene, PoolServiceSO pool,
+        static GameObject CreateOrLoadCorePrefab(AudioServiceSO audio, TimeServiceSO time, SceneServiceSO scene,
             FloatVariableSO scoreVar, FloatVariableSO highVar)
         {
             string path = CorePrefabPath;
@@ -272,7 +270,6 @@ namespace Metz.JamKit.Editor
             var core = new GameObject("JamKitCore");
             if (audio != null) core.AddComponent<AudioServiceRunner>().Service = audio;
             core.AddComponent<TimeServiceRunner>().Service = time;
-            core.AddComponent<PoolServiceRunner>().Service = pool;
             var fade = core.AddComponent<FadeOverlay>();
             var sceneRunner = core.AddComponent<SceneServiceRunner>();
             sceneRunner.Service = scene;

@@ -8,7 +8,7 @@ namespace Metz.JamKit
     /// <see cref="Target"/>, a <see cref="Targets"/> runtime set (preferred — data-driven, no
     /// scene scans), or leave both empty and it falls back to finding the nearest object with
     /// <see cref="TargetTag"/>. Re-scans on an interval so it survives player respawns and
-    /// pooled reuse. Drives a Rigidbody2D or Rigidbody when present, else the transform.
+    /// spawned reuse. Drives a Rigidbody2D or Rigidbody when present, else the transform.
     /// </summary>
     [DisallowMultipleComponent]
     public sealed class ChaseMover : MonoBehaviour
@@ -43,7 +43,7 @@ namespace Metz.JamKit
             _rb = GetComponent<Rigidbody>();
         }
 
-        void OnEnable() => _nextScan = 0f; // pooled respawn re-scans immediately
+        void OnEnable() => _nextScan = 0f; // a freshly spawned copy re-scans immediately
 
         void FixedUpdate()
         {

@@ -36,7 +36,7 @@
   "samples": [
     {
       "displayName": "00 Hour Zero",
-      "description": "The kit tour with zero scripts: Spawner + Pool + TriggerZone + Ripple variable + Toast, all prefabs, all inspector wiring.",
+      "description": "The kit tour with zero scripts: Spawner + TriggerZone + Ripple variable + Toast, all prefabs, all inspector wiring.",
       "path": "Samples~/00 Hour Zero"
     },
     {
@@ -46,7 +46,7 @@
     },
     {
       "displayName": "02 Survivor",
-      "description": "Full 3D loop in Game.unity: WaveSpawner chasers, Aimer + ProjectileShooter, pooled debris, GameTimer, and a small glue script.",
+      "description": "Full 3D loop in Game.unity: WaveSpawner chasers, Aimer + ProjectileShooter, self-cleaning debris, GameTimer, and a small glue script.",
       "path": "Samples~/02 Survivor"
     },
     {

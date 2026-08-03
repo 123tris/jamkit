@@ -12,7 +12,7 @@ namespace Metz.JamKit
     /// platforms and triggers behave; falls back to the transform.
     /// </summary>
     [DisallowMultipleComponent]
-    public sealed class PatrolMover : MonoBehaviour, IPoolable
+    public sealed class PatrolMover : MonoBehaviour
     {
         /// <summary>
         /// What happens when the path runs out of waypoints. A strategy object, not an enum + switch,
@@ -100,11 +100,9 @@ namespace Metz.JamKit
             Mode ??= new PingPong();   // legacy enum data / empty reference → the old default
         }
 
-        // Capture the start at every enable, not just Awake — spawned/pooled copies begin
-        // their path wherever the spawner put them.
+        // Capture the start at every enable, not just Awake — spawned copies begin their path
+        // wherever the spawner put them.
         void OnEnable() => Restart();
-        public void OnSpawn() => Restart();
-        public void OnDespawn() { }
 
         public void Restart()
         {

@@ -21,9 +21,6 @@ namespace Metz.JamKit
             [Min(0f)] public float DelayBefore;
         }
 
-        [Header("Service")]
-        public PoolServiceSO PoolService;
-
         [Header("Setup")]
         public List<Wave> Waves = new();
         public Transform SpawnPoint;
@@ -66,8 +63,7 @@ namespace Metz.JamKit
                     for (int c = 0; c < w.Count; c++)
                     {
                         var pos = origin.position + new Vector3(UnityEngine.Random.Range(-Jitter.x, Jitter.x), 0f, UnityEngine.Random.Range(-Jitter.y, Jitter.y));
-                        if (PoolService != null) PoolService.Spawn(w.Prefab, pos, origin.rotation);
-                        else Instantiate(w.Prefab, pos, origin.rotation);
+                        Instantiate(w.Prefab, pos, origin.rotation);
                         if (perSpawn > 0f) yield return new WaitForSeconds(perSpawn);
                     }
                 }

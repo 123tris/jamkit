@@ -14,10 +14,6 @@ namespace Metz.JamKit
     [DisallowMultipleComponent]
     public sealed class SpawnBurst : MonoBehaviour
     {
-        [Header("Service")]
-        [Tooltip("Optional. Spawns through the pool when assigned.")]
-        public PoolServiceSO PoolService;
-
         [Header("Spawn")]
         public GameObject Prefab;
         [Tooltip("How many to spawn. Constant or a shared Ripple variable.")]
@@ -52,9 +48,7 @@ namespace Metz.JamKit
                     : Is2D ? Quaternion.Euler(0f, 0f, Random.Range(0f, 360f))
                     : Random.rotation;
 
-                var go = PoolService != null
-                    ? PoolService.Spawn(Prefab, center + offset, rot)
-                    : Instantiate(Prefab, center + offset, rot);
+                var go = Instantiate(Prefab, center + offset, rot);
                 if (go == null || LaunchSpeed.Value <= 0f) continue;
 
                 Vector3 dir = offset.sqrMagnitude > 0.0001f

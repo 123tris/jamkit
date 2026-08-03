@@ -1,7 +1,7 @@
 # 02 Survivor
 
 The full game loop in 3D: `WaveSpawner` waves of chasers, a `Mover3D` + `Aimer` +
-`ProjectileShooter` player, pooled projectiles and death debris, a `GameTimer` round clock,
+`ProjectileShooter` player, self-cleaning projectiles and death debris, a `GameTimer` round clock,
 and a small glue script (`SurvivorLoop`) that ends the run — the "graduate to code" example.
 
 This sample lives **inside your `Game.unity`** (setup drops the `SurvivorArena` prefab there):

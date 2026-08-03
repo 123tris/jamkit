@@ -4,6 +4,37 @@ All notable changes to JamKit are documented here. Format follows [Keep a Change
 
 ## [Unreleased]
 
+### Removed — pooling, in full
+
+`GameObjectPool`, `IPoolable`, `PoolServiceSO`, `PoolServiceRunner`, their two test files, and the
+`PoolService.asset` the wizard used to scaffold. Spawners and despawners now call `Instantiate` and
+`Destroy` directly.
+
+**Why.** Three reasons, any one of them sufficient:
+
+1. **It duplicated the stack** — PILLAR 4's first rule. Unity ships `UnityEngine.Pool.ObjectPool<T>`
+   and `LinkedPool<T>`; `GameObjectPool` was a hand-rolled second implementation.
+2. **The first real jam deleted it on day 3** (GMTK 2026) and shipped a finished game without it. At
+   jam scale, pooling is optimisation nobody asked for.
+3. **It was the kit's single largest source of coupling.** Nine components held a `PoolServiceSO`
+   field guarded by the same `pool != null ? pool.Spawn(…) : Instantiate(…)` branch, so "no pooling"
+   was not expressible as data — only as a fork. Removing it deleted nine fields and nine
+   conditionals along with the subsystem.
+
+**Migration.** Every `PoolService` / `DespawnPool` inspector slot disappears; Unity drops the value
+silently and behaviour falls through to the `Instantiate`/`Destroy` path those slots already used
+when left empty, so a project that never assigned one is unaffected. `Health` and `AutoDespawn` no
+longer implement `IPoolable`: pooled reuse used to refill HP and re-arm the despawn timer via
+`OnSpawn`, which a fresh `Instantiate` gives you anyway. Pair spawns with `AutoDespawn` so they clean
+up. If profiling ever demands pooling, use `UnityEngine.Pool` in game code — one file, and not the
+kit's job.
+
+Also touched: `Pickup`, `Damager`, `TriggerZone`, `SpawnBurst`, `Spawner`, `ProjectileShooter`,
+`HitscanShooter`, `PatrolMover` (dropped `IPoolable`), the Survivor sample's `WaveSpawner`, the
+wizard's `JamKitCore` prefab, `StarterPrefabLibrary`, and the Doctor's service scan.
+
+---
+
 Theme: an object-oriented review pass (*The Object Oriented Way*, Okhravi) — kill conditionals re-run in the core, move string failures from run-time to edit-time. Rationale and the full validated/rejected map live in [Documentation~/object-oriented-review.md](Documentation~/object-oriented-review.md); PILLARS.md gained a strategy-object rule (2) and a silent-no-op rule (3).
 
 ### Breaking — serialized fields changed shape

@@ -25,7 +25,6 @@ namespace Metz.JamKit.Editor
         {
             public InputServiceSO Input;
             public TimeServiceSO Time;
-            public PoolServiceSO Pool;
             public FloatVariableSO Score;
         }
 
@@ -108,13 +107,12 @@ namespace Metz.JamKit.Editor
                 var pickup = go.AddComponent<Pickup>();
                 pickup.ScoreVariable = ctx.Score;
                 pickup.ScoreValue = new FloatReference(1f);
-                pickup.PoolService = ctx.Pool;
                 return go;
             }},
-            new() { Name = "Spawner", Compose = ctx =>
+            new() { Name = "Spawner", Compose = _ =>
             {
                 var go = new GameObject("Spawner");
-                go.AddComponent<Spawner>().PoolService = ctx.Pool;
+                go.AddComponent<Spawner>();
                 return go;
             }},
             new() { Name = "KillZone2D", Compose = _ =>
@@ -205,7 +203,6 @@ namespace Metz.JamKit.Editor
             health.DestroyOnDeath = true;
             var burst = go.AddComponent<SpawnBurst>();
             burst.Is2D = is2D;
-            burst.PoolService = ctx.Pool;
             health.OnDied ??= new UltEvent();
             health.OnDied.AddPersistentCall((Action)burst.Burst);
             AddFeelPlayer(go, health);

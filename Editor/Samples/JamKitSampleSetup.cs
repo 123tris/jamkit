@@ -46,7 +46,7 @@ namespace Metz.JamKit.Editor
         public static readonly Spec[] Specs =
         {
             new Spec("00 Hour Zero", false, null,
-                "The kit tour: services, pooling, Ripple events, HUD binding — read the hierarchy, everything is a prefab."),
+                "The kit tour: services, Ripple events, HUD binding — read the hierarchy, everything is a prefab."),
             new Spec("01 Platformer", false, null,
                 "WASD/arrows + Space; hazards hurt, the pit kills, the flag respawns you."),
             new Spec("02 Survivor", true, "SurvivorArena",

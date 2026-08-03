@@ -17,10 +17,9 @@ namespace Metz.JamKit
     ///     raises max HP everywhere at once); <see cref="CurrentVariable"/> is a *two-way* mirror of
     ///     current HP — bind a HUD to it, and any external write (checkpoint, cheat, debug panel)
     ///     drives this Health back; Broadcast* fan damage/death out globally.
-    /// Pool-aware: respawning through a <see cref="GameObjectPool"/> refills HP via <see cref="IPoolable"/>.
     /// </summary>
     [DisallowMultipleComponent]
-    public sealed class Health : MonoBehaviour, IPoolable
+    public sealed class Health : MonoBehaviour
     {
         [BoxGroup("Stats")]
         [Tooltip("Max HP. A plain constant, or point at a shared Ripple variable so upgrades/difficulty raise it everywhere at once.")]
@@ -30,9 +29,6 @@ namespace Metz.JamKit
         public float Current = 10f;
 
         [BoxGroup("On Death")] public bool DestroyOnDeath = false;
-        [BoxGroup("On Death")]
-        [Tooltip("Return to this pool on death instead of destroying — for pooled enemies/projectiles. Takes precedence over DestroyOnDeath.")]
-        public PoolServiceSO DespawnPool;
 
         [FoldoutGroup("Events (this instance)")]
         [Tooltip("This instance took damage (amount). Wire feedbacks here: MMF_Player.PlayFeedbacks(), HitStop.Play(float)...")]
@@ -45,7 +41,7 @@ namespace Metz.JamKit
         public UltEvent OnDied;
 
         [FoldoutGroup("Broadcast (Ripple, global)")]
-        [Tooltip("Optional — TWO-WAY mirror of current HP. Bind a HUD (BarBinding/LabelBinding), and any external write (checkpoint, cheat, debug panel) drives this Health back. Leave null for pooled/multiple instances so each keeps its own HP — a shared asset would pool their health together.")]
+        [Tooltip("Optional — TWO-WAY mirror of current HP. Bind a HUD (BarBinding/LabelBinding), and any external write (checkpoint, cheat, debug panel) drives this Health back. Leave null when several objects share this component so each keeps its own HP — one shared asset would pool their health together.")]
         public FloatVariableSO CurrentVariable;
         [FoldoutGroup("Broadcast (Ripple, global)")]
         [Tooltip("Optional — fires for damage to ANY Health sharing this event (global shake, vignette).")]
@@ -72,10 +68,6 @@ namespace Metz.JamKit
         {
             if (CurrentVariable != null) CurrentVariable.OnValueChanged -= OnCurrentVariableChanged;
         }
-
-        // Pooled respawn = fresh HP, otherwise a reused enemy comes back dead.
-        public void OnSpawn() => ResetFull();
-        public void OnDespawn() { }
 
         public void Damage(float amount)
         {
@@ -116,8 +108,7 @@ namespace Metz.JamKit
         {
             OnDied?.Invoke();
             if (BroadcastDied != null) BroadcastDied.Invoke();
-            if (DespawnPool != null) DespawnPool.Despawn(gameObject);
-            else if (DestroyOnDeath) Destroy(gameObject);
+            if (DestroyOnDeath) Destroy(gameObject);
         }
 
         // Mirror Current out to the shared variable (guarded so the echo isn't read back as an edit).
