@@ -13,7 +13,7 @@ namespace Metz.JamKit
     /// OnDisable to release the variable subscriptions.
     /// On WebGL the Resolution and VSync rows are hidden (the browser owns both).
     /// </summary>
-    internal sealed class MenuSettingsBinder
+    public sealed class MenuSettingsBinder
     {
         // Element names — must match JamKitMenu.uxml.
         const string MasterName = "settings-master", MusicName = "settings-music", SfxName = "settings-sfx";

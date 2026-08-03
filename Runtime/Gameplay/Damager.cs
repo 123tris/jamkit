@@ -1,5 +1,8 @@
+using System;
 using System.Collections.Generic;
+using Metz.JamKit.Utils;
 using Ripple;
+using Sirenix.OdinInspector;
 using UnityEngine;
 
 namespace Metz.JamKit
@@ -33,7 +36,8 @@ namespace Metz.JamKit
 
         void TryHit(GameObject other)
         {
-            if (((1 << other.layer) & TargetLayers) == 0) return;
+            if (!TargetLayers.IsInLayerMask(other)) return;
+            
             var h = other.GetComponent<Health>();
             if (h == null) h = other.GetComponentInParent<Health>();
             if (h == null) return;

@@ -6,8 +6,8 @@ using UnityEngine.Audio;
 namespace Metz.JamKit
 {
     /// <summary>
-    /// Unity-mixer flavor of the audio service — the fallback backend for projects without
-    /// FMOD (when FMOD is installed the scaffold uses <c>FmodAudioServiceSO</c> instead).
+    /// Unity-mixer flavor of the audio service — the backend for projects without
+    /// FMOD (with FMOD installed, audio is driven directly through FMOD instead of this service).
     /// Holds the mixer reference, exposed parameter names, and Ripple volume variables
     /// (mark them persistent so settings survive restarts). Methods route to a scene-side
     /// <see cref="AudioServiceRunner"/>; with no runner present they are silent no-ops.

@@ -362,11 +362,15 @@ no diagnostic (and `[Required]` can't guard a string).
 
 ### MenuController — a State machine over a stack
 
-[MenuController.cs](../Runtime/UI/MenuController.cs) drives Start/Settings/Pause views in one `UIDocument`
-via a `Stack<View>` (`Push`/`Pop`/`ResetStack`/`Apply`). It centralizes element names in a nested
-`const` class `N` so a typo is a compile error; `Bind` warns once per missing button. `MenuSettingsBinder`
-handles the Settings view's sliders and is the package's one `Dispose()` lifetime object (its SO
-subscriptions outlive the scene). Scene navigation uses `SceneRef` fields (§11).
+[MenuController.cs](../Runtime/UI/MenuController.cs) owns the serialized service refs and wires three plain
+collaborators for the Start/Settings/Pause views in one `UIDocument`: `MenuNavigator` (the `Stack<View>` —
+shows the top view from a `Dictionary<View, VisualElement>`, focuses its first control, resumes time on
+leaving Pause, syncs the sliders on entering Settings), `MenuSettingsBinder` (the Settings sliders; the
+package's one `Dispose()` object, its SO subscriptions outlive the scene), and `PauseCoordinator`
+(freeze/restore time + the pause open/close `VoidEventSO`s, guarded so it never resumes a freeze it didn't
+push). Element names live in a nested `const` class `N` (a typo is a compile error) and the inline `Bind`
+warns once per missing button. Input-map switching stays on the controller — it's asymmetric with pausing
+(the main menu resumes time but keeps UI input). Scene navigation uses `SceneRef` fields (§11).
 
 Other UI: `PauseController` (routes Esc to `MenuController.HandleBack`), `GameOverController` (code-built
 screen using the menu USS), `Toast` (transient messages driven by Ripple events), `DebugPanel` (ships in
