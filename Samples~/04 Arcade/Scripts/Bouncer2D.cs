@@ -3,13 +3,6 @@ using UnityEngine;
 
 namespace Metz.JamKit
 {
-    /// <summary>
-    /// Arcade ball physics: constant speed, clean reflection off everything it hits — the pong /
-    /// breakout / pinball-lite core that Rigidbody bounciness never quite gives you. Optional
-    /// per-bounce speed-up, paddle english (outgoing angle bent by where the ball strikes objects
-    /// on <see cref="PaddleLayers"/>), and a minimum angle so rallies can't degenerate into flat
-    /// horizontal/vertical loops. Fires <see cref="OnBounce"/> for juice.
-    /// </summary>
     [DisallowMultipleComponent]
     [RequireComponent(typeof(Rigidbody2D))]
     public sealed class Bouncer2D : MonoBehaviour
@@ -36,7 +29,7 @@ namespace Metz.JamKit
         [Header("Events")]
         [Tooltip("Raised on every bounce — wire SFX / CameraShake / ParticleBurst here.")]
         public VoidEventSO OnBounce;
-        public event System.Action<Vector2> Bounced; // arg: contact normal
+        public event System.Action<Vector2> Bounced;
 
         Rigidbody2D _rb;
         Vector2 _lastVelocity;
@@ -45,7 +38,6 @@ namespace Metz.JamKit
         void Awake()
         {
             _rb = GetComponent<Rigidbody2D>();
-            // Arcade-ball setup so the preset "just works": no gravity, no spin, no tunneling.
             _rb.gravityScale = 0f;
             _rb.freezeRotation = true;
             _rb.collisionDetectionMode = CollisionDetectionMode2D.Continuous;
@@ -57,7 +49,6 @@ namespace Metz.JamKit
             if (LaunchOnEnable) Launch();
         }
 
-        /// <summary>Launch along LaunchDirection (with jitter). Call after a serve reset.</summary>
         public void Launch()
         {
             var dir = LaunchDirection.sqrMagnitude > 0f ? LaunchDirection.normalized : Vector2.right;
@@ -65,7 +56,6 @@ namespace Metz.JamKit
             Kick(dir);
         }
 
-        /// <summary>Send the ball in a direction at current speed.</summary>
         public void Kick(Vector2 direction)
         {
             var dir = ClampAwayFromAxes(direction.normalized, MinAngleFromAxis);
@@ -75,7 +65,6 @@ namespace Metz.JamKit
 
         void FixedUpdate()
         {
-            // Contacts scrub speed; hold it constant so the ball never dies in a corner.
             var v = _rb.linearVelocity;
             if (v.sqrMagnitude > 0.0001f)
                 _rb.linearVelocity = v.normalized * _speed;
@@ -91,7 +80,6 @@ namespace Metz.JamKit
             var paddle = English > 0f ? c.collider.GetComponentInParent<Paddle>() : null;
             if (paddle != null)
             {
-                // Bend by hit offset along the paddle's long (right) axis: edge hits cut sharper.
                 var pt = paddle.transform;
                 float halfExtent = Mathf.Max(0.0001f, c.collider.bounds.extents.magnitude);
                 float offset = Vector2.Dot(contact.point - (Vector2)pt.position, (Vector2)pt.right) / halfExtent;
@@ -108,21 +96,15 @@ namespace Metz.JamKit
             if (OnBounce != null) OnBounce.Invoke();
         }
 
-        /// <summary>
-        /// Push a unit direction at least <paramref name="minAngleDeg"/> degrees away from both
-        /// axes so rallies can't flatten into horizontal/vertical loops. Rebuilds the vector
-        /// exactly at the limit angle — nudging a component and re-normalizing would shrink it
-        /// back below the threshold (the play-mode tests caught exactly that). Pure.
-        /// </summary>
         public static Vector2 ClampAwayFromAxes(Vector2 dir, float minAngleDeg)
         {
             if (minAngleDeg <= 0f) return dir;
             dir = dir.sqrMagnitude > 0.0001f ? dir.normalized : Vector2.right;
             float min = Mathf.Sin(minAngleDeg * Mathf.Deg2Rad);
             float max = Mathf.Cos(minAngleDeg * Mathf.Deg2Rad);
-            if (Mathf.Abs(dir.y) < min)      // too flat against the x-axis
+            if (Mathf.Abs(dir.y) < min)
                 return new Vector2(max * Sign(dir.x), min * Sign(dir.y));
-            if (Mathf.Abs(dir.x) < min)      // too flat against the y-axis
+            if (Mathf.Abs(dir.x) < min)
                 return new Vector2(min * Sign(dir.x), max * Sign(dir.y));
             return dir;
         }

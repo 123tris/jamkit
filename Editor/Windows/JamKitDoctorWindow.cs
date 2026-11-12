@@ -8,14 +8,6 @@ using Object = UnityEngine.Object;
 
 namespace Metz.JamKit.Editor
 {
-    /// <summary>
-    /// Jam-day insurance: one window that checks the PROJECT-SHAPE failure points (mixer params
-    /// not exposed, PanelSettings without a theme, scenes missing from Build Settings, no
-    /// EventSystem, HitStop without a TimeServiceRunner) and offers a Fix button wherever the
-    /// fix is unambiguous. Per-field null references are not scanned here anymore — [Required]
-    /// attributes surface them in the inspector and project-wide in Odin Validator, and
-    /// auto-assign fills them; the toolbar button runs that fill on demand.
-    /// </summary>
     public sealed class JamKitDoctorWindow : EditorWindow
     {
         class Issue
@@ -31,13 +23,8 @@ namespace Metz.JamKit.Editor
         Vector2 _scroll;
         bool _scanned;
 
-        /// <summary>Signature of <see cref="Add"/> — what an external scan reports through.</summary>
         public delegate void IssueReporter(MessageType severity, string message, string fixLabel = null, Action fix = null, Object context = null);
 
-        /// <summary>
-        /// Optional integrations (FMOD, …) append extra checks here from [InitializeOnLoad];
-        /// they run on every scan and report through the supplied <see cref="IssueReporter"/>.
-        /// </summary>
         public static readonly List<Action<IssueReporter>> ExtraScans = new();
 
         [MenuItem("JamKit/Doctor", priority = 1)]
@@ -99,11 +86,12 @@ namespace Metz.JamKit.Editor
             _scanned = true;
             _issues.Clear();
             ScanServices();
-            ScanAudio();
             ScanInput();
             ScanPanelSettings();
             ScanBuildScenes();
             ScanOpenScenes();
+            ScanGameAsmdef();
+            ScanEmbeddedPackageEdits();
             foreach (var scan in ExtraScans) scan(Add);
             Repaint();
         }
@@ -111,12 +99,9 @@ namespace Metz.JamKit.Editor
         void Add(MessageType severity, string message, string fixLabel = null, Action fix = null, Object context = null)
             => _issues.Add(new Issue { Severity = severity, Message = message, FixLabel = fixLabel, Fix = fix, Context = context });
 
-        // ------------------------------------------------------------------ checks
-
         static readonly Type[] ServiceTypes =
         {
-            typeof(TimeServiceSO), typeof(SceneServiceSO), typeof(InputServiceSO),
-            typeof(SaveServiceSO),
+            typeof(TimeServiceSO), typeof(SceneServiceSO), typeof(InputServiceSO), typeof(ScreenFadeSO),
         };
 
         void ScanServices()
@@ -129,56 +114,6 @@ namespace Metz.JamKit.Editor
                 Add(MessageType.Warning,
                     $"Missing service assets: {string.Join(", ", missing)}. Run the wizard to create the full set.",
                     "Run Wizard", JamProjectWizard.Run);
-        }
-
-        // Unity-audio path only: with FMOD installed the scaffold creates no AudioServiceSO, so
-        // this loop simply finds nothing (the FMOD ExtraScan covers that backend).
-        void ScanAudio()
-        {
-            foreach (var audio in FindAssets<AudioServiceSO>())
-            {
-                if (audio.Mixer == null)
-                {
-                    Add(MessageType.Warning, $"AudioService '{audio.name}' has no mixer — volume sliders will do nothing.",
-                        "Copy Template", () =>
-                        {
-                            var mixer = TemplateAssets.EnsureMixer();
-                            if (mixer != null)
-                            {
-                                audio.Mixer = mixer;
-                                EditorUtility.SetDirty(audio);
-                                AssetDatabase.SaveAssets();
-                            }
-                        }, audio);
-                    continue;
-                }
-
-                foreach (var param in new[] { audio.MasterParam, audio.MusicParam, audio.SfxParam })
-                {
-                    if (!audio.Mixer.GetFloat(param, out _))
-                    {
-                        var mixerPath = AssetDatabase.GetAssetPath(audio.Mixer);
-                        Add(MessageType.Error,
-                            $"Mixer '{audio.Mixer.name}' does not expose '{param}' — volume sliders will not work.",
-                            "Repair Mixer", () =>
-                            {
-                                var repaired = TemplateAssets.RepairMixer(mixerPath);
-                                if (repaired != null)
-                                {
-                                    audio.Mixer = repaired;
-                                    EditorUtility.SetDirty(audio);
-                                    AssetDatabase.SaveAssets();
-                                }
-                            }, audio.Mixer);
-                        break; // repair fixes all three at once
-                    }
-                }
-
-                if (audio.MasterVolume == null || audio.MusicVolume == null || audio.SfxVolume == null)
-                    Add(MessageType.Warning,
-                        $"AudioService '{audio.name}' is missing Ripple volume variables — settings sliders won't bind.",
-                        context: audio);
-            }
         }
 
         void ScanInput()
@@ -214,7 +149,7 @@ namespace Metz.JamKit.Editor
             foreach (var guid in AssetDatabase.FindAssets("t:PanelSettings"))
             {
                 var path = AssetDatabase.GUIDToAssetPath(guid);
-                if (!path.StartsWith("Assets/")) continue; // leave package-shipped assets alone
+                if (!path.StartsWith("Assets/")) continue;
                 var ps = AssetDatabase.LoadAssetAtPath<PanelSettings>(path);
                 if (ps == null || ps.themeStyleSheet != null) continue;
                 Add(MessageType.Error, $"PanelSettings '{ps.name}' has no theme — UI renders unstyled.",
@@ -269,26 +204,40 @@ namespace Metz.JamKit.Editor
                         Undo.RegisterCreatedObjectUndo(es, "Create EventSystem");
                     });
 
-            bool hasHitStop = false;
-            bool hasTimeRunner = Object.FindObjectsByType<TimeServiceRunner>(FindObjectsInactive.Include, FindObjectsSortMode.None).Length > 0;
             var looseObjects = new HashSet<GameObject>();
-
             foreach (var mb in JamKitAutoAssign.AllJamKitComponentsInOpenScenes())
-            {
-                if (mb is HitStop) hasHitStop = true;
                 if (!PrefabUtility.IsPartOfPrefabInstance(mb.gameObject))
                     looseObjects.Add(mb.gameObject);
-            }
 
-            if (hasHitStop && !hasTimeRunner)
-                Add(MessageType.Warning, "HitStop present but no TimeServiceRunner in the scene — freeze-frames won't run. Add a JamKitCore (wizard) or a TimeServiceRunner.");
-
-            // Pillar nudge, not an error: scenes as lists of prefab instances merge better and
-            // propagate fixes. No auto-fix — deciding what becomes a prefab is design work.
             if (looseObjects.Count > 0)
                 Add(MessageType.Info,
                     $"{looseObjects.Count} JamKit object(s) in open scenes are not prefab instances. " +
                     "Consider making them prefabs (or starter variants) — scenes as prefab lists merge better (PILLARS.md).");
+        }
+
+        void ScanGameAsmdef()
+        {
+            if (!AssetDatabase.IsValidFolder("Assets/_Project/Scripts")) return;
+            if (AssetDatabase.FindAssets("t:AssemblyDefinitionAsset", new[] { "Assets/_Project/Scripts" }).Length > 0) return;
+            if (AssetDatabase.FindAssets("t:MonoScript", new[] { "Assets/_Project/Scripts" }).Length == 0) return;
+
+            Add(MessageType.Info,
+                "Game scripts have no .asmdef, so they compile into Assembly-CSharp alongside the kit. " +
+                "A game class in the global namespace can then shadow a JamKit type of the same name, silently. " +
+                "Re-run the wizard to scaffold Assets/_Project/Scripts/Game.asmdef.",
+                "Run Wizard", JamProjectWizard.Run);
+        }
+
+        void ScanEmbeddedPackageEdits()
+        {
+            var info = UnityEditor.PackageManager.PackageInfo.FindForAssembly(typeof(Health).Assembly);
+            if (info == null || info.source != UnityEditor.PackageManager.PackageSource.Embedded) return;
+
+            Add(MessageType.Info,
+                $"JamKit is embedded at {info.resolvedPath.Replace('\\', '/')} (version {info.version}), so edits to it are " +
+                "project-local and invisible to upstream. That's a legitimate jam move — but bump the version to a " +
+                "'-fork.N' suffix so two different trees never both claim the same version, and see UPSTREAMING.md " +
+                "for getting the good parts back.");
         }
 
         static IEnumerable<T> FindAssets<T>() where T : ScriptableObject

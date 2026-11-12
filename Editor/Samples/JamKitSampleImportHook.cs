@@ -6,13 +6,6 @@ using UnityEngine;
 
 namespace Metz.JamKit.Editor
 {
-    /// <summary>
-    /// Offers one-click setup the moment a sample lands in Assets: the shipped scene's import is
-    /// the marker. Samples with scripts trigger a compile — the offer waits for the domain reload
-    /// so their types exist; script-less samples are offered immediately. Each sample is offered
-    /// once per project (declining leaves the menu as the path back), and never in batch mode —
-    /// CI imports must not block on a dialog.
-    /// </summary>
     sealed class JamKitSampleImportHook : AssetPostprocessor
     {
         const string PendingKey = "JamKit.PendingSampleOffers";
@@ -46,8 +39,6 @@ namespace Metz.JamKit.Editor
                 return;
             }
 
-            // Samples with scripts finish importing across a domain reload; script-less ones
-            // never reload, so also flush when no compile is pending.
             if (!didDomainReload && EditorApplication.isCompiling)
             {
                 SessionState.SetString(PendingKey, string.Join("|", pending));
@@ -55,7 +46,6 @@ namespace Metz.JamKit.Editor
             }
 
             SessionState.SetString(PendingKey, "");
-            // Escape the import pipeline before touching scenes or showing dialogs.
             var toOffer = new List<string>(pending);
             EditorApplication.delayCall += () => Offer(toOffer);
         }

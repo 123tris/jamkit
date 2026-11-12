@@ -5,12 +5,6 @@ using UnityEngine;
 
 namespace Metz.JamKit.Editor
 {
-    /// <summary>
-    /// One-click itch.io WebGL build. Builds burn jam hours in exactly two ways — wrong
-    /// compression settings (black screen on itch) and hunting for the output folder —
-    /// so this locks in gzip + decompression fallback (loads correctly no matter how itch
-    /// serves headers), builds all enabled scenes, and reveals the folder to zip.
-    /// </summary>
     public static class WebGLItchBuild
     {
         [MenuItem("JamKit/Build/WebGL (itch.io)", priority = 30)]
@@ -33,8 +27,6 @@ namespace Metz.JamKit.Editor
                 return;
             }
 
-            // itch.io-safe settings: gzip is the best size/compat tradeoff, and the decompression
-            // fallback makes the build load even when the server doesn't send Content-Encoding.
             PlayerSettings.WebGL.compressionFormat = WebGLCompressionFormat.Gzip;
             PlayerSettings.WebGL.decompressionFallback = true;
             PlayerSettings.runInBackground = true;

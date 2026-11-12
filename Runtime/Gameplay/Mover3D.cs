@@ -1,80 +1,70 @@
 using Ripple;
 using Sirenix.OdinInspector;
 using UnityEngine;
+using UnityEngine.InputSystem;
 
 namespace Metz.JamKit
 {
-    /// <summary>
-    /// Prototype-grade 3D character mover. Reads from <see cref="InputServiceSO"/>'s Move + Jump.
-    /// Camera-relative movement when <see cref="CameraReference"/> is assigned (or Camera.main exists).
-    /// </summary>
     [DisallowMultipleComponent]
-    [RequireComponent(typeof(Rigidbody))]
+    [RequireComponent(typeof(Rigidbody), typeof(Collider))]
     public sealed class Mover3D : MonoBehaviour
     {
-        [Header("Service")]
-        [Required] public InputServiceSO InputService;
+        [Required] public InputActionReference Move;
+        [Required] public InputActionReference Jump;
 
-        [Header("Tuning")]
-        [Tooltip("Constant or a shared Ripple variable (speed buffs, difficulty).")]
         public FloatReference MoveSpeed = new(5f);
-        [Tooltip("Constant or a shared Ripple variable.")]
         public FloatReference JumpSpeed = new(6f);
         public bool RotateToFaceMove = true;
+
+        [Tooltip("Movement is relative to this transform. Empty uses the main camera.")]
         public Transform CameraReference;
+
         public LayerMask GroundLayers = ~0;
         public float GroundCheckDistance = 0.2f;
 
-        Rigidbody _rb;
-        Collider _col;
-        bool _wantsJump;
+        Rigidbody body;
+        Collider bodyCollider;
+        bool wantsJump;
 
         void Awake()
         {
-            _rb = GetComponent<Rigidbody>();
-            _col = GetComponent<Collider>();
-            _rb.constraints |= RigidbodyConstraints.FreezeRotationX | RigidbodyConstraints.FreezeRotationZ;
-            if (CameraReference == null && Camera.main != null) CameraReference = Camera.main.transform;
+            body = GetComponent<Rigidbody>();
+            bodyCollider = GetComponent<Collider>();
+            body.constraints |= RigidbodyConstraints.FreezeRotationX | RigidbodyConstraints.FreezeRotationZ;
+            if (CameraReference == null) CameraReference = Camera.main.transform;
+        }
+
+        void OnEnable()
+        {
+            Move.action.Enable();
+            Jump.action.Enable();
         }
 
         void Update()
         {
-            if (InputService == null) return;
-            var jump = InputService.Jump;
-            if (jump != null && jump.WasPressedThisFrame() && IsGrounded())
-                _wantsJump = true;
+            if (Jump.action.WasPressedThisFrame() && IsGrounded()) wantsJump = true;
         }
 
         void FixedUpdate()
         {
-            Vector2 input = (InputService == null || InputService.Move == null) ? Vector2.zero : InputService.Move.ReadValue<Vector2>();
-            Vector3 dir = new(input.x, 0f, input.y);
-            if (CameraReference != null && dir.sqrMagnitude > 0f)
-            {
-                var fwd = CameraReference.forward; fwd.y = 0f; fwd.Normalize();
-                var right = CameraReference.right; right.y = 0f; right.Normalize();
-                dir = right * input.x + fwd * input.y;
-            }
-            if (dir.sqrMagnitude > 1f) dir.Normalize();
+            Vector2 input = Move.action.ReadValue<Vector2>();
+            Vector3 direction = CameraReference.right.OnGround().normalized * input.x
+                                + CameraReference.forward.OnGround().normalized * input.y;
+            direction = Vector3.ClampMagnitude(direction, 1f);
 
-            var v = _rb.linearVelocity;
-            v.x = dir.x * MoveSpeed.Value;
-            v.z = dir.z * MoveSpeed.Value;
-            if (_wantsJump) { v.y = JumpSpeed.Value; _wantsJump = false; }
-            _rb.linearVelocity = v;
+            Vector3 velocity = direction * MoveSpeed.Value;
+            velocity.y = wantsJump ? JumpSpeed.Value : body.linearVelocity.y;
+            wantsJump = false;
+            body.linearVelocity = velocity;
 
-            if (RotateToFaceMove && dir.sqrMagnitude > 0.001f)
-            {
-                var rot = Quaternion.LookRotation(dir, Vector3.up);
-                _rb.MoveRotation(Quaternion.Slerp(_rb.rotation, rot, 0.2f));
-            }
+            if (RotateToFaceMove && direction.sqrMagnitude > 0.001f)
+                body.MoveRotation(Quaternion.Slerp(body.rotation, Quaternion.LookRotation(direction, Vector3.up), 0.2f));
         }
 
         bool IsGrounded()
         {
-            if (_col == null) return false;
-            var b = _col.bounds;
-            var origin = new Vector3(b.center.x, b.min.y + 0.01f, b.center.z);
+            Bounds bounds = bodyCollider.bounds;
+            var origin = new Vector3(bounds.center.x, bounds.min.y + 0.01f, bounds.center.z);
             return Physics.Raycast(origin, Vector3.down, GroundCheckDistance, GroundLayers);
         }
     }

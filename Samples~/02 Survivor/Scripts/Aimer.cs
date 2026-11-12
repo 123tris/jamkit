@@ -1,22 +1,15 @@
+using Sirenix.OdinInspector;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
 namespace Metz.JamKit
 {
-    /// <summary>
-    /// Points a pivot at the mouse cursor or the gamepad Look stick — twin-stick shooters,
-    /// turrets, aimed throws. Mouse: cursor is projected into the world (XY plane for 2D,
-    /// the pivot's ground plane for XZ). Gamepad: any meaningful Look-stick deflection takes
-    /// over. XY rotates the pivot's right axis to the aim (matches <see cref="ProjectileShooter"/>'s
-    /// 2D convention); XZ rotates forward (matches 3D).
-    /// </summary>
     [DisallowMultipleComponent]
     public sealed class Aimer : MonoBehaviour
     {
         public enum AimPlane { XY, XZ }
 
-        [Header("Service")]
-        public InputServiceSO InputService;
+        [Required] public InputActionReference Look;
 
         [Header("Aim")]
         public AimPlane Plane = AimPlane.XY;
@@ -40,10 +33,7 @@ namespace Metz.JamKit
         {
             var pivot = Pivot != null ? Pivot : transform;
 
-            // Gamepad stick wins while deflected; otherwise fall back to the mouse cursor.
-            Vector2 stick = (InputService != null && InputService.Look != null)
-                ? InputService.Look.ReadValue<Vector2>()
-                : Vector2.zero;
+            Vector2 stick = Look.action.ReadValue<Vector2>();
 
             if (stick.sqrMagnitude > 0.04f)
             {

@@ -5,17 +5,8 @@ using UnityEngine.UIElements;
 
 namespace Metz.JamKit
 {
-    /// <summary>
-    /// Owns the Settings view's controls for <see cref="MenuController"/>: two-way volume sliders
-    /// bound to Ripple variables, and graphics options persisted to PlayerPrefs. Plain class (not a
-    /// MonoBehaviour) so MenuController's inspector/serialized API is unchanged — this is purely
-    /// code organization. Construct it with the menu root; call <see cref="Dispose"/> from
-    /// OnDisable to release the variable subscriptions.
-    /// On WebGL the Resolution and VSync rows are hidden (the browser owns both).
-    /// </summary>
     public sealed class MenuSettingsBinder
     {
-        // Element names — must match JamKitMenu.uxml.
         const string MasterName = "settings-master", MusicName = "settings-music", SfxName = "settings-sfx";
         const string QualityName = "settings-quality", ResolutionName = "settings-resolution";
         const string FullscreenName = "settings-fullscreen", VSyncName = "settings-vsync";
@@ -34,7 +25,6 @@ namespace Metz.JamKit
         Toggle _fullscreen, _vsync;
         Resolution[] _resolutions;
 
-        /// <summary>The control keyboard/gamepad focus should land on when the view opens (may be null).</summary>
         public VisualElement FirstFocus => _master;
 
         public MenuSettingsBinder(VisualElement root, FloatVariableSO master, FloatVariableSO music, FloatVariableSO sfx)
@@ -53,14 +43,11 @@ namespace Metz.JamKit
             Wire();
         }
 
-        /// <summary>Release the Ripple variable subscriptions (element callbacks die with the visual tree).</summary>
         public void Dispose()
         {
             for (int i = 0; i < _teardown.Count; i++) _teardown[i]?.Invoke();
             _teardown.Clear();
         }
-
-        // -------------------- wiring --------------------
 
         void Wire()
         {
@@ -97,12 +84,10 @@ namespace Metz.JamKit
 
             if (_isWebGL)
             {
-                // The browser owns resolution and vsync; showing dead controls just confuses players.
                 HideRow(_resolution);
                 HideRow(_vsync);
             }
 
-            // Apply persisted state once.
             QualitySettings.SetQualityLevel(Mathf.Clamp(PlayerPrefs.GetInt(PrefsQuality, QualitySettings.GetQualityLevel()), 0, QualitySettings.names.Length - 1), true);
             if (!_isWebGL)
             {
@@ -111,20 +96,17 @@ namespace Metz.JamKit
             }
         }
 
-        /// <summary>Wire a volume slider two-way to its Ripple variable, and register the variable→slider teardown.</summary>
         void HookVolumeSlider(Slider slider, FloatVariableSO variable)
         {
             if (slider == null) return;
             slider.lowValue = 0f; slider.highValue = 1f;
             if (variable == null) return;
 
-            // slider → variable (callback dies with the visual tree, no teardown needed).
             slider.RegisterValueChangedCallback(e =>
             {
                 if (!Mathf.Approximately(variable.CurrentValue, e.newValue)) variable.SetCurrentValue(e.newValue);
             });
 
-            // variable → slider (lives on the persistent SO; must be torn down via Dispose).
             void OnVarChanged(float v)
             {
                 if (slider.panel != null && !Mathf.Approximately(slider.value, v)) slider.SetValueWithoutNotify(v);
@@ -137,16 +119,12 @@ namespace Metz.JamKit
 
         static void HideRow(VisualElement control)
         {
-            // Controls sit inside a .jk-row container with their label; hide the whole row.
             var row = control?.parent;
             if (row != null) row.style.display = DisplayStyle.None;
         }
 
-        // -------------------- choices --------------------
-
         void BuildResolutions()
         {
-            // Dedupe Screen.resolutions by width×height, keeping the highest refresh rate per size.
             var all = Screen.resolutions;
             var unique = new List<Resolution>(all.Length);
             for (int i = 0; i < all.Length; i++)
@@ -181,9 +159,6 @@ namespace Metz.JamKit
             _quality.SetValueWithoutNotify(SafeChoice(_quality, PlayerPrefs.GetInt(PrefsQuality, QualitySettings.GetQualityLevel())));
         }
 
-        // -------------------- sync + apply --------------------
-
-        /// <summary>Push current values into the controls (call when the Settings view opens).</summary>
         public void SyncToUI()
         {
             if (_master != null && _masterVar != null) _master.SetValueWithoutNotify(_masterVar.CurrentValue);
@@ -203,7 +178,7 @@ namespace Metz.JamKit
 
         void ApplyScreen()
         {
-            if (_isWebGL) return; // browser owns the canvas size
+            if (_isWebGL) return;
             if (_resolutions == null || _resolutions.Length == 0) return;
             int i = Mathf.Clamp(PlayerPrefs.GetInt(PrefsResolution, 0), 0, _resolutions.Length - 1);
             var r = _resolutions[i];

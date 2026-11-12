@@ -8,25 +8,13 @@ using Object = UnityEngine.Object;
 
 namespace Metz.JamKit.Editor
 {
-    /// <summary>
-    /// One-click sample setup: <c>JamKit &gt; Samples &gt; Set Up …</c>. Samples are prefab-first —
-    /// each ships a scene of prefab instances plus its prefabs (service slots deliberately null,
-    /// because package assets can never reference project assets). Setup closes that gap:
-    /// scaffold <c>Assets/_Project</c> if needed, wire every imported sample PREFAB to the
-    /// project's services (asset-level, so all instances inherit it), open the shipped scene,
-    /// drop in the project's JamKitCore, fill the rest, save. Idempotent.
-    /// </summary>
     public static class JamKitSampleSetup
     {
         public readonly struct Spec
         {
-            /// <summary>Display name — also the sample folder name and (for own-scene samples) the scene name.</summary>
             public readonly string Name;
-            /// <summary>True = the sample's arena prefab is instanced into the wizard's Game.unity instead of its own scene.</summary>
             public readonly bool InGameScene;
-            /// <summary>For InGameScene samples: the prefab (by name, without extension) dropped into Game.unity.</summary>
             public readonly string ArenaPrefab;
-            /// <summary>One line logged when the sample is ready.</summary>
             public readonly string PlayHint;
 
             public Spec(string name, bool inGameScene, string arenaPrefab, string playHint)
@@ -38,11 +26,6 @@ namespace Metz.JamKit.Editor
             }
         }
 
-        /// <summary>
-        /// Every shipped sample. Survivor is the only Game.unity resident: its loop ends in the
-        /// GameOver scene, whose Retry button loads the scene *named* "Game" — the arena must
-        /// live there for the full loop to cycle.
-        /// </summary>
         public static readonly Spec[] Specs =
         {
             new Spec("00 Hour Zero", false, null,
@@ -70,14 +53,11 @@ namespace Metz.JamKit.Editor
         [MenuItem(MenuRoot + "Set Up 04 Arcade", false, 45)] static void Setup04() => SetUp(Specs[4]);
         [MenuItem(MenuRoot + "Set Up 04 Arcade", true)] static bool Can04() => IsImported(Specs[4]);
 
-        // Grayed-out entries mean "not imported yet" — give that state a door.
         [MenuItem(MenuRoot + "Import Samples (Package Manager)…", false, 60)]
         static void OpenPackageManager() => UnityEditor.PackageManager.UI.Window.Open("com.metz.jamkit");
 
-        /// <summary>True once the sample folder (with its scene) is imported into Assets/Samples.</summary>
         public static bool IsImported(Spec spec) => FindSampleFolder(spec) != null;
 
-        /// <summary>Imported sample root, located by its shipped "&lt;Name&gt;/&lt;Name&gt;.unity" scene.</summary>
         static string FindSampleFolder(Spec spec)
         {
             foreach (var guid in AssetDatabase.FindAssets($"t:SceneAsset {spec.Name}"))
@@ -89,7 +69,6 @@ namespace Metz.JamKit.Editor
             return null;
         }
 
-        /// <summary>Run the sample's full setup. Safe to re-run; never overwrites shipped content.</summary>
         public static void SetUp(Spec spec)
         {
             if (EditorApplication.isPlayingOrWillChangePlaymode)
@@ -105,7 +84,6 @@ namespace Metz.JamKit.Editor
                 return;
             }
 
-            // Opening scenes below discards unsaved work without this prompt.
             if (!EditorSceneManager.SaveCurrentModifiedScenesIfUserWantsTo()) return;
 
             bool scaffolded = false;
@@ -115,9 +93,6 @@ namespace Metz.JamKit.Editor
                 scaffolded = true;
             }
 
-            // Wire the imported prefab ASSETS to the project's services — this is the step the
-            // package-immutability wall makes necessary, and asset-level wiring means every
-            // instance everywhere (shipped scene included) inherits the fix.
             int wired = 0;
             foreach (var guid in AssetDatabase.FindAssets("t:Prefab", new[] { folder }))
                 wired += JamKitAutoAssign.FillPrefabAsset(AssetDatabase.GUIDToAssetPath(guid));
@@ -145,7 +120,6 @@ namespace Metz.JamKit.Editor
             ReportReady(spec, scenePath, scaffolded, wired);
         }
 
-        /// <summary>The key wizard artifacts every sample leans on; any missing → full (idempotent) scaffold.</summary>
         static bool ProjectIsScaffolded()
             => File.Exists(JamProjectWizard.BootstrapScenePath)
             && File.Exists(JamProjectWizard.GameScenePath)
@@ -153,10 +127,9 @@ namespace Metz.JamKit.Editor
             && AssetDatabase.LoadAssetAtPath<GameObject>(JamProjectWizard.CorePrefabPath) != null
             && AssetDatabase.LoadAssetAtPath<InputServiceSO>(JamProjectWizard.ServicesDir + "/InputService.asset") != null;
 
-        /// <summary>Shipped sample scenes carry no JamKitCore (it's a project asset) — instance the project's.</summary>
         static void InstantiateCoreIfAbsent()
         {
-            if (Object.FindObjectsByType<SceneServiceRunner>(FindObjectsInactive.Include, FindObjectsSortMode.None).Length > 0)
+            if (Object.FindObjectsByType<HighScoreTracker>(FindObjectsInactive.Include, FindObjectsSortMode.None).Length > 0)
                 return;
             var core = AssetDatabase.LoadAssetAtPath<GameObject>(JamProjectWizard.CorePrefabPath);
             if (core != null) PrefabUtility.InstantiatePrefab(core);
@@ -174,7 +147,7 @@ namespace Metz.JamKit.Editor
             }
             foreach (var go in Object.FindObjectsByType<Transform>(FindObjectsInactive.Include, FindObjectsSortMode.None))
                 if (PrefabUtility.GetCorrespondingObjectFromSource(go.gameObject) == prefab)
-                    return; // already placed
+                    return;
             PrefabUtility.InstantiatePrefab(prefab);
         }
 

@@ -1,93 +1,114 @@
 using NUnit.Framework;
+using Ripple;
 using UnityEngine;
 
 namespace Metz.JamKit.Tests
 {
     public class GameTimerTests
     {
-        GameObject _go;
+        GameObject host;
 
         GameTimer NewTimer(GameTimer.Mode mode, float duration)
         {
-            _go = new GameObject("timer");
-            _go.SetActive(false); // avoid OnEnable/Update; tests drive Tick directly
-            var t = _go.AddComponent<GameTimer>();
-            t.CountMode = mode;
-            t.Duration = new Ripple.FloatReference(duration);
-            return t;
+            host = new GameObject("timer");
+            host.SetActive(false);
+            var timer = host.AddComponent<GameTimer>();
+            timer.CountMode = mode;
+            timer.Duration = new FloatReference(duration);
+            timer.StartTimer();
+            return timer;
         }
 
         [TearDown]
-        public void TearDown()
-        {
-            if (_go != null) Object.DestroyImmediate(_go);
-        }
+        public void TearDown() => Object.DestroyImmediate(host);
 
         [Test]
         public void CountDown_ReachesZeroAndStops()
         {
-            var t = NewTimer(GameTimer.Mode.CountDown, 1f);
-            t.StartTimer();
-            for (int i = 0; i < 12 && t.IsRunning; i++) t.Tick(0.1f);
-            Assert.AreEqual(0f, t.CurrentTime, 0.0001f);
-            Assert.IsFalse(t.IsRunning);
+            GameTimer timer = NewTimer(GameTimer.Mode.CountDown, 3f);
+
+            timer.Tick(2f);
+            Assert.AreEqual(1f, timer.CurrentTime, 0.0001f);
+            Assert.IsTrue(timer.IsRunning);
+
+            timer.Tick(2f);
+            Assert.AreEqual(0f, timer.CurrentTime, 0.0001f);
+            Assert.IsFalse(timer.IsRunning);
         }
 
         [Test]
         public void CountUp_StopsAtCap()
         {
-            var t = NewTimer(GameTimer.Mode.CountUp, 0.5f);
-            t.StartTimer();
-            for (int i = 0; i < 10 && t.IsRunning; i++) t.Tick(0.1f);
-            Assert.AreEqual(0.5f, t.CurrentTime, 0.0001f);
-            Assert.IsFalse(t.IsRunning);
+            GameTimer timer = NewTimer(GameTimer.Mode.CountUp, 3f);
+
+            timer.Tick(5f);
+
+            Assert.AreEqual(3f, timer.CurrentTime, 0.0001f);
+            Assert.IsFalse(timer.IsRunning);
         }
 
         [Test]
         public void CountUp_NoCapRunsForever()
         {
-            var t = NewTimer(GameTimer.Mode.CountUp, 0f);
-            t.StartTimer();
-            for (int i = 0; i < 100; i++) t.Tick(0.1f);
-            Assert.IsTrue(t.IsRunning);
-            Assert.AreEqual(10f, t.CurrentTime, 0.001f);
+            GameTimer timer = NewTimer(GameTimer.Mode.CountUp, 0f);
+
+            timer.Tick(500f);
+
+            Assert.AreEqual(500f, timer.CurrentTime, 0.0001f);
+            Assert.IsTrue(timer.IsRunning);
         }
 
         [Test]
         public void Pause_HoldsValue()
         {
-            var t = NewTimer(GameTimer.Mode.CountDown, 5f);
-            t.StartTimer();
-            t.Tick(1f);
-            t.Pause();
-            t.Tick(1f);
-            Assert.AreEqual(4f, t.CurrentTime, 0.0001f);
-            t.Resume();
-            t.Tick(1f);
-            Assert.AreEqual(3f, t.CurrentTime, 0.0001f);
+            GameTimer timer = NewTimer(GameTimer.Mode.CountDown, 10f);
+            timer.Tick(4f);
+
+            timer.Pause();
+            timer.Tick(4f);
+            Assert.AreEqual(6f, timer.CurrentTime, 0.0001f);
+
+            timer.Resume();
+            timer.Tick(1f);
+            Assert.AreEqual(5f, timer.CurrentTime, 0.0001f);
         }
 
         [Test]
         public void ResetTimer_RestoresStartValueWithoutRunning()
         {
-            var t = NewTimer(GameTimer.Mode.CountDown, 8f);
-            t.StartTimer();
-            t.Tick(3f);
-            t.ResetTimer();
-            Assert.AreEqual(8f, t.CurrentTime, 0.0001f);
-            Assert.IsFalse(t.IsRunning);
+            GameTimer timer = NewTimer(GameTimer.Mode.CountDown, 10f);
+            timer.Tick(4f);
+
+            timer.ResetTimer();
+
+            Assert.AreEqual(10f, timer.CurrentTime, 0.0001f);
+            Assert.IsFalse(timer.IsRunning);
         }
 
         [Test]
-        public void Completed_FiresOncePerRun()
+        public void OnCompleted_FiresOncePerRun()
         {
-            var t = NewTimer(GameTimer.Mode.CountDown, 0.2f);
-            int fired = 0;
-            t.Completed = new UltEvents.UltEvent();
-            t.Completed.DynamicCalls += () => fired++;
-            t.StartTimer();
-            for (int i = 0; i < 5; i++) t.Tick(0.1f);
-            Assert.AreEqual(1, fired);
+            GameTimer timer = NewTimer(GameTimer.Mode.CountDown, 1f);
+            int completed = 0;
+            timer.OnCompleted.AddListener(() => completed++);
+
+            timer.Tick(2f);
+            timer.Tick(2f);
+
+            Assert.AreEqual(1, completed);
+        }
+
+        [Test]
+        public void TimeVariable_MirrorsCurrentTime()
+        {
+            GameTimer timer = NewTimer(GameTimer.Mode.CountDown, 10f);
+            var mirror = ScriptableObject.CreateInstance<FloatVariableSO>();
+            timer.TimeVariable = mirror;
+
+            timer.Tick(4f);
+
+            Assert.AreEqual(6f, mirror.CurrentValue, 0.0001f);
+            Object.DestroyImmediate(mirror);
         }
     }
 }

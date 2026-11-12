@@ -1,479 +1,389 @@
+using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using Ripple;
 using Unity.Cinemachine;
 using UnityEditor;
+using UnityEditor.Events;
 using UnityEditor.SceneManagement;
 using UnityEngine;
+using UnityEngine.Events;
+using UnityEngine.EventSystems;
 using UnityEngine.InputSystem;
+using UnityEngine.InputSystem.UI;
+using UnityEngine.SceneManagement;
 using UnityEngine.UIElements;
+using Object = UnityEngine.Object;
 
 namespace Metz.JamKit.Editor
 {
-    /// <summary>
-    /// One-click jam scaffold. Creates the SO service assets (Time / Scene / Input / Save,
-    /// plus Unity-mixer Audio only when FMOD is absent — with FMOD installed, audio is driven
-    /// directly through FMOD instead), the Ripple variables (score + high score +
-    /// timer as plain variables — no service; volume + high score marked persistent), the template
-    /// PanelSettings (+ mixer on the Unity-audio path), the starter prefab library, and three
-    /// scenes (Bootstrap / Game / GameOver). Every scene gets a self-contained JamKitCore (all
-    /// runners + HighScoreTracker + DebugPanel) plus an EventSystem, so audio/pause/input/
-    /// transitions work in each scene without a persistent root or any singletons — the runners
-    /// simply register with the shared service SOs on load.
-    /// </summary>
     public static class JamProjectWizard
     {
         const string ProjectRoot = "Assets/_Project";
-        public const string ServicesDir = "Assets/_Project/Services";
-        const string VariablesDir = "Assets/_Project/Variables";
-        const string PrefabsDir = "Assets/_Project/Prefabs";
+        const string VariablesDir = ProjectRoot + "/Variables";
+        const string EventsDir = ProjectRoot + "/Events";
+        const string PrefabsDir = ProjectRoot + "/Prefabs";
+        const string GameAsmdefPath = ProjectRoot + "/Scripts/Game.asmdef";
 
+        public const string ServicesDir = ProjectRoot + "/Services";
         public const string BootstrapScenePath = ProjectRoot + "/Scenes/Bootstrap.unity";
         public const string GameScenePath = ProjectRoot + "/Scenes/Game.unity";
         public const string GameOverScenePath = ProjectRoot + "/Scenes/GameOver.unity";
         public const string CorePrefabPath = PrefabsDir + "/JamKitCore.prefab";
         public const string MenuPrefabPath = PrefabsDir + "/JamKitMenu.prefab";
 
-        /// <summary>
-        /// Optional integrations (FMOD, …) append extra scaffold steps here from
-        /// [InitializeOnLoad]; they run at the end of every <see cref="Scaffold"/> — wizard and
-        /// one-click sample setup alike. Steps must be idempotent (create-or-load) and work on
-        /// assets only: a throwaway scene is open when they run.
-        /// </summary>
-        public static readonly List<System.Action> PostScaffold = new();
+        static readonly string[] ScenePaths = { BootstrapScenePath, GameScenePath, GameOverScenePath };
+
+        static readonly string[] Folders =
+        {
+            "Scenes", "Scripts", "Prefabs", "Audio/Resources", "UI/Resources", "Art", "Services", "Variables", "Events",
+        };
+
+        public static readonly List<Action> PostScaffold = new();
+
+        struct Volumes
+        {
+            public FloatVariableSO Master;
+            public FloatVariableSO Music;
+            public FloatVariableSO Sfx;
+        }
+
+        struct FlowEvents
+        {
+            public VoidEventSO Play;
+            public VoidEventSO MainMenu;
+            public VoidEventSO Restart;
+            public VoidEventSO GameOver;
+        }
 
         [MenuItem("JamKit/New Jam Project", priority = 0)]
         public static void Run()
         {
-            if (!EditorUtility.DisplayDialog(
-                "JamKit: New Jam Project",
-                "Creates Bootstrap / Game / GameOver scenes, the SO service assets, the Ripple variables, " +
-                "the audio mixer, the UI Toolkit panel settings, and wires each scene with a JamKitCore, " +
-                "menu/pause flow, and an EventSystem for gamepad navigation.\n\nProceed?",
-                "Create", "Cancel"))
+            if (!EditorUtility.DisplayDialog("JamKit: New Jam Project",
+                    "Creates Bootstrap, Game and GameOver scenes, the service assets, the Ripple variables, " +
+                    "the menu and starter prefabs, and wires each scene with a menu and pause flow.\n\nProceed?",
+                    "Create", "Cancel"))
                 return;
 
-            // Never silently stomp scenes the user may have built their jam in. Asset creation is
-            // create-or-load (safe); scene creation is the destructive part, so it gets a choice.
             bool overwriteScenes = true;
-            var existingScenes = new List<string>();
-            foreach (var p in new[] { BootstrapScenePath, GameScenePath, GameOverScenePath })
-                if (File.Exists(p)) existingScenes.Add(p);
-            if (existingScenes.Count > 0)
+            string[] existing = ScenePaths.Where(File.Exists).ToArray();
+            if (existing.Length > 0)
             {
-                int choice = EditorUtility.DisplayDialogComplex(
-                    "JamKit: Scenes Already Exist",
-                    "These scenes already exist:\n\n" + string.Join("\n", existingScenes) +
-                    "\n\nKeep them (only missing scenes are created), or overwrite all three with fresh copies?",
+                int choice = EditorUtility.DisplayDialogComplex("JamKit: Scenes Already Exist",
+                    "These scenes already exist:\n\n" + string.Join("\n", existing) +
+                    "\n\nKeep them and create only the missing ones, or overwrite all three?",
                     "Keep Existing", "Cancel", "Overwrite All");
                 if (choice == 1) return;
                 overwriteScenes = choice == 2;
             }
 
-            // The scene builds below open new scenes, which discards unsaved work without this prompt.
             if (!EditorSceneManager.SaveCurrentModifiedScenesIfUserWantsTo()) return;
 
             Scaffold(overwriteScenes);
             EditorSceneManager.OpenScene(BootstrapScenePath);
-
             OfferFastPlayMode();
-
-            Debug.Log("[JamKit] Setup complete. Services in Assets/_Project/Services; JamKitCore + JamKitMenu " +
-                      "prefabs and the starter library in Assets/_Project/Prefabs (edit a prefab once, every scene " +
-                      "updates — customize starters as prefab VARIANTS). Press Play: Start → Settings → Game " +
-                      "(Esc pauses) → GameOver all work end-to-end.");
+            Debug.Log("[JamKit] Setup complete. Press Play: Start, Settings, Game (Esc pauses) and GameOver work end to end.");
         }
 
-        /// <summary>
-        /// The wizard's work without its dialogs, for tools that scaffold on demand (sample setup).
-        /// Create-or-load throughout; existing scenes are replaced only when <paramref name="overwriteScenes"/>.
-        /// Callers own the save-modified-scenes prompt, and a throwaway scene is left open at the
-        /// end (prefab building) — open a real one afterwards.
-        /// </summary>
         public static void Scaffold(bool overwriteScenes)
         {
-            EnsureFolders();
+            foreach (string folder in Folders) Directory.CreateDirectory($"{ProjectRoot}/{folder}");
+            AssetDatabase.Refresh();
+            EnsureGameAsmdef();
 
-            var panelSettings = TemplateAssets.EnsurePanelSettings();
-            var menuUxml = TemplateAssets.EnsureMenuDocument();
+            PanelSettings panelSettings = TemplateAssets.EnsurePanelSettings();
+            VisualTreeAsset menuUxml = TemplateAssets.EnsureMenuDocument();
 
-            // Ripple variables: volumes (persistent — settings survive restarts), score/high-score
-            // (high score persistent), and a timer readout for HUD binding. State lives here, not
-            // in services (see PILLARS.md); the only score logic is the HighScoreTracker on Core.
-            var master = CreateOrLoadFloatVar($"{VariablesDir}/MasterVolume.asset", persist: true);
-            var music  = CreateOrLoadFloatVar($"{VariablesDir}/MusicVolume.asset", persist: true);
-            var sfx    = CreateOrLoadFloatVar($"{VariablesDir}/SfxVolume.asset", persist: true);
-            var scoreVar = CreateOrLoadFloatVar($"{VariablesDir}/Score.asset", 0f, 999999f, 0f);
-            var highVar  = CreateOrLoadFloatVar($"{VariablesDir}/HighScore.asset", 0f, 999999f, 0f, persist: true);
-            CreateOrLoadFloatVar($"{VariablesDir}/Timer.asset", 0f, 999999f, 0f);
-
-            // Service SOs — services wrap behavior only (scene loads, timescale, input, IO).
-            // Audio is FMOD-first: with FMOD installed, no mixer and no Unity AudioService are
-            // scaffolded — audio is driven directly through FMOD, with the menu sliders writing the
-            // same Ripple volume variables that the project's FMOD glue reads.
-            AudioServiceSO audio = null;
-#if !JAMKIT_FMOD
-            var mixer = TemplateAssets.EnsureMixer();
-            audio = CreateOrLoadSO<AudioServiceSO>($"{ServicesDir}/AudioService.asset", a =>
+            var volumes = new Volumes
             {
-                a.Mixer = mixer;
-                a.MasterVolume = master;
-                a.MusicVolume = music;
-                a.SfxVolume = sfx;
+                Master = Variable("MasterVolume", persist: true),
+                Music = Variable("MusicVolume", persist: true),
+                Sfx = Variable("SfxVolume", persist: true),
+            };
+            FloatVariableSO score = Variable("Score", 0f, 999999f, 0f);
+            FloatVariableSO highScore = Variable("HighScore", 0f, 999999f, 0f, persist: true);
+            Variable("Timer", 0f, 999999f, 0f);
+            GameObjectListSO players = Asset<GameObjectListSO>($"{VariablesDir}/Players.asset",
+                set => SetBool(set, "_runtimeSet", true));
+
+            var time = Asset<TimeServiceSO>($"{ServicesDir}/TimeService.asset");
+            var fade = Asset<ScreenFadeSO>($"{ServicesDir}/ScreenFade.asset");
+            var scenes = Asset<SceneServiceSO>($"{ServicesDir}/SceneService.asset", service => service.Fade = fade);
+            var input = Asset<InputServiceSO>($"{ServicesDir}/InputService.asset",
+                service => service.Actions = Resources.Load<InputActionAsset>("JamKitInput"));
+
+            var events = new FlowEvents
+            {
+                Play = Asset<VoidEventSO>($"{EventsDir}/Play.asset"),
+                MainMenu = Asset<VoidEventSO>($"{EventsDir}/MainMenu.asset"),
+                Restart = Asset<VoidEventSO>($"{EventsDir}/Restart.asset"),
+                GameOver = Asset<VoidEventSO>($"{EventsDir}/GameOver.asset"),
+            };
+            var flow = Asset<GameFlow>($"{ProjectRoot}/GameFlow.asset", asset => asset.Transitions = new List<GameFlow.Transition>
+            {
+                new() { On = events.Play, To = new SceneRef("Game") },
+                new() { On = events.MainMenu, To = new SceneRef("Bootstrap") },
+                new() { On = events.GameOver, To = new SceneRef("GameOver") },
+                new() { On = events.Restart },
             });
-#endif
-            var time  = CreateOrLoadSO<TimeServiceSO>($"{ServicesDir}/TimeService.asset");
-            var scene = CreateOrLoadSO<SceneServiceSO>($"{ServicesDir}/SceneService.asset");
-            CreateOrLoadSO<SaveServiceSO>($"{ServicesDir}/SaveService.asset");
-
-            var actions = Resources.Load<InputActionAsset>("JamKitInput");
-            var input = CreateOrLoadSO<InputServiceSO>($"{ServicesDir}/InputService.asset", i => { i.Actions = actions; });
-
             AssetDatabase.SaveAssets();
 
-            // Prefab-first: JamKitCore + Menu are prefab assets instanced into each scene, so a
-            // later fix or addition propagates everywhere at once. Built in a throwaway empty
-            // scene so the user's scene never gets temp objects; we open Bootstrap at the end.
             EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
-            var corePrefab = CreateOrLoadCorePrefab(audio, time, scene, scoreVar, highVar);
-            var menuPrefab = CreateOrLoadMenuPrefab(audio, time, scene, input, panelSettings, menuUxml, master, music, sfx);
+            GameObject core = CorePrefab(time, scenes, flow, score, highScore, volumes);
+            GameObject menu = MenuPrefab(time, input, events, panelSettings, menuUxml, volumes);
+            StarterPrefabLibrary.EnsureAll(new StarterPrefabLibrary.Context { Time = time, Score = score, Players = players });
 
-            // Starter prefab assets — the Lego bricks designers variant and drop into scenes.
-            StarterPrefabLibrary.EnsureAll(new StarterPrefabLibrary.Context
-            {
-                Input = input,
-                Time = time,
-                Score = scoreVar,
-            });
+            if (overwriteScenes || !File.Exists(GameScenePath)) CreateGameScene(core, menu);
+            if (overwriteScenes || !File.Exists(GameOverScenePath)) CreateGameOverScene(core, menu, score);
+            if (overwriteScenes || !File.Exists(BootstrapScenePath)) CreateBootstrapScene(core, menu);
 
-            // Bootstrap is built last so it's the scene left open for the user.
-            if (overwriteScenes || !File.Exists(GameScenePath))
-                CreateGameScene(GameScenePath, corePrefab, menuPrefab, input);
-            if (overwriteScenes || !File.Exists(GameOverScenePath))
-                CreateGameOverScene(GameOverScenePath, corePrefab, scene, scoreVar, highVar, panelSettings);
-            if (overwriteScenes || !File.Exists(BootstrapScenePath))
-                CreateBootstrapScene(BootstrapScenePath, corePrefab, menuPrefab);
+            EditorBuildSettings.scenes = EditorBuildSettings.scenes
+                .Concat(ScenePaths.Where(path => EditorBuildSettings.scenes.All(scene => scene.path != path))
+                    .Select(path => new EditorBuildSettingsScene(path, true)))
+                .ToArray();
 
-            AddScenesToBuildSettings(new[] { BootstrapScenePath, GameScenePath, GameOverScenePath });
-
-            foreach (var step in PostScaffold) step();
+            foreach (Action step in PostScaffold) step();
 
             AssetDatabase.SaveAssets();
             AssetDatabase.Refresh();
         }
 
-        /// <summary>
-        /// Domain reload off = near-instant Play. Safe because every JamKit SO resets its mutable
-        /// state per session (the 0.4.0 reset guards exist exactly for this).
-        /// </summary>
         static void OfferFastPlayMode()
         {
             if (EditorSettings.enterPlayModeOptionsEnabled) return;
             if (!EditorUtility.DisplayDialog("JamKit: Fast Play Mode",
-                "Enable fast enter-play-mode (disables domain reload)?\n\n" +
-                "Play starts near-instantly. JamKit's services are built for it; your own statics " +
-                "must reset themselves (or use [RuntimeInitializeOnLoadMethod]).\n\n" +
-                "You can change this any time in Project Settings > Editor > Enter Play Mode Settings.",
-                "Enable", "Skip"))
+                    "Disable domain reload so Play starts near-instantly?\n\n" +
+                    "JamKit and Ripple reset their own state each session. Your own statics must do the same.\n\n" +
+                    "Change it any time in Project Settings > Editor > Enter Play Mode Settings.",
+                    "Enable", "Skip"))
                 return;
             EditorSettings.enterPlayModeOptionsEnabled = true;
             EditorSettings.enterPlayModeOptions = EnterPlayModeOptions.DisableDomainReload;
         }
 
-        // -------------------- asset helpers --------------------
-
-        static void EnsureFolders()
+        static void EnsureGameAsmdef()
         {
-            string[] folders = {
-                "Assets/_Project",
-                "Assets/_Project/Scenes",
-                "Assets/_Project/Scripts",
-                "Assets/_Project/Prefabs",
-                "Assets/_Project/Audio",
-                "Assets/_Project/Audio/Resources",
-                "Assets/_Project/UI",
-                "Assets/_Project/UI/Resources",
-                "Assets/_Project/Art",
-                "Assets/_Project/Services",
-                "Assets/_Project/Variables",
-            };
-            foreach (var f in folders)
-            {
-                if (!AssetDatabase.IsValidFolder(f))
-                {
-                    var parent = Path.GetDirectoryName(f).Replace("\\", "/");
-                    var leaf = Path.GetFileName(f);
-                    AssetDatabase.CreateFolder(parent, leaf);
-                }
-            }
+            if (File.Exists(GameAsmdefPath)) return;
+            File.WriteAllText(GameAsmdefPath,
+@"{
+    ""name"": ""Game"",
+    ""references"": [
+        ""Metz.JamKit.Runtime"",
+        ""Metz.Ripple.Runtime"",
+        ""Unity.Cinemachine"",
+        ""Unity.InputSystem"",
+        ""Unity.RenderPipelines.Universal.Runtime""
+    ],
+    ""autoReferenced"": true
+}
+");
+            AssetDatabase.ImportAsset(GameAsmdefPath);
         }
 
-        static T CreateOrLoadSO<T>(string path, System.Action<T> configure = null) where T : ScriptableObject
+        static T Asset<T>(string path, Action<T> configure = null) where T : ScriptableObject
         {
             var existing = AssetDatabase.LoadAssetAtPath<T>(path);
             if (existing != null) return existing;
 
-            var inst = ScriptableObject.CreateInstance<T>();
-            configure?.Invoke(inst);
-            Directory.CreateDirectory(Path.GetDirectoryName(path));
-            AssetDatabase.CreateAsset(inst, path);
-            return inst;
+            var asset = ScriptableObject.CreateInstance<T>();
+            AssetDatabase.CreateAsset(asset, path);
+            configure?.Invoke(asset);
+            EditorUtility.SetDirty(asset);
+            return asset;
         }
 
-        static FloatVariableSO CreateOrLoadFloatVar(string path, float min = 0f, float max = 1f, float initial = 1f, bool persist = false)
-        {
-            var existing = AssetDatabase.LoadAssetAtPath<FloatVariableSO>(path);
-            if (existing != null) return existing;
-            var inst = ScriptableObject.CreateInstance<FloatVariableSO>();
-            Directory.CreateDirectory(Path.GetDirectoryName(path));
-            AssetDatabase.CreateAsset(inst, path);
+        static FloatVariableSO Variable(string name, float min = 0f, float max = 1f, float initial = 1f, bool persist = false)
+            => Asset<FloatVariableSO>($"{VariablesDir}/{name}.asset", variable =>
+            {
+                var serialized = new SerializedObject(variable);
+                serialized.FindProperty("_isClamped").boolValue = true;
+                serialized.FindProperty("min._constantValue").floatValue = min;
+                serialized.FindProperty("max._constantValue").floatValue = max;
+                serialized.FindProperty("_initialValue").floatValue = initial;
+                serialized.FindProperty("_persist").boolValue = persist;
+                serialized.ApplyModifiedPropertiesWithoutUndo();
+            });
 
-            // Set min/max/initial/persist on the Ripple base via SerializedObject (string paths, so
-            // no compile-time dependency on Ripple's private fields) so the values stick.
-            var so = new SerializedObject(inst);
-            TrySetFloat(so, "min", min);
-            TrySetFloat(so, "max", max);
-            TrySetFloat(so, "_initialValue", initial);
-            TrySetBool(so, "_persist", persist);
-            so.ApplyModifiedPropertiesWithoutUndo();
-            return inst;
+        static void SetBool(Object target, string propertyName, bool value)
+        {
+            var serialized = new SerializedObject(target);
+            serialized.FindProperty(propertyName).boolValue = value;
+            serialized.ApplyModifiedPropertiesWithoutUndo();
         }
 
-        static void TrySetFloat(SerializedObject so, string name, float v)
+        static GameObject CorePrefab(TimeServiceSO time, SceneServiceSO scenes, GameFlow flow, FloatVariableSO score,
+            FloatVariableSO highScore, Volumes volumes)
         {
-            var prop = so.FindProperty(name);
-            if (prop != null && prop.propertyType == SerializedPropertyType.Float) prop.floatValue = v;
-        }
-
-        static void TrySetBool(SerializedObject so, string name, bool v)
-        {
-            var prop = so.FindProperty(name);
-            if (prop != null && prop.propertyType == SerializedPropertyType.Boolean) prop.boolValue = v;
-        }
-
-        // -------------------- shared scene pieces --------------------
-
-        /// <summary>
-        /// The JamKitCore prefab: every service runner + fade overlay + the score tracker +
-        /// the DebugPanel (Backquote — the only debug surface that exists in builds), plus the
-        /// Toast child (it hosts its own UIDocument at runtime). Load-or-create so user
-        /// customizations survive re-running. On the FMOD path <paramref name="audio"/> is null
-        /// — audio runs directly through FMOD rather than a JamKit audio-service runner.
-        /// </summary>
-        static GameObject CreateOrLoadCorePrefab(AudioServiceSO audio, TimeServiceSO time, SceneServiceSO scene,
-            FloatVariableSO scoreVar, FloatVariableSO highVar)
-        {
-            string path = CorePrefabPath;
-            var existing = AssetDatabase.LoadAssetAtPath<GameObject>(path);
+            var existing = AssetDatabase.LoadAssetAtPath<GameObject>(CorePrefabPath);
             if (existing != null) return existing;
 
             var core = new GameObject("JamKitCore");
-            if (audio != null) core.AddComponent<AudioServiceRunner>().Service = audio;
-            core.AddComponent<TimeServiceRunner>().Service = time;
-            var fade = core.AddComponent<FadeOverlay>();
-            var sceneRunner = core.AddComponent<SceneServiceRunner>();
-            sceneRunner.Service = scene;
-            sceneRunner.Fade = fade;
             var tracker = core.AddComponent<HighScoreTracker>();
-            tracker.Score = scoreVar;
-            tracker.HighScore = highVar;
+            tracker.Score = score;
+            tracker.HighScore = highScore;
 
-            var toast = new GameObject("Toast");
-            toast.transform.SetParent(core.transform, false);
-            toast.AddComponent<Toast>();
+            var driver = core.AddComponent<GameFlowDriver>();
+            driver.Flow = flow;
+            driver.SceneService = scenes;
 
-            var debug = new GameObject("DebugPanel");
-            debug.transform.SetParent(core.transform, false);
-            var panel = debug.AddComponent<DebugPanel>();
-            panel.TimeService = time;
-            panel.SceneService = scene;
+#if !JAMKIT_FMOD
+            var mixer = TemplateAssets.EnsureMixer();
+            foreach ((string parameter, FloatVariableSO volume) in new[]
+                     {
+                         ("MasterVol", volumes.Master), ("MusicVol", volumes.Music), ("SfxVol", volumes.Sfx),
+                     })
+            {
+                var channel = core.AddComponent<MixerVolume>();
+                channel.Mixer = mixer;
+                channel.Parameter = parameter;
+                channel.Volume = volume;
+            }
+#endif
 
-            Directory.CreateDirectory(PrefabsDir);
-            var prefab = PrefabUtility.SaveAsPrefabAsset(core, path);
-            Object.DestroyImmediate(core);
-            return prefab;
+            Child(core, "Toast").AddComponent<Toast>();
+
+            var debug = Child(core, "DebugPanel").AddComponent<DebugPanel>();
+            debug.TimeService = time;
+            debug.SceneService = scenes;
+
+            return SaveAsPrefab(core, CorePrefabPath);
         }
 
-        /// <summary>
-        /// Menu prefab wired to the services; scenes instance it and override InitialView. The
-        /// volume-override variables are set explicitly so the sliders bind with EITHER audio
-        /// backend (under FMOD there is no AudioServiceSO to fall back to).
-        /// </summary>
-        static GameObject CreateOrLoadMenuPrefab(AudioServiceSO audio, TimeServiceSO time, SceneServiceSO scene, InputServiceSO input,
-            PanelSettings panelSettings, VisualTreeAsset menuUxml, FloatVariableSO master, FloatVariableSO music, FloatVariableSO sfx)
+        static GameObject MenuPrefab(TimeServiceSO time, InputServiceSO input, FlowEvents events,
+            PanelSettings panelSettings, VisualTreeAsset menuUxml, Volumes volumes)
         {
-            string path = MenuPrefabPath;
-            var existing = AssetDatabase.LoadAssetAtPath<GameObject>(path);
-            if (existing != null) return RepointMenuUxml(existing, path, menuUxml);
+            var existing = AssetDatabase.LoadAssetAtPath<GameObject>(MenuPrefabPath);
+            if (existing != null) return existing;
 
             var root = new GameObject("JamKitMenu");
-            var doc = root.AddComponent<UIDocument>();
+            var document = root.AddComponent<UIDocument>();
+            document.visualTreeAsset = menuUxml;
+            document.panelSettings = panelSettings;
+
             var controller = root.AddComponent<MenuController>();
-
-            if (menuUxml != null)
-            {
-                doc.visualTreeAsset = menuUxml;
-                controller.MenuUxml = menuUxml;
-            }
-            if (panelSettings != null) doc.panelSettings = panelSettings;
-
             controller.TimeService = time;
-            controller.SceneService = scene;
             controller.InputService = input;
-            controller.masterVolume = master;
-            controller.musicVolume = music;
-            controller.sfxVolume = sfx;
-            controller.InitialView = MenuController.View.Start;
+            controller.Pause = InputReferences.Find("Pause");
+            controller.Cancel = InputReferences.Find("Cancel");
+            controller.MasterVolume = volumes.Master;
+            controller.MusicVolume = volumes.Music;
+            controller.SfxVolume = volumes.Sfx;
 
-            Directory.CreateDirectory(PrefabsDir);
-            var prefab = PrefabUtility.SaveAsPrefabAsset(root, path);
+            MenuView start = View(root, "Start", "start-menu");
+            Button(start, "start-play", events.Play.Raise);
+            Button(start, "start-settings", controller.ShowSettings);
+            Button(start, "start-quit", controller.QuitGame);
+
+            MenuView settings = View(root, "Settings", "settings-menu");
+            Button(settings, "settings-back", controller.Back);
+
+            MenuView pause = View(root, "Pause", "pause-menu");
+            pause.PausesTime = true;
+            Button(pause, "pause-resume", controller.Back);
+            Button(pause, "pause-settings", controller.ShowSettings);
+            Button(pause, "pause-restart", events.Restart.Raise);
+            Button(pause, "pause-mainmenu", events.MainMenu.Raise);
+
+            MenuView gameOver = View(root, "GameOver", "gameover-menu");
+            Button(gameOver, "gameover-retry", events.Play.Raise);
+            Button(gameOver, "gameover-mainmenu", events.MainMenu.Raise);
+
+            controller.Views = new List<MenuView> { start, settings, pause, gameOver };
+            controller.InitialView = start;
+            controller.PauseView = pause;
+            controller.SettingsView = settings;
+
+            return SaveAsPrefab(root, MenuPrefabPath);
+        }
+
+        static MenuView View(GameObject menu, string name, string rootElement)
+        {
+            var view = Child(menu, name).AddComponent<MenuView>();
+            view.RootElementName = rootElement;
+            return view;
+        }
+
+        static void Button(MenuView view, string elementName, UnityAction action)
+        {
+            var binding = new MenuView.ButtonBinding { ElementName = elementName };
+            UnityEventTools.AddPersistentListener(binding.OnClicked.Response, action);
+            view.Buttons.Add(binding);
+        }
+
+        static GameObject Child(GameObject parent, string name)
+        {
+            var child = new GameObject(name);
+            child.transform.SetParent(parent.transform, false);
+            return child;
+        }
+
+        static GameObject SaveAsPrefab(GameObject root, string path)
+        {
+            GameObject prefab = PrefabUtility.SaveAsPrefabAsset(root, path);
             Object.DestroyImmediate(root);
             return prefab;
         }
 
-        /// <summary>
-        /// Point an already-scaffolded menu prefab at the project's UXML copy. Projects scaffolded
-        /// before the markup became a project-owned template still reference the package asset (which
-        /// lives in the read-only package cache); re-running the wizard migrates them. No-op once the
-        /// reference is already local, so this stays idempotent.
-        /// </summary>
-        static GameObject RepointMenuUxml(GameObject prefab, string path, VisualTreeAsset menuUxml)
+        static void CreateBootstrapScene(GameObject core, GameObject menu)
         {
-            if (menuUxml == null) return prefab;
-
-            var root = PrefabUtility.LoadPrefabContents(path);
-            try
-            {
-                var doc = root.GetComponent<UIDocument>();
-                var controller = root.GetComponent<MenuController>();
-
-                bool changed = false;
-                if (doc != null && doc.visualTreeAsset != menuUxml) { doc.visualTreeAsset = menuUxml; changed = true; }
-                if (controller != null && controller.MenuUxml != menuUxml) { controller.MenuUxml = menuUxml; changed = true; }
-                if (!changed) return prefab;
-
-                PrefabUtility.SaveAsPrefabAsset(root, path);
-            }
-            finally
-            {
-                PrefabUtility.UnloadPrefabContents(root);
-            }
-            return AssetDatabase.LoadAssetAtPath<GameObject>(path);
+            Scene scene = NewScene(cinemachine: true);
+            PrefabUtility.InstantiatePrefab(core);
+            PrefabUtility.InstantiatePrefab(menu);
+            EditorSceneManager.SaveScene(scene, BootstrapScenePath);
         }
 
-        static GameObject Instance(GameObject prefab, string name = null)
+        static void CreateGameScene(GameObject core, GameObject menu)
         {
-            var go = (GameObject)PrefabUtility.InstantiatePrefab(prefab);
-            if (!string.IsNullOrEmpty(name)) go.name = name;
-            return go;
+            Scene scene = NewScene(cinemachine: true);
+            new GameObject("Directional Light") { transform = { rotation = Quaternion.Euler(50f, -30f, 0f) } }
+                .AddComponent<Light>().type = LightType.Directional;
+            PrefabUtility.InstantiatePrefab(core);
+
+            var gameplayMenu = (GameObject)PrefabUtility.InstantiatePrefab(menu);
+            gameplayMenu.name = "JamKitGameplayUI";
+            gameplayMenu.GetComponent<MenuController>().InitialView = null;
+            EditorSceneManager.SaveScene(scene, GameScenePath);
         }
 
-        internal static void CreateEventSystem()
+        static void CreateGameOverScene(GameObject core, GameObject menu, FloatVariableSO score)
         {
-            var es = new GameObject("EventSystem");
-            es.AddComponent<UnityEngine.EventSystems.EventSystem>();
-            es.AddComponent<UnityEngine.InputSystem.UI.InputSystemUIInputModule>();
+            Scene scene = NewScene(cinemachine: false);
+            PrefabUtility.InstantiatePrefab(core);
+
+            var gameOverMenu = (GameObject)PrefabUtility.InstantiatePrefab(menu);
+            gameOverMenu.name = "JamKitGameOverUI";
+            var controller = gameOverMenu.GetComponent<MenuController>();
+            controller.InitialView = controller.Views.First(view => view.RootElementName == "gameover-menu");
+
+            var scoreLabel = gameOverMenu.AddComponent<LabelBinding>();
+            scoreLabel.Document = gameOverMenu.GetComponent<UIDocument>();
+            scoreLabel.ElementName = "gameover-score";
+            scoreLabel.Variable = score;
+            scoreLabel.Format = "Score: {0:0}";
+            EditorSceneManager.SaveScene(scene, GameOverScenePath);
         }
 
-        internal static void CreateDirectionalLight()
+        static Scene NewScene(bool cinemachine)
         {
-            var lightGo = new GameObject("Directional Light");
-            var light = lightGo.AddComponent<Light>();
-            light.type = LightType.Directional;
-            lightGo.transform.rotation = Quaternion.Euler(50f, -30f, 0f);
-        }
+            Scene scene = EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
 
-        internal static void CreateCamera(bool cinemachine)
-        {
-            var camGo = new GameObject("Main Camera");
-            camGo.tag = "MainCamera";
-            var cam = camGo.AddComponent<Camera>();
-            cam.transform.position = new Vector3(0, 1, -10);
-            cam.clearFlags = CameraClearFlags.SolidColor;
-            cam.backgroundColor = new Color(0.05f, 0.06f, 0.09f);
+            var camera = new GameObject("Main Camera") { tag = "MainCamera" };
+            camera.transform.position = new Vector3(0f, 1f, -10f);
+            var lens = camera.AddComponent<Camera>();
+            lens.clearFlags = CameraClearFlags.SolidColor;
+            lens.backgroundColor = new Color(0.05f, 0.06f, 0.09f);
+            camera.AddComponent<AudioListener>();
             if (cinemachine)
             {
-                camGo.AddComponent<CinemachineBrain>();
-                // NOT CinemachineImpulseListener: that's a vcam extension and never runs on a
-                // plain camera — shake would silently do nothing until a CinemachineCamera exists.
-                camGo.AddComponent<CinemachineExternalImpulseListener>();
+                camera.AddComponent<CinemachineBrain>();
+                camera.AddComponent<CinemachineExternalImpulseListener>();
             }
-            camGo.AddComponent<AudioListener>();
-        }
 
-        // -------------------- scenes --------------------
-
-        static void CreateBootstrapScene(string path, GameObject corePrefab, GameObject menuPrefab)
-        {
-            var s = EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
-
-            CreateCamera(cinemachine: true);
-            Instance(corePrefab);
-            Instance(menuPrefab); // prefab default InitialView = Start
-            CreateEventSystem();
-
-            EditorSceneManager.MarkSceneDirty(s);
-            EditorSceneManager.SaveScene(s, path);
-        }
-
-        static void CreateGameScene(string path, GameObject corePrefab, GameObject menuPrefab, InputServiceSO input)
-        {
-            var s = EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
-
-            CreateCamera(cinemachine: true);
-            CreateDirectionalLight();
-
-            Instance(corePrefab);
-
-            // Hidden pause layer: Esc opens pause, gameplay input goes live (InitialView = None
-            // as an instance override; PauseController is an added component on the instance).
-            var menuGo = Instance(menuPrefab, "JamKitGameplayUI");
-            var menu = menuGo.GetComponent<MenuController>();
-            menu.InitialView = MenuController.View.None;
-            var pause = menuGo.AddComponent<PauseController>();
-            pause.Menu = menu;
-            pause.InputService = input;
-
-            CreateEventSystem();
-
-            EditorSceneManager.MarkSceneDirty(s);
-            EditorSceneManager.SaveScene(s, path);
-        }
-
-        static void CreateGameOverScene(string path, GameObject corePrefab,
-            SceneServiceSO scene, FloatVariableSO scoreVar, FloatVariableSO highVar, PanelSettings panelSettings)
-        {
-            var s = EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
-
-            CreateCamera(cinemachine: false);
-            Instance(corePrefab);
-
-            var uiGo = new GameObject("GameOverUI");
-            var doc = uiGo.AddComponent<UIDocument>();
-            doc.panelSettings = panelSettings;
-            var over = uiGo.AddComponent<GameOverController>();
-            over.SceneService = scene;
-            over.ScoreVariable = scoreVar;
-            over.HighScoreVariable = highVar;
-            over.RetryScene = new SceneRef("Game");
-            over.MainMenuScene = new SceneRef("Bootstrap");
-
-            CreateEventSystem();
-
-            EditorSceneManager.MarkSceneDirty(s);
-            EditorSceneManager.SaveScene(s, path);
-        }
-
-        static void AddScenesToBuildSettings(string[] scenePaths)
-        {
-            var existing = new List<EditorBuildSettingsScene>(EditorBuildSettings.scenes);
-            foreach (var p in scenePaths)
-            {
-                bool already = false;
-                foreach (var sc in existing) if (sc.path == p) { already = true; break; }
-                if (!already) existing.Add(new EditorBuildSettingsScene(p, true));
-            }
-            EditorBuildSettings.scenes = existing.ToArray();
+            var eventSystem = new GameObject("EventSystem");
+            eventSystem.AddComponent<EventSystem>();
+            eventSystem.AddComponent<InputSystemUIInputModule>();
+            return scene;
         }
     }
 }

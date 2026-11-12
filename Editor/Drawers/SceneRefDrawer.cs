@@ -5,12 +5,6 @@ using UnityEngine;
 
 namespace Metz.JamKit.Editor
 {
-    /// <summary>
-    /// Draws a <see cref="SceneRef"/> as a dropdown of the scenes in Build Settings, so a scene
-    /// reference is a pick, not a typed string. Prefers the stored GUID (survives renames) and
-    /// falls back to the name; a value that is no longer in Build Settings is still shown, tagged,
-    /// so nothing is silently lost.
-    /// </summary>
     [CustomPropertyDrawer(typeof(SceneRef))]
     public sealed class SceneRefDrawer : PropertyDrawer
     {
@@ -28,12 +22,10 @@ namespace Metz.JamKit.Editor
                 guids.Add(s.guid.ToString());
             }
 
-            // Resolve the current pick: GUID first (rename-proof), then name.
             int current = -1;
             if (!string.IsNullOrEmpty(guidProp.stringValue)) current = guids.IndexOf(guidProp.stringValue);
             if (current < 0 && !string.IsNullOrEmpty(nameProp.stringValue)) current = names.IndexOf(nameProp.stringValue);
 
-            // Option 0 is "(none)"; scenes follow. A value not in Build Settings is appended, tagged.
             var options = new List<string> { "(none)" };
             options.AddRange(names);
 
@@ -61,11 +53,9 @@ namespace Metz.JamKit.Editor
                     nameProp.stringValue = names[idx];
                     guidProp.stringValue = guids[idx];
                 }
-                // (Re-selecting the tagged "missing" entry leaves the value untouched.)
             }
             else if (current >= 0)
             {
-                // Heal name/GUID against the current asset — picks up renames since last edit.
                 if (nameProp.stringValue != names[current]) nameProp.stringValue = names[current];
                 if (guidProp.stringValue != guids[current]) guidProp.stringValue = guids[current];
             }

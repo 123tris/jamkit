@@ -3,12 +3,6 @@ using UnityEngine;
 
 namespace Metz.JamKit.Editor
 {
-    /// <summary>
-    /// <c>GameObject &gt; JamKit &gt; …</c>: instantiates the project's STARTER PREFABS
-    /// (<see cref="StarterPrefabLibrary"/>) as linked prefab instances, so scenes stay lists of
-    /// prefabs and a starter fix propagates to every scene (PILLARS.md). Composition lives in the
-    /// starter assets, not here — customize by making prefab variants of the starters.
-    /// </summary>
     public static class JamKitCreateMenu
     {
         const string Menu2D = "GameObject/JamKit/2D/";

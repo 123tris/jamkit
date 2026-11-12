@@ -1,78 +1,66 @@
+using System;
+using Sirenix.OdinInspector;
 using UnityEngine;
+using UnityEngine.InputSystem;
 
 namespace Metz.JamKit
 {
-    /// <summary>
-    /// Player side of "press E": finds the nearest <see cref="Interactable"/> within
-    /// <see cref="Radius"/>, toggles its prompt, and interacts on the Interact action.
-    /// Overlap probing is allocation-free (preallocated buffers) and works for 2D and 3D
-    /// colliders at once — whichever your game uses just works.
-    /// </summary>
     [DisallowMultipleComponent]
     public sealed class Interactor : MonoBehaviour
     {
-        [Header("Service")]
-        public InputServiceSO InputService;
-
-        [Header("Probe")]
+        [Required] public InputActionReference Interact;
         [Min(0.1f)] public float Radius = 1.5f;
-        [Tooltip("Layers searched for Interactables. Keep tight for perf on big scenes.")]
         public LayerMask Layers = ~0;
 
+        readonly Collider[] hits3D = new Collider[16];
+        readonly Collider2D[] hits2D = new Collider2D[16];
+
         public Interactable CurrentTarget { get; private set; }
-        public event System.Action<Interactable> TargetChanged;
 
-        readonly Collider[] _hits3D = new Collider[16];
-        readonly Collider2D[] _hits2D = new Collider2D[16];
-        ContactFilter2D _filter2D;
+        public event Action<Interactable> TargetChanged;
 
-        void Awake()
-        {
-            _filter2D = new ContactFilter2D { useLayerMask = true, layerMask = Layers, useTriggers = true };
-        }
+        void OnEnable() => Interact.action.Enable();
+
+        void OnDisable() => SetTarget(null);
 
         void Update()
         {
-            var nearest = FindNearest();
-            if (nearest != CurrentTarget)
-            {
-                if (CurrentTarget != null) CurrentTarget.SetFocused(false);
-                CurrentTarget = nearest;
-                if (CurrentTarget != null) CurrentTarget.SetFocused(true);
-                TargetChanged?.Invoke(CurrentTarget);
-            }
-
-            if (CurrentTarget == null || InputService == null) return;
-            var action = InputService.Interact;
-            if (action != null && action.WasPressedThisFrame())
-                CurrentTarget.DoInteract(this);
+            SetTarget(FindNearest());
+            if (CurrentTarget != null && Interact.action.WasPressedThisFrame()) CurrentTarget.Interact(this);
         }
 
-        void OnDisable()
+        void SetTarget(Interactable target)
         {
+            if (target == CurrentTarget) return;
             if (CurrentTarget != null) CurrentTarget.SetFocused(false);
-            CurrentTarget = null;
+            CurrentTarget = target;
+            if (CurrentTarget != null) CurrentTarget.SetFocused(true);
+            TargetChanged?.Invoke(CurrentTarget);
         }
 
         Interactable FindNearest()
         {
-            Interactable best = null;
-            float bestSqr = float.MaxValue;
+            Interactable nearest = null;
+            float nearestDistance = float.MaxValue;
 
-            int n3 = Physics.OverlapSphereNonAlloc(transform.position, Radius, _hits3D, Layers, QueryTriggerInteraction.Collide);
-            for (int i = 0; i < n3; i++) Consider(_hits3D[i].GetComponentInParent<Interactable>(), ref best, ref bestSqr);
+            int count3D = Physics.OverlapSphereNonAlloc(transform.position, Radius, hits3D, Layers, QueryTriggerInteraction.Collide);
+            for (int i = 0; i < count3D; i++) Consider(hits3D[i]);
 
-            int n2 = Physics2D.OverlapCircle(transform.position, Radius, _filter2D, _hits2D);
-            for (int i = 0; i < n2; i++) Consider(_hits2D[i].GetComponentInParent<Interactable>(), ref best, ref bestSqr);
+            var filter = new ContactFilter2D { useLayerMask = true, layerMask = Layers, useTriggers = true };
+            int count2D = Physics2D.OverlapCircle(transform.position, Radius, filter, hits2D);
+            for (int i = 0; i < count2D; i++) Consider(hits2D[i]);
 
-            return best;
-        }
+            return nearest;
 
-        void Consider(Interactable candidate, ref Interactable best, ref float bestSqr)
-        {
-            if (candidate == null || !candidate.CanInteract) return;
-            float sqr = (candidate.transform.position - transform.position).sqrMagnitude;
-            if (sqr < bestSqr) { bestSqr = sqr; best = candidate; }
+            void Consider(Component hit)
+            {
+                var candidate = hit.GetComponentInParent<Interactable>();
+                if (candidate == null || !candidate.CanInteract) return;
+                float distance = (candidate.transform.position - transform.position).sqrMagnitude;
+                if (distance >= nearestDistance) return;
+                nearestDistance = distance;
+                nearest = candidate;
+            }
         }
 
         void OnDrawGizmosSelected()

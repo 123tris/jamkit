@@ -1,0 +1,22 @@
+{
+    "name": "Metz.JamKit.Flow.Editor",
+    "rootNamespace": "Metz.JamKit.Editor.Flow",
+    "references": [
+        "Metz.JamKit.Runtime",
+        "Metz.Ripple.Runtime"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [
+        "ODIN_INSPECTOR",
+        "UNITY_6000_4_OR_NEWER"
+    ],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

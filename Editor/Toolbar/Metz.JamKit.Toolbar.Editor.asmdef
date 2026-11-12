@@ -1,0 +1,22 @@
+{
+    "name": "Metz.JamKit.Toolbar.Editor",
+    "rootNamespace": "Metz.JamKit.Editor",
+    "references": [
+        "Metz.JamKit.Runtime",
+        "Metz.JamKit.Editor"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [
+        "ODIN_INSPECTOR",
+        "UNITY_6000_3_OR_NEWER"
+    ],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

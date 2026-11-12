@@ -1,68 +1,138 @@
+using System.Collections;
 using System.Collections.Generic;
 using Sirenix.OdinInspector;
 using UnityEngine;
 
 namespace Metz.JamKit
 {
-    /// <summary>
-    /// ScriptableObject definition of the time service: a stack-based wrapper for
-    /// <see cref="Time.timeScale"/> and the ONLY thing allowed to touch it (see PILLARS.md).
-    /// Push/pop modifiers compose without stomping — pause + hit-freeze + slow-mo nest properly.
-    /// Scene-side <see cref="TimeServiceRunner"/> is required for <see cref="FreezeForSeconds"/>.
-    /// </summary>
-    [CreateAssetMenu(menuName = "JamKit/Services/Time Service", fileName = "TimeService")]
-    public sealed class TimeServiceSO : ServiceSO<TimeServiceRunner>
+    public sealed class TimeModifier
     {
-        readonly Stack<float> _stack = new();
-        float _baseScale = 1f;
+        readonly TimeServiceSO service;
+        float scale;
+
+        internal TimeModifier(TimeServiceSO service, float scale)
+        {
+            this.service = service;
+            this.scale = scale;
+        }
+
+        public float Scale
+        {
+            get => scale;
+            set
+            {
+                scale = value;
+                service.Apply();
+            }
+        }
+
+        public void Release() => service.Release(this);
+    }
+
+    [CreateAssetMenu(menuName = "JamKit/Services/Time Service", fileName = "TimeService")]
+    public sealed class TimeServiceSO : ServiceSO
+    {
+        readonly List<TimeModifier> modifiers = new();
+        TimeModifier pause;
+        float baseScale = 1f;
 
         public float BaseScale
         {
-            get => _baseScale;
-            set { _baseScale = value; Apply(); }
+            get => baseScale;
+            set
+            {
+                baseScale = value;
+                Apply();
+            }
         }
 
         [ShowInInspector, ReadOnly, FoldoutGroup("Debug")]
-        public float CurrentScale => Application.isPlaying ? Time.timeScale : 1f;
+        public float EffectiveScale
+        {
+            get
+            {
+                float scale = baseScale;
+                foreach (TimeModifier modifier in modifiers)
+                    scale = Mathf.Min(scale, baseScale * modifier.Scale);
+                return Mathf.Max(0f, scale);
+            }
+        }
 
         [ShowInInspector, ReadOnly, FoldoutGroup("Debug")]
-        public int StackDepth => _stack.Count;
+        public int ActiveModifiers => modifiers.Count;
+
+        [ShowInInspector, ReadOnly, FoldoutGroup("Debug")]
+        public bool IsPaused => pause != null;
+
+        public TimeModifier Push(float scale)
+        {
+            var modifier = new TimeModifier(this, scale);
+            modifiers.Add(modifier);
+            Apply();
+            return modifier;
+        }
+
+        public TimeModifier PushSmooth(float scale, float seconds, float from = 1f)
+        {
+            TimeModifier modifier = Push(from);
+            JamKitHost.Run(EaseTo(modifier, scale, seconds));
+            return modifier;
+        }
+
+        [Button, DisableInEditorMode, FoldoutGroup("Debug")]
+        public void Pause() => pause ??= Push(0f);
+
+        [Button, DisableInEditorMode, FoldoutGroup("Debug")]
+        public void Resume()
+        {
+            pause?.Release();
+            pause = null;
+        }
+
+        public void FreezeForSeconds(float seconds) => FreezeAsync(seconds);
+
+        public Awaitable FreezeAsync(float seconds, float scale = 0f) => JamKitHost.Run(Freeze(seconds, scale));
+
+        public override void ResetState()
+        {
+            modifiers.Clear();
+            pause = null;
+            Apply();
+        }
 
         protected override void OnDisable()
         {
-            // Restore timescale when the SO unloads (e.g. domain reload exits play mode).
-            _stack.Clear();
-            if (Application.isPlaying) Time.timeScale = 1f;
+            ResetState();
             base.OnDisable();
         }
 
-        public void Push(float scale) { _stack.Push(scale); Apply(); }
-        public void Pop() { if (_stack.Count > 0) _stack.Pop(); Apply(); }
-        public void Clear() { _stack.Clear(); Apply(); }
-
-        /// <summary>
-        /// Drop all pushed modifiers and restore base timescale. Runs each play session and on
-        /// every runner (re)enable, so a leftover push (e.g. quitting Play while paused with
-        /// Domain Reload disabled) can't leak a frozen timescale into the next session/scene.
-        /// </summary>
-        public override void ResetState() { _stack.Clear(); Apply(); }
-
-        [Button, DisableInEditorMode, FoldoutGroup("Debug")]
-        public void Pause() => Push(0f);
-
-        [Button, DisableInEditorMode, FoldoutGroup("Debug")]
-        public void Resume() => Pop();
-
-        /// <summary>Push then auto-pop after <paramref name="seconds"/> real time. Requires a Runner.</summary>
-        public Coroutine FreezeForSeconds(float seconds, float scale = 0f)
-            => Runner == null ? null : Runner.StartFreeze(seconds, scale);
-
-        void Apply()
+        internal void Release(TimeModifier modifier)
         {
-            if (!Application.isPlaying) return;
-            Time.timeScale = _stack.Count == 0
-                ? _baseScale
-                : Mathf.Max(0f, _stack.Peek());
+            modifiers.Remove(modifier);
+            Apply();
+        }
+
+        internal void Apply()
+        {
+            if (Application.isPlaying) Time.timeScale = EffectiveScale;
+        }
+
+        IEnumerator Freeze(float seconds, float scale)
+        {
+            TimeModifier modifier = Push(scale);
+            yield return new WaitForSecondsRealtime(seconds);
+            modifier.Release();
+        }
+
+        static IEnumerator EaseTo(TimeModifier modifier, float scale, float seconds)
+        {
+            float from = modifier.Scale;
+            for (float t = 0f; t < seconds; t += Time.unscaledDeltaTime)
+            {
+                modifier.Scale = Mathf.Lerp(from, scale, t / seconds);
+                yield return null;
+            }
+            modifier.Scale = scale;
         }
     }
 }

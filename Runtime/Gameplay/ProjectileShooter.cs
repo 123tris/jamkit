@@ -1,63 +1,50 @@
 using Ripple;
 using Sirenix.OdinInspector;
 using UnityEngine;
+using UnityEngine.InputSystem;
 
 namespace Metz.JamKit
 {
-    /// <summary>
-    /// Fires a projectile prefab on an interval, either while the Attack input is held or
-    /// automatically. Pair the projectile with <see cref="AutoDespawn"/> so it cleans up.
-    /// Sets the spawned Rigidbody's velocity along the muzzle's facing.
-    /// </summary>
     public sealed class ProjectileShooter : MonoBehaviour
     {
-        [Header("Services")]
-        [Tooltip("Required only when UseAttackInput is true.")]
-        public InputServiceSO InputService;
-
-        [Header("Projectile")]
         [Required] public GameObject ProjectilePrefab;
-        [Tooltip("Spawn point + direction. Defaults to this transform. 3D fires along +forward, 2D along +right.")]
+
+        [Required, Tooltip("Spawn point. 3D fires along its forward axis, 2D along its right axis.")]
         public Transform Muzzle;
-        [Tooltip("Muzzle velocity. Constant or a shared Ripple variable (weapon upgrades).")]
+
         public FloatReference Speed = new(12f);
-        [Tooltip("Seconds between shots. Constant or a shared Ripple variable (fire-rate buffs).")]
         public FloatReference FireInterval = new(0.2f);
 
-        [Header("Mode")]
-        [Tooltip("Fire while the Attack action is held. When false, fires automatically on the interval.")]
-        public bool UseAttackInput = true;
-        [Tooltip("Drive a Rigidbody2D (true) or a 3D Rigidbody (false).")]
-        public bool Is2D = false;
+        [Tooltip("Fire along the muzzle right axis instead of forward.")]
+        public bool Is2D;
 
-        [FoldoutGroup("Broadcast (Ripple, global)")]
-        [Tooltip("Optional — any shot sharing this event (muzzle SFX, ammo counters).")]
-        public VoidEventSO BroadcastFired;
+        [Tooltip("Fires while held. Leave empty to fire automatically.")]
+        public InputActionReference Attack;
 
-        float _next;
+        [FoldoutGroup("Events")] public Signal OnFired = new();
+
+        Cooldown cooldown;
+
+        void Reset() => Muzzle = transform;
+
+        void OnEnable()
+        {
+            if (Attack != null) Attack.action.Enable();
+        }
 
         void Update()
         {
-            bool wantFire = !UseAttackInput
-                || (InputService != null && InputService.Attack != null && InputService.Attack.IsPressed());
-            if (!wantFire || ProjectilePrefab == null) return;
-            if (Time.time < _next) return;
-            Fire();
-            _next = Time.time + FireInterval.Value;
+            if (Attack != null && !Attack.action.IsPressed()) return;
+            if (cooldown.TryUse(FireInterval.Value)) Fire();
         }
 
+        [Button, DisableInEditorMode, FoldoutGroup("Debug")]
         public GameObject Fire()
         {
-            var muzzle = Muzzle != null ? Muzzle : transform;
-            var go = Instantiate(ProjectilePrefab, muzzle.position, muzzle.rotation);
-
-            // Is2D picks the facing axis (muzzle.right vs muzzle.forward); the motor applies it to
-            // whichever body the projectile has.
-            if (go != null)
-                Motor.LaunchBody(go, (Is2D ? muzzle.right : muzzle.forward) * Speed.Value);
-
-            if (BroadcastFired != null) BroadcastFired.Invoke();
-            return go;
+            GameObject projectile = Instantiate(ProjectilePrefab, Muzzle.position, Muzzle.rotation);
+            new Body(projectile).Velocity = (Is2D ? Muzzle.right : Muzzle.forward) * Speed.Value;
+            OnFired.Invoke();
+            return projectile;
         }
     }
 }

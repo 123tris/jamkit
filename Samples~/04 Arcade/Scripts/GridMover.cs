@@ -1,22 +1,16 @@
 using Ripple;
+using Sirenix.OdinInspector;
 using UnityEngine;
+using UnityEngine.InputSystem;
 
 namespace Metz.JamKit
 {
-    /// <summary>
-    /// Tile-stepped movement (frogger, sokoban, snake, roguelikes). Reads the Move action,
-    /// quantizes to 4-way steps of <see cref="CellSize"/>, slides between cells over
-    /// <see cref="MoveDuration"/>, and refuses steps into <see cref="BlockedBy"/> colliders.
-    /// Transform-based — pair with a kinematic Rigidbody(2D) if triggers need to see it.
-    /// AI/code can drive it with <see cref="TryStep"/>.
-    /// </summary>
     [DisallowMultipleComponent]
     public sealed class GridMover : MonoBehaviour
     {
         public enum GridPlane { XY, XZ }
 
-        [Header("Service")]
-        public InputServiceSO InputService;
+        [Required] public InputActionReference Move;
 
         [Header("Grid")]
         public GridPlane Plane = GridPlane.XY;
@@ -37,7 +31,7 @@ namespace Metz.JamKit
         [Header("Events")]
         [Tooltip("Raised when a step starts — hop SFX, dust puffs.")]
         public VoidEventSO OnStep;
-        public event System.Action<Vector3> Stepped; // arg: destination
+        public event System.Action<Vector3> Stepped;
 
         Vector3 _from, _to;
         float _moveT = -1f;
@@ -66,13 +60,11 @@ namespace Metz.JamKit
                 return;
             }
 
-            if (InputService == null || InputService.Move == null) return;
             if (Time.time < _nextRepeat) return;
 
-            Vector2 input = InputService.Move.ReadValue<Vector2>();
+            Vector2 input = Move.action.ReadValue<Vector2>();
             if (input.sqrMagnitude < 0.25f) return;
 
-            // 4-way: dominant axis wins.
             Vector2Int dir = Mathf.Abs(input.x) >= Mathf.Abs(input.y)
                 ? new Vector2Int(input.x > 0f ? 1 : -1, 0)
                 : new Vector2Int(0, input.y > 0f ? 1 : -1);
@@ -80,7 +72,6 @@ namespace Metz.JamKit
             if (TryStep(dir)) _nextRepeat = Time.time + RepeatDelay;
         }
 
-        /// <summary>Attempt one step. Returns false while sliding or when the target cell is blocked.</summary>
         public bool TryStep(Vector2Int dir)
         {
             if (_moveT >= 0f) return false;
@@ -112,7 +103,6 @@ namespace Metz.JamKit
 
         Vector3 Snap(Vector3 p) => SnapToGrid(p, CellSize, Plane);
 
-        /// <summary>Round a position to the nearest cell center on the given plane. Pure — covered by tests.</summary>
         public static Vector3 SnapToGrid(Vector3 p, float cellSize, GridPlane plane)
         {
             float x = Mathf.Round(p.x / cellSize) * cellSize;

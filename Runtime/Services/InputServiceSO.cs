@@ -1,113 +1,39 @@
-using System;
+using Sirenix.OdinInspector;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
 namespace Metz.JamKit
 {
-    /// <summary>
-    /// Holds the project's <see cref="InputActionAsset"/> and exposes named action maps
-    /// (UI + Gameplay) with quick switching. Components reference this SO directly —
-    /// no singleton lookup. Action/map lookups are cached so per-frame access (movers reading
-    /// Move/Jump in Update + FixedUpdate) doesn't do a string dictionary lookup each call.
-    /// </summary>
     [CreateAssetMenu(menuName = "JamKit/Services/Input Service", fileName = "InputService")]
     public sealed class InputServiceSO : ServiceSO
     {
-        [Tooltip("InputActionAsset that contains 'UI' and 'Gameplay' maps. Drag JamKitInput here, or your own.")]
-        public InputActionAsset Actions;
-
-        public string UIMapName = "UI";
+        [Required] public InputActionAsset Actions;
         public string GameplayMapName = "Gameplay";
+        public string UIMapName = "UI";
 
-        [Tooltip("Enable the Gameplay map on first access instead of waiting for a menu to call SwitchToGameplay(). " +
-                 "Tick this on secondary player services (GameplayMapName = Gameplay1/Gameplay2 for keyboard co-op) — " +
-                 "menus only drive the default service's map.")]
-        public bool AutoEnableGameplay = false;
+        [Tooltip("Lock and hide the cursor in gameplay, release it in UI.")]
+        public bool ManageCursor = true;
 
-        // ---- cache (rebuilt when the asset or a map name changes) ----
-        InputActionAsset _cachedAsset;
-        string _cachedUIName, _cachedGameplayName;
-        InputActionMap _uiMap, _gameplayMap;
-        InputAction _move, _look, _jump, _attack, _dash, _interact, _pause, _uiSubmit, _uiCancel, _uiNavigate;
+        [ShowInInspector, ReadOnly, FoldoutGroup("Debug")]
+        public bool InGameplay { get; private set; }
 
-        void EnsureCache()
+        [Button, DisableInEditorMode, FoldoutGroup("Debug")]
+        public void SwitchToGameplay() => Switch(GameplayMapName, UIMapName, true);
+
+        [Button, DisableInEditorMode, FoldoutGroup("Debug")]
+        public void SwitchToUI() => Switch(UIMapName, GameplayMapName, false);
+
+        public override void ResetState() => InGameplay = false;
+
+        void Switch(string enable, string disable, bool gameplay)
         {
-            if (_cachedAsset == Actions && _cachedUIName == UIMapName && _cachedGameplayName == GameplayMapName) return;
-            _cachedAsset = Actions;
-            _cachedUIName = UIMapName;
-            _cachedGameplayName = GameplayMapName;
+            Actions.FindActionMap(disable, true).Disable();
+            Actions.FindActionMap(enable, true).Enable();
+            InGameplay = gameplay;
 
-            _uiMap       = Actions != null ? Actions.FindActionMap(UIMapName, false) : null;
-            _gameplayMap = Actions != null ? Actions.FindActionMap(GameplayMapName, false) : null;
-
-            _move     = _gameplayMap?.FindAction("Move");
-            _look     = _gameplayMap?.FindAction("Look");
-            _jump     = _gameplayMap?.FindAction("Jump");
-            _attack   = _gameplayMap?.FindAction("Attack");
-            _dash     = _gameplayMap?.FindAction("Dash");
-            _interact = _gameplayMap?.FindAction("Interact");
-            _pause    = _gameplayMap?.FindAction("Pause");
-
-            _uiSubmit   = _uiMap?.FindAction("Submit");
-            _uiCancel   = _uiMap?.FindAction("Cancel");
-            _uiNavigate = _uiMap?.FindAction("Navigate");
-
-            if (AutoEnableGameplay && _gameplayMap != null && _current == null && Application.isPlaying)
-                SwitchTo(_gameplayMap);
-        }
-
-        public InputActionMap UI       { get { EnsureCache(); return _uiMap; } }
-        public InputActionMap Gameplay { get { EnsureCache(); return _gameplayMap; } }
-
-        public InputAction Move     { get { EnsureCache(); return _move; } }
-        public InputAction Look     { get { EnsureCache(); return _look; } }
-        public InputAction Jump     { get { EnsureCache(); return _jump; } }
-        public InputAction Attack   { get { EnsureCache(); return _attack; } }
-        public InputAction Dash     { get { EnsureCache(); return _dash; } }
-        public InputAction Interact { get { EnsureCache(); return _interact; } }
-        public InputAction Pause    { get { EnsureCache(); return _pause; } }
-
-        public InputAction UI_Submit   { get { EnsureCache(); return _uiSubmit; } }
-        public InputAction UI_Cancel   { get { EnsureCache(); return _uiCancel; } }
-        public InputAction UI_Navigate { get { EnsureCache(); return _uiNavigate; } }
-
-        public event Action<InputActionMap> MapSwitched;
-        InputActionMap _current;
-        public InputActionMap CurrentMap => _current;
-
-        [Sirenix.OdinInspector.ShowInInspector, Sirenix.OdinInspector.ReadOnly, Sirenix.OdinInspector.FoldoutGroup("Debug")]
-        public string CurrentMapName => _current != null ? _current.name : "(none)";
-
-        public void SwitchTo(InputActionMap map)
-        {
-            if (map == null) return;
-            if (_current != null) _current.Disable();
-            _current = map;
-            _current.Enable();
-            MapSwitched?.Invoke(map);
-        }
-
-        public void SwitchToUI() => SwitchTo(UI);
-        public void SwitchToGameplay() => SwitchTo(Gameplay);
-
-        /// <summary>Drop cached maps and the current-map pointer (runs each play session via the base hook).</summary>
-        public override void ResetState()
-        {
-            _current = null;
-            _cachedAsset = null;
-        }
-
-        protected override void OnEnable()
-        {
-            base.OnEnable();
-            ResetState();
-        }
-
-        protected override void OnDisable()
-        {
-            if (_current != null && Application.isPlaying) _current.Disable();
-            _current = null;
-            base.OnDisable();
+            if (!ManageCursor) return;
+            Cursor.lockState = gameplay ? CursorLockMode.Locked : CursorLockMode.None;
+            Cursor.visible = !gameplay;
         }
     }
 }

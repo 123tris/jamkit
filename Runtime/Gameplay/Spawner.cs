@@ -5,57 +5,55 @@ using UnityEngine;
 
 namespace Metz.JamKit
 {
-    /// <summary>
-    /// Spawns a prefab at this transform on a fixed interval. Pair spawns with
-    /// <see cref="AutoDespawn"/> so they clean up.
-    /// </summary>
     public sealed class Spawner : MonoBehaviour
     {
-        [Header("Spawn")]
         [Required] public GameObject Prefab;
-        [Tooltip("Seconds between spawns. Constant or a shared Ripple variable (difficulty ramp).")]
         public FloatReference Interval = new(1f);
         public bool AutoStart = true;
-        [Tooltip("Max instances alive at once. -1 = unlimited. Counts active spawned instances; despawned/destroyed ones free a slot. Constant or a shared Ripple variable.")]
+
+        [Tooltip("-1 is unlimited.")]
         public IntReference MaxAlive = new(-1);
-        public Vector2 Jitter = Vector2.zero;
 
-        float _next;
-        bool _running;
-        readonly List<GameObject> _spawned = new();
+        [Tooltip("Random offset on the X and Z axes.")]
+        public Vector2 Jitter;
 
-        void OnEnable() { if (AutoStart) Begin(); }
+        readonly List<GameObject> spawned = new();
+        Cooldown cooldown;
+        bool running;
 
-        public void Begin() { _running = true; _next = Time.time + Interval.Value; }
-        public void Stop()  { _running = false; }
+        void OnEnable()
+        {
+            if (AutoStart) Begin();
+        }
+
+        public void Begin()
+        {
+            running = true;
+            cooldown.Start(Interval.Value);
+        }
+
+        public void Stop() => running = false;
 
         void Update()
         {
-            if (!_running || Prefab == null) return;
-            if (MaxAlive.Value >= 0 && CountAlive() >= MaxAlive.Value) { _next = Time.time + Interval.Value; return; }
-            if (Time.time < _next) return;
-            SpawnOne();
-            _next = Time.time + Interval.Value;
+            if (!running || !cooldown.Ready) return;
+            cooldown.Start(Interval.Value);
+            if (MaxAlive.Value < 0 || CountAlive() < MaxAlive.Value) SpawnOne();
         }
 
         [Button, DisableInEditorMode, FoldoutGroup("Debug")]
         public GameObject SpawnOne()
         {
-            var pos = transform.position + new Vector3(Random.Range(-Jitter.x, Jitter.x), 0f, Random.Range(-Jitter.y, Jitter.y));
-            var go = Instantiate(Prefab, pos, transform.rotation);
-            if (go != null) _spawned.Add(go);
-            return go;
+            var offset = new Vector3(Random.Range(-Jitter.x, Jitter.x), 0f, Random.Range(-Jitter.y, Jitter.y));
+            GameObject instance = Instantiate(Prefab, transform.position + offset, transform.rotation);
+            spawned.Add(instance);
+            return instance;
         }
 
-        /// <summary>Live count of spawned instances, pruning any that were destroyed or despawned (inactive).</summary>
         public int CountAlive()
         {
-            for (int i = _spawned.Count - 1; i >= 0; i--)
-            {
-                var go = _spawned[i];
-                if (go == null || !go.activeInHierarchy) _spawned.RemoveAt(i);
-            }
-            return _spawned.Count;
+            spawned.RemoveAll(instance => instance == null || !instance.activeInHierarchy);
+            return spawned.Count;
         }
     }
 }

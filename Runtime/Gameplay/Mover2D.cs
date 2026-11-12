@@ -1,71 +1,72 @@
 using Ripple;
 using Sirenix.OdinInspector;
 using UnityEngine;
+using UnityEngine.InputSystem;
 
 namespace Metz.JamKit
 {
-    /// <summary>
-    /// Prototype-grade 2D character mover. Reads from <see cref="InputServiceSO"/>'s Move / Jump actions.
-    /// </summary>
     [DisallowMultipleComponent]
-    [RequireComponent(typeof(Rigidbody2D))]
+    [RequireComponent(typeof(Rigidbody2D), typeof(Collider2D))]
     public sealed class Mover2D : MonoBehaviour
     {
-        [Header("Service")]
-        [Required] public InputServiceSO InputService;
+        [Required] public InputActionReference Move;
+        [Required, HideIf(nameof(TopDown))] public InputActionReference Jump;
 
-        [Header("Tuning")]
-        [Tooltip("Constant or a shared Ripple variable (speed buffs, difficulty).")]
         public FloatReference MoveSpeed = new(6f);
-        [Tooltip("Constant or a shared Ripple variable.")]
-        public FloatReference JumpSpeed = new(12f);
-        public bool TopDown = false;
-        [Tooltip("Per-axis input multiplier in TopDown mode. (1,0) = horizontal-only paddle, (0,1) = vertical-only paddle.")]
-        public Vector2 AxisScale = Vector2.one;
-        public LayerMask GroundLayers = ~0;
-        public float GroundCheckDistance = 0.1f;
+        [HideIf(nameof(TopDown))] public FloatReference JumpSpeed = new(12f);
 
-        Rigidbody2D _rb;
-        Collider2D _col;
-        bool _wantsJump;
+        [Tooltip("Move on both axes with no gravity or jumping.")]
+        public bool TopDown;
+
+        [ShowIf(nameof(TopDown)), Tooltip("Per-axis input multiplier. (1,0) is a horizontal-only paddle.")]
+        public Vector2 AxisScale = Vector2.one;
+
+        [HideIf(nameof(TopDown))] public LayerMask GroundLayers = ~0;
+        [HideIf(nameof(TopDown))] public float GroundCheckDistance = 0.1f;
+
+        Rigidbody2D body;
+        Collider2D bodyCollider;
+        bool wantsJump;
 
         void Awake()
         {
-            _rb = GetComponent<Rigidbody2D>();
-            _col = GetComponent<Collider2D>();
-            if (TopDown) _rb.gravityScale = 0f;
+            body = GetComponent<Rigidbody2D>();
+            bodyCollider = GetComponent<Collider2D>();
+            if (TopDown) body.gravityScale = 0f;
+        }
+
+        void OnEnable()
+        {
+            Move.action.Enable();
+            if (!TopDown) Jump.action.Enable();
         }
 
         void Update()
         {
-            if (InputService == null || TopDown) return;
-            var jump = InputService.Jump;
-            if (jump != null && jump.WasPressedThisFrame() && IsGrounded())
-                _wantsJump = true;
+            if (!TopDown && Jump.action.WasPressedThisFrame() && IsGrounded()) wantsJump = true;
         }
 
         void FixedUpdate()
         {
-            Vector2 input = (InputService == null || InputService.Move == null) ? Vector2.zero : InputService.Move.ReadValue<Vector2>();
+            Vector2 input = Move.action.ReadValue<Vector2>();
             if (TopDown)
             {
-                _rb.linearVelocity = Vector2.Scale(input, AxisScale) * MoveSpeed.Value;
+                body.linearVelocity = Vector2.Scale(input, AxisScale) * MoveSpeed.Value;
+                return;
             }
-            else
-            {
-                var v = _rb.linearVelocity;
-                v.x = input.x * MoveSpeed.Value;
-                if (_wantsJump) { v.y = JumpSpeed.Value; _wantsJump = false; }
-                _rb.linearVelocity = v;
-            }
+
+            Vector2 velocity = body.linearVelocity;
+            velocity.x = input.x * MoveSpeed.Value;
+            if (wantsJump) velocity.y = JumpSpeed.Value;
+            wantsJump = false;
+            body.linearVelocity = velocity;
         }
 
         bool IsGrounded()
         {
-            if (_col == null) return false;
-            var b = _col.bounds;
-            var origin = new Vector2(b.center.x, b.min.y + 0.01f);
-            return Physics2D.Raycast(origin, Vector2.down, GroundCheckDistance, GroundLayers).collider != null;
+            Bounds bounds = bodyCollider.bounds;
+            var origin = new Vector2(bounds.center.x, bounds.min.y - 0.01f);
+            return Physics2D.Raycast(origin, Vector2.down, GroundCheckDistance, GroundLayers);
         }
     }
 }

@@ -4,7 +4,6 @@
     "references": [
         "Metz.JamKit.Runtime",
         "Metz.Ripple.Runtime",
-        "Kybernetik.UltEvents",
         "Unity.InputSystem",
         "UnityEngine.TestRunner",
         "UnityEditor.TestRunner"
@@ -19,15 +18,8 @@
     "autoReferenced": false,
     "defineConstraints": [
         "UNITY_INCLUDE_TESTS",
-        "ULTEVENTS",
         "ODIN_INSPECTOR"
     ],
-    "versionDefines": [
-        {
-            "name": "com.kybernetik.ultevents",
-            "expression": "0",
-            "define": "ULTEVENTS"
-        }
-    ],
+    "versionDefines": [],
     "noEngineReferences": false
 }

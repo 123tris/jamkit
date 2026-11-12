@@ -1,9 +1,9 @@
 {
   "name": "com.metz.jamkit",
-  "version": "0.9.1",
+  "version": "1.0.0-pre.1",
   "displayName": "JamKit",
-  "description": "Rapid game-jam toolkit for Unity 6 — the glue layer of a four-part stack: Ripple owns state/events, Feel owns feedback, FMOD owns audio, JamKit owns services-for-behavior (no singletons), gameplay primitives, UI Toolkit menus, and prefab-first editor tooling. Requires Odin Inspector, UltEvents, and Ripple; Feel and FMOD are the recommended feedback/audio paths.",
-  "unity": "6000.0",
+  "description": "Rapid game-jam toolkit for Unity 6.6. Ripple owns state and events, JamKit owns the rest of hour one: self-hosting services (time, scenes, input, screen fade), backend-neutral audio, tweens and camera shake, gameplay primitives, UI Toolkit menus and editor tooling. Requires Odin Inspector and Ripple; Feel and FMOD are optional.",
+  "unity": "6000.6",
   "author": {
     "name": "Metz"
   },
@@ -36,27 +36,27 @@
   "samples": [
     {
       "displayName": "00 Hour Zero",
-      "description": "The kit tour with zero scripts: Spawner + TriggerZone + Ripple variable + Toast, all prefabs, all inspector wiring.",
+      "description": "The kit tour with zero scripts. Needs re-authoring for 1.0.",
       "path": "Samples~/00 Hour Zero"
     },
     {
       "displayName": "01 Platformer",
-      "description": "2D pack: Mover2D, Health with visible UltEvent wiring (hit-stop, respawn, refill), patrol hazard, kill pit, goal, FollowCamera.",
+      "description": "2D movement, health, hazards and a goal. Needs re-authoring for 1.0.",
       "path": "Samples~/01 Platformer"
     },
     {
       "displayName": "02 Survivor",
-      "description": "Full 3D loop in Game.unity: WaveSpawner chasers, Aimer + ProjectileShooter, self-cleaning debris, GameTimer, and a small glue script.",
+      "description": "A full 3D loop with waves, aiming and a round timer. Needs re-authoring for 1.0.",
       "path": "Samples~/02 Survivor"
     },
     {
       "displayName": "03 Feel Showcase",
-      "description": "REQUIRES FEEL. Health → FeelPlayer → MMF_Player stacks, plus the stack-safe MMF_JamKitHitStop custom feedback.",
+      "description": "Requires Feel. Health signals driving MMF_Player stacks. Needs re-authoring for 1.0.",
       "path": "Samples~/03 Feel Showcase"
     },
     {
       "displayName": "04 Arcade",
-      "description": "Breakout-pong scene of prefabs; home of the sample-local arcade components (Bouncer2D, Paddle, GridMover, ThrustMover2D, ScreenWrap2D).",
+      "description": "Breakout-pong built from sample-local arcade components. Needs re-authoring for 1.0.",
       "path": "Samples~/04 Arcade"
     }
   ]

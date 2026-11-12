@@ -1,0 +1,11 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" editor-extension-mode="False">
+    <Style src="JamKitMenu.uss" />
+    <ui:VisualElement name="gameover-menu" class="jk-view jk-view--start">
+        <ui:Label text="Game Over" name="gameover-title" class="jk-title" />
+        <ui:Label text="" name="gameover-score" class="jk-section-title" />
+        <ui:VisualElement class="jk-button-column">
+            <ui:Button text="Retry" name="gameover-retry" class="jk-button" />
+            <ui:Button text="Main Menu" name="gameover-mainmenu" class="jk-button" />
+        </ui:VisualElement>
+    </ui:VisualElement>
+</ui:UXML>

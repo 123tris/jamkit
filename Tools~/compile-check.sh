@@ -1,114 +1,79 @@
 #!/bin/bash
-# Fast compile verification without launching Unity ("nothing ships unverified").
-# Compiles Runtime, Editor, and Tests sources with Roslyn against the reference set
-# extracted from the Unity-generated csprojs in the project root. Requires the dotnet SDK
-# and that Unity has generated csprojs + built Library/ScriptAssemblies at least once.
+# Roslyn compile check without launching Unity. Builds Ripple from source, then JamKit's
+# Runtime, Editor, Tests and Samples against it, using the reference set from the
+# Unity-generated csprojs in the host project. Needs the dotnet SDK, and Unity must have
+# generated the csprojs and Library/ScriptAssemblies at least once.
 #
-# Usage: bash Packages/com.metz.jamkit/Tools~/compile-check.sh [project-root]
+# Usage: bash Packages/com.metz.jamkit/Tools~/compile-check.sh [project-root] [ripple-root]
+#
+# Editor/Toolbar and Editor/Flow use Unity 6.3+ / 6.4+ editor APIs. They are only compiled
+# when the host project's csprojs point at an editor that has them.
 set -u
 PROJ="${1:-$(cd "$(dirname "$0")/../../.." && pwd)}"
-# csc.dll is a Windows process: /c/... paths from Git Bash's pwd/find don't resolve there.
 PROJ="$(cygpath -m "$PROJ" 2>/dev/null || echo "$PROJ")"
-# The package folder may be embedded under any name (com.metz.jamkit, jamkit, …) — derive it
-# from this script's own location (Tools~ always sits directly inside the package).
 PKG="$(cd "$(dirname "$0")/.." && pwd)"
 PKG="$(cygpath -m "$PKG" 2>/dev/null || echo "$PKG")"
-# Windows-style path so the native compiler can write to it (Git Bash /tmp is not C:\tmp).
+RIPPLE="${2:-$(grep -o '"com.metz.ripple": *"file:[^"]*' "$PROJ/Packages/manifest.json" | sed 's/.*file://')}"
 OUT="$(cygpath -m "${TEMP:-/tmp}" 2>/dev/null || echo /tmp)/jamkit-compile-check"
 mkdir -p "$OUT"
 
 CSC=$(ls -d "C:/Program Files/dotnet/sdk"/*/Roslyn/bincore/csc.dll 2>/dev/null | sort -V | tail -1)
 if [ -z "$CSC" ]; then echo "dotnet SDK csc.dll not found"; exit 2; fi
+if [ ! -d "$RIPPLE/Runtime" ]; then echo "Ripple sources not found (pass the path as the second argument)"; exit 2; fi
 
+# build_asm <csproj> <srcdir> <out.dll> [extra refs] [exclude glob]
 build_asm () {
-  local csproj="$1" srcdir="$2" out="$3" extra_ref="${4:-}" exclude="${5:-}" extra_defines="${6:-}"
+  local csproj="$1" srcdir="$2" out="$3" extra_ref="${4:-}" exclude="${5:-}"
   local rsp="$OUT/$(basename "$out" .dll).rsp"
   : > "$rsp"
-
   grep -o '<HintPath>[^<]*' "$csproj" | sed 's/<HintPath>/-r:"/;s/$/"/' >> "$rsp"
-
   grep -o 'ProjectReference Include="[^"]*"' "$csproj" \
     | sed 's/ProjectReference Include="//;s/"$//;s/\.csproj$//' \
     | while read -r name; do
         case "$name" in
-          Metz.JamKit.*) ;; # replaced by freshly built dlls via extra_ref
+          Metz.JamKit.*|Metz.Ripple.*|Kybernetik.UltEvents*) ;;
           *) echo "-r:\"$PROJ/Library/ScriptAssemblies/$name.dll\"" >> "$rsp" ;;
         esac
       done
-
-  # extra_ref may hold several space-separated dll paths ($OUT never contains spaces).
   for ref in $extra_ref; do echo "-r:\"$ref\"" >> "$rsp"; done
-
   local srcs
   if [ -n "$exclude" ]; then
     srcs=$(find "$srcdir" -name '*.cs' -not -path "$exclude" 2>/dev/null)
   else
     srcs=$(find "$srcdir" -name '*.cs' 2>/dev/null)
   fi
-  if [ -z "$srcs" ]; then
-    echo "=== $(basename "$out") skipped (no sources in $srcdir)"
-    return 0
-  fi
+  if [ -z "$srcs" ]; then echo "=== $(basename "$out") skipped (no sources)"; return 0; fi
   echo "$srcs" | sed 's/^/"/;s/$/"/' >> "$rsp"
-
   local defines
   defines=$(grep -o 'DefineConstants>[^<]*' "$csproj" | sed 's/DefineConstants>//' | head -1)
-  if [ -n "$extra_defines" ]; then defines="$defines;$extra_defines"; fi
   {
     echo "-nologo"; echo "-nostdlib"; echo "-target:library"
     echo "-langversion:9.0"; echo "-warn:0"
     echo "-define:$defines"; echo "-out:\"$out\""
   } >> "$rsp"
-
   echo "=== $(basename "$out")"
   dotnet "$CSC" -noconfig "@$rsp" || return 1
 }
 
-# Runtime/Fmod and Editor/Fmod are their own JAMKIT_FMOD-gated assemblies (built further down
-# when FMOD is available), so the base builds exclude them.
-build_asm "$PROJ/Metz.JamKit.Runtime.csproj" "$PKG/Runtime" "$OUT/Metz.JamKit.Runtime.dll" "" "*/Fmod/*" || exit 1
-build_asm "$PROJ/Metz.JamKit.Editor.csproj" "$PKG/Editor" "$OUT/Metz.JamKit.Editor.dll" "$OUT/Metz.JamKit.Runtime.dll" "*/Fmod/*" || exit 1
-# Tests legs: batch-generated tests csprojs are referenceless stubs (test assemblies don't
-# compile without the test runner active), so the RUNTIME csproj is the reference source and
-# the test-framework dlls are staged into $OUT alongside Ripple/UltEvents (extra_ref paths
-# must be space-free).
-cp -f "$PROJ/Library/ScriptAssemblies/Metz.Ripple.Runtime.dll" "$PROJ/Library/ScriptAssemblies/Kybernetik.UltEvents.dll" "$OUT/" 2>/dev/null
+RR="$OUT/Metz.Ripple.Runtime.dll"
+JR="$OUT/Metz.JamKit.Runtime.dll"
+JE="$OUT/Metz.JamKit.Editor.dll"
+build_asm "$PROJ/Metz.Ripple.Runtime.csproj" "$RIPPLE/Runtime" "$RR" || exit 1
+build_asm "$PROJ/Metz.Ripple.Editor.csproj" "$RIPPLE/Editor" "$OUT/Metz.Ripple.Editor.dll" "$RR" "*/Dependency Resolver/*" || exit 1
+build_asm "$PROJ/Metz.JamKit.Runtime.csproj" "$PKG/Runtime" "$JR" "$RR" "*/Fmod/*" || exit 1
+build_asm "$PROJ/Metz.JamKit.Editor.csproj" "$PKG/Editor" "$JE" "$JR $RR" "*/Editor/[FT][lo]*/*" || exit 1
+
 find "$PROJ/Library/PackageCache" -name "nunit.framework.dll" -path "*unity-custom*" 2>/dev/null | head -1 | while read -r f; do cp -f "$f" "$OUT/"; done
 cp -f "$PROJ/Library/ScriptAssemblies/UnityEngine.TestRunner.dll" "$PROJ/Library/ScriptAssemblies/UnityEditor.TestRunner.dll" "$OUT/" 2>/dev/null
-TESTREFS="$OUT/Metz.Ripple.Runtime.dll $OUT/Kybernetik.UltEvents.dll $OUT/nunit.framework.dll $OUT/UnityEngine.TestRunner.dll $OUT/UnityEditor.TestRunner.dll"
-build_asm "$PROJ/Metz.JamKit.Runtime.csproj" "$PKG/Tests/Runtime" "$OUT/Metz.JamKit.Tests.dll" "$OUT/Metz.JamKit.Runtime.dll $TESTREFS" || exit 1
-build_asm "$PROJ/Metz.JamKit.Runtime.csproj" "$PKG/Tests/Editor" "$OUT/Metz.JamKit.EditorTests.dll" "$OUT/Metz.JamKit.Runtime.dll $OUT/Metz.JamKit.Editor.dll $TESTREFS" || exit 1
-# Samples~ is invisible to Unity until imported, so this is the ONLY compile coverage sample
-# code gets. Same reference set as Runtime + the fresh Runtime dll. The Feel Showcase sample
-# is excluded: it references the Feel asset (MoreMountains), which only exists in consumer
-# projects — it compiles in the dev/GMTK projects instead.
-build_asm "$PROJ/Metz.JamKit.Runtime.csproj" "$PKG/Samples~" "$OUT/Metz.JamKit.Samples.dll" "$OUT/Metz.JamKit.Runtime.dll" "*/03 Feel Showcase/*" || exit 1
+TESTREFS="$RR $OUT/nunit.framework.dll $OUT/UnityEngine.TestRunner.dll $OUT/UnityEditor.TestRunner.dll"
+build_asm "$PROJ/Metz.JamKit.Runtime.csproj" "$PKG/Tests/Runtime" "$OUT/Metz.JamKit.Tests.dll" "$JR $TESTREFS" || exit 1
+build_asm "$PROJ/Metz.JamKit.Runtime.csproj" "$PKG/Tests/Editor" "$OUT/Metz.JamKit.EditorTests.dll" "$JR $JE $TESTREFS" || exit 1
+build_asm "$PROJ/Metz.JamKit.Runtime.csproj" "$PKG/Samples~" "$OUT/Metz.JamKit.Samples.dll" "$JR $RR" "*/03 Feel Showcase/*" || exit 1
 
-# --- Optional FMOD integration (JAMKIT_FMOD) --------------------------------------------
-# Compiled only when the FMOD for Unity sources are reachable: the project has them imported
-# at Assets/Plugins/FMOD, or FMOD_SRC points at an integration's root. FMODUnity.dll is built
-# from those sources first — the whole FMOD folder minus Editor code, since the platform
-# classes under platforms/*/src belong to the same assembly (runtime reference set; the
-# UNITY_*_EXIST defines mirror what its asmdef versionDefines would activate in these projects).
-FMOD_SRC="${FMOD_SRC:-$PROJ/Assets/Plugins/FMOD}"
-if [ -d "$FMOD_SRC" ]; then
-  # Timeline mirrors the asmdef versionDefines too: without UNITY_TIMELINE_EXIST the gate
-  # builds an FMODUnity.dll that lacks FMODUnity.STOP_MODE, hiding ambiguities (CS0104) that
-  # the consumer projects (which have com.unity.timeline) would hit. Staged into $OUT because
-  # extra_ref paths must be space-free.
-  TIMELINE_REF="" TIMELINE_DEF=""
-  if [ -f "$PROJ/Library/ScriptAssemblies/Unity.Timeline.dll" ]; then
-    cp -f "$PROJ/Library/ScriptAssemblies/Unity.Timeline.dll" "$OUT/"
-    TIMELINE_REF="$OUT/Unity.Timeline.dll"
-    TIMELINE_DEF=";UNITY_TIMELINE_EXIST"
-  fi
-  build_asm "$PROJ/Metz.JamKit.Runtime.csproj" "$FMOD_SRC" "$OUT/FMODUnity.dll" "$TIMELINE_REF" "*/Editor/*" \
-    "UNITY_PHYSICS_EXIST;UNITY_PHYSICS2D_EXIST$TIMELINE_DEF" || exit 1
-  build_asm "$PROJ/Metz.JamKit.Runtime.csproj" "$PKG/Runtime/Fmod" "$OUT/Metz.JamKit.Fmod.dll" \
-    "$OUT/Metz.JamKit.Runtime.dll $OUT/FMODUnity.dll" "" "JAMKIT_FMOD" || exit 1
-  build_asm "$PROJ/Metz.JamKit.Editor.csproj" "$PKG/Editor/Fmod" "$OUT/Metz.JamKit.Fmod.Editor.dll" \
-    "$OUT/Metz.JamKit.Runtime.dll $OUT/Metz.JamKit.Editor.dll $OUT/Metz.JamKit.Fmod.dll $OUT/FMODUnity.dll" "" "JAMKIT_FMOD" || exit 1
+if grep -q "UnityEditor.GraphToolkitModule.dll" "$PROJ/Metz.JamKit.Editor.csproj"; then
+  build_asm "$PROJ/Metz.JamKit.Editor.csproj" "$PKG/Editor/Toolbar" "$OUT/Metz.JamKit.Toolbar.Editor.dll" "$JR $JE" || exit 1
+  build_asm "$PROJ/Metz.JamKit.Editor.csproj" "$PKG/Editor/Flow" "$OUT/Metz.JamKit.Flow.Editor.dll" "$JR $RR" || exit 1
 else
-  echo "=== FMOD assemblies skipped (no FMOD sources at $FMOD_SRC)"
+  echo "=== Toolbar and Flow editor assemblies skipped (host editor is older than 6.4)"
 fi
 echo "ALL GREEN"

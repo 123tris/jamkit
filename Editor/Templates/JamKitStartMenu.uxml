@@ -5,7 +5,7 @@
         <ui:VisualElement class="jk-button-column">
             <ui:Button text="Play" name="start-play" class="jk-button" />
             <ui:Button text="Settings" name="start-settings" class="jk-button" />
-            <ui:Button text="Quit" name="start-quit" class="jk-button" />
+            <ui:Button text="Quit" name="start-quit" class="jk-button jk-quit" />
         </ui:VisualElement>
     </ui:VisualElement>
 </ui:UXML>

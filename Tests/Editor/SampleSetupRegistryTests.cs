@@ -4,11 +4,6 @@ using NUnit.Framework;
 
 namespace Metz.JamKit.Tests.Editor
 {
-    /// <summary>
-    /// Registry ↔ Samples~ ↔ package.json consistency. The one-click setup finds samples by the
-    /// "&lt;Name&gt;/&lt;Name&gt;.unity" scene convention, so a rename that skips one of the three
-    /// places silently breaks it — these tests make that a red bar instead.
-    /// </summary>
     public class SampleSetupRegistryTests
     {
         static string PackageRoot => Path.GetFullPath("Packages/com.metz.jamkit");

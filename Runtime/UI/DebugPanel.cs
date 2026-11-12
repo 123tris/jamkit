@@ -1,3 +1,6 @@
+using System;
+using System.IO;
+using Sirenix.OdinInspector;
 using UnityEngine;
 using UnityEngine.InputSystem;
 using UnityEngine.SceneManagement;
@@ -5,120 +8,78 @@ using UnityEngine.UIElements;
 
 namespace Metz.JamKit
 {
-    /// <summary>
-    /// In-game debug overlay toggled by a key — the only debug surface that exists in BUILDS
-    /// (WebGL jam testing has no inspector; see PILLARS.md). Self-builds a top-sorted UIDocument
-    /// and shows an FPS readout, a time-scale slider, quick-jump buttons for every scene in
-    /// Build Settings, reload, and quit. Lives on JamKitCore by default. Strip it from release
-    /// builds by removing the component or gating with a scripting define.
-    /// </summary>
     [RequireComponent(typeof(UIDocument))]
     public sealed class DebugPanel : MonoBehaviour
     {
-        [Header("Services")]
-        public TimeServiceSO TimeService;
-        public SceneServiceSO SceneService;
+        const int SortingOrder = 30000;
 
-        [Header("Toggle")]
-        [Tooltip("Backquote (`) by default — browsers swallow F-keys, so avoid those for WebGL jam builds.")]
+        [Required] public TimeServiceSO TimeService;
+        [Required] public SceneServiceSO SceneService;
+
+        [Tooltip("Browsers swallow function keys, so avoid those for WebGL builds.")]
         public Key ToggleKey = Key.Backquote;
-        public bool VisibleAtStart = false;
 
-        UIDocument _doc;
-        Label _fps;
-        bool _visible;
-        float _accum;
-        int _frames;
+        public bool VisibleAtStart;
 
-        void Awake()
-        {
-            _doc = GetComponent<UIDocument>();
-            if (_doc.panelSettings == null)
-                _doc.panelSettings = JamKitUI.CreatePanelSettings(PanelScaleMode.ConstantPixelSize, 30000); // above menus, below the fade overlay
-            else
-                JamKitUI.ApplyDefaultTheme(_doc.panelSettings);
-        }
+        VisualElement root;
+        Label fps;
+        float elapsed;
+        int frames;
+
+        void Awake() => GetComponent<UIDocument>().panelSettings =
+            JamKitUI.CreatePanelSettings(PanelScaleMode.ConstantPixelSize, SortingOrder);
 
         void OnEnable()
         {
+            root = GetComponent<UIDocument>().rootVisualElement;
             Build();
             SetVisible(VisibleAtStart);
         }
 
+        void Update()
+        {
+            Keyboard keyboard = Keyboard.current;
+            if (keyboard != null && keyboard[ToggleKey].wasPressedThisFrame) SetVisible(root.style.display == DisplayStyle.None);
+
+            elapsed += Time.unscaledDeltaTime;
+            frames++;
+            if (elapsed < 0.5f) return;
+            fps.text = $"FPS: {frames / elapsed:0}";
+            elapsed = 0f;
+            frames = 0;
+        }
+
         void Build()
         {
-            var root = _doc.rootVisualElement;
-            if (root == null) return;
             root.Clear();
 
             var panel = new VisualElement();
             panel.style.position = Position.Absolute;
-            panel.style.top = 8; panel.style.left = 8;
+            panel.style.top = panel.style.left = 8;
             panel.style.paddingLeft = panel.style.paddingRight = 12;
             panel.style.paddingTop = panel.style.paddingBottom = 12;
             panel.style.minWidth = 220;
             panel.style.backgroundColor = new Color(0f, 0f, 0f, 0.8f);
-            panel.style.borderTopLeftRadius = panel.style.borderBottomRightRadius = 8;
             root.Add(panel);
 
-            _fps = MakeLabel("FPS: --");
-            panel.Add(_fps);
+            fps = new Label("FPS: --");
+            fps.style.color = Color.white;
+            panel.Add(fps);
 
-            var ts = new Slider("Time Scale", 0f, 2f) { value = 1f };
-            ts.style.marginTop = 8;
-            ts.RegisterValueChangedCallback(e =>
-            {
-                if (TimeService != null) TimeService.BaseScale = e.newValue;
-                else Time.timeScale = e.newValue;
-            });
-            panel.Add(ts);
+            var timeScale = new Slider("Time Scale", 0f, 2f) { value = 1f };
+            timeScale.RegisterValueChangedCallback(change => TimeService.BaseScale = change.newValue);
+            panel.Add(timeScale);
 
-            panel.Add(MakeButton("Reload Scene", () => SceneService?.ReloadCurrent()));
-            // Every scene in Build Settings gets a jump button — no list to maintain.
+            panel.Add(new Button(SceneService.Reload) { text = "Reload Scene" });
             for (int i = 0; i < SceneManager.sceneCountInBuildSettings; i++)
             {
-                var sceneName = System.IO.Path.GetFileNameWithoutExtension(SceneUtility.GetScenePathByBuildIndex(i));
-                panel.Add(MakeButton($"Load: {sceneName}", () => SceneService?.LoadAsync(sceneName)));
+                string sceneName = Path.GetFileNameWithoutExtension(SceneUtility.GetScenePathByBuildIndex(i));
+                panel.Add(new Button(() => SceneService.Load(sceneName)) { text = $"Load: {sceneName}" });
             }
-            panel.Add(MakeButton("Quit", Quit));
+            panel.Add(new Button(Quit) { text = "Quit" });
         }
 
-        void Update()
-        {
-            var kb = Keyboard.current;
-            if (kb != null && kb[ToggleKey].wasPressedThisFrame) SetVisible(!_visible);
-
-            _accum += Time.unscaledDeltaTime;
-            _frames++;
-            if (_accum >= 0.5f)
-            {
-                if (_fps != null) _fps.text = $"FPS: {_frames / _accum:0}";
-                _accum = 0f;
-                _frames = 0;
-            }
-        }
-
-        void SetVisible(bool v)
-        {
-            _visible = v;
-            var root = _doc.rootVisualElement;
-            if (root != null) root.style.display = v ? DisplayStyle.Flex : DisplayStyle.None;
-        }
-
-        static Label MakeLabel(string t)
-        {
-            var l = new Label(t);
-            l.style.color = Color.white;
-            l.style.fontSize = 14;
-            return l;
-        }
-
-        static Button MakeButton(string t, System.Action a)
-        {
-            var b = new Button(a) { text = t };
-            b.style.marginTop = 4;
-            return b;
-        }
+        void SetVisible(bool visible) => root.style.display = visible ? DisplayStyle.Flex : DisplayStyle.None;
 
         static void Quit()
         {

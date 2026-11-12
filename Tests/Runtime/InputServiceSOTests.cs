@@ -1,121 +1,66 @@
+using System;
 using NUnit.Framework;
 using UnityEngine;
 using UnityEngine.InputSystem;
+using Object = UnityEngine.Object;
 
 namespace Metz.JamKit.Tests
 {
-    /// <summary>
-    /// Characterization tests for the input service's cache + map switching, using a
-    /// programmatically-built InputActionAsset (no devices, no bindings needed).
-    /// </summary>
     public class InputServiceSOTests
     {
-        InputServiceSO _svc;
-        InputActionAsset _asset;
-
-        static InputActionAsset MakeAsset(string uiName = "UI", string gameplayName = "Gameplay")
-        {
-            var asset = ScriptableObject.CreateInstance<InputActionAsset>();
-            var ui = asset.AddActionMap(uiName);
-            ui.AddAction("Submit");
-            ui.AddAction("Cancel");
-            ui.AddAction("Navigate");
-            var gameplay = asset.AddActionMap(gameplayName);
-            gameplay.AddAction("Move");
-            gameplay.AddAction("Look");
-            gameplay.AddAction("Jump");
-            gameplay.AddAction("Attack");
-            gameplay.AddAction("Interact");
-            gameplay.AddAction("Pause");
-            return asset;
-        }
+        InputServiceSO input;
+        InputActionAsset actions;
 
         [SetUp]
         public void SetUp()
         {
-            _svc = ScriptableObject.CreateInstance<InputServiceSO>();
-            _asset = MakeAsset();
-            _svc.Actions = _asset;
+            actions = ScriptableObject.CreateInstance<InputActionAsset>();
+            actions.AddActionMap("UI").AddAction("Cancel");
+            actions.AddActionMap("Gameplay").AddAction("Move");
+
+            input = ScriptableObject.CreateInstance<InputServiceSO>();
+            input.Actions = actions;
+            input.ManageCursor = false;
         }
 
         [TearDown]
         public void TearDown()
         {
-            Object.DestroyImmediate(_svc); // OnDisable disables the current map
-            Object.DestroyImmediate(_asset);
+            actions.Disable();
+            Object.DestroyImmediate(input);
+            Object.DestroyImmediate(actions);
         }
 
         [Test]
-        public void GettersResolveMapsAndActions()
+        public void SwitchToGameplay_EnablesGameplayAndDisablesUI()
         {
-            Assert.IsNotNull(_svc.UI);
-            Assert.IsNotNull(_svc.Gameplay);
-            Assert.AreEqual("Move", _svc.Move.name);
-            Assert.AreEqual("Pause", _svc.Pause.name);
-            Assert.AreEqual("Submit", _svc.UI_Submit.name);
-            Assert.AreEqual("Navigate", _svc.UI_Navigate.name);
+            input.SwitchToUI();
+
+            input.SwitchToGameplay();
+
+            Assert.IsTrue(actions.FindActionMap("Gameplay").enabled);
+            Assert.IsFalse(actions.FindActionMap("UI").enabled);
+            Assert.IsTrue(input.InGameplay);
         }
 
         [Test]
-        public void CacheInvalidatesWhenAssetSwapped()
+        public void SwitchToUI_EnablesUIAndDisablesGameplay()
         {
-            var before = _svc.Gameplay;
-            var replacement = MakeAsset();
-            _svc.Actions = replacement;
+            input.SwitchToGameplay();
 
-            Assert.AreNotSame(before, _svc.Gameplay);
-            Object.DestroyImmediate(replacement);
+            input.SwitchToUI();
+
+            Assert.IsTrue(actions.FindActionMap("UI").enabled);
+            Assert.IsFalse(actions.FindActionMap("Gameplay").enabled);
+            Assert.IsFalse(input.InGameplay);
         }
 
         [Test]
-        public void CacheInvalidatesWhenMapNameChanged()
+        public void UnknownMapNameThrows()
         {
-            Assert.IsNotNull(_svc.Gameplay);
-            _svc.GameplayMapName = "DoesNotExist";
-            Assert.IsNull(_svc.Gameplay);
-            Assert.IsNull(_svc.Move);
-        }
+            input.GameplayMapName = "Missing";
 
-        [Test]
-        public void SwitchToEnablesNextAndDisablesPrevious()
-        {
-            _svc.SwitchToGameplay();
-            Assert.AreSame(_svc.Gameplay, _svc.CurrentMap);
-            Assert.IsTrue(_svc.Gameplay.enabled);
-
-            _svc.SwitchToUI();
-            Assert.AreSame(_svc.UI, _svc.CurrentMap);
-            Assert.IsTrue(_svc.UI.enabled);
-            Assert.IsFalse(_svc.Gameplay.enabled);
-        }
-
-        [Test]
-        public void SwitchToNullIsIgnored()
-        {
-            _svc.SwitchToGameplay();
-            _svc.SwitchTo(null);
-            Assert.AreSame(_svc.Gameplay, _svc.CurrentMap);
-            Assert.IsTrue(_svc.Gameplay.enabled);
-        }
-
-        [Test]
-        public void ResetStateClearsCurrentMap()
-        {
-            _svc.SwitchToGameplay();
-            _svc.ResetState();
-            Assert.IsNull(_svc.CurrentMap);
-        }
-
-        // Current behavior, changes in 0.10 (see plan): the AutoEnableGameplay flag makes a
-        // property GETTER enable an input map as a side effect. The flag is being removed;
-        // this test is deleted with it.
-        [Test]
-        public void AutoEnableGameplayEnablesMapOnFirstGetterAccess_CurrentBehavior()
-        {
-            _svc.AutoEnableGameplay = true;
-            _ = _svc.Move; // getter triggers EnsureCache -> SwitchTo(gameplay)
-            Assert.AreSame(_svc.Gameplay, _svc.CurrentMap);
-            Assert.IsTrue(_svc.Gameplay.enabled);
+            Assert.Throws<ArgumentException>(() => input.SwitchToGameplay());
         }
     }
 }

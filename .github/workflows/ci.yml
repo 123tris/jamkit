@@ -19,7 +19,7 @@ on:
 env:
   UNITY_VERSION: 6000.0.26f1
   # Branch pin matters: Ripple's main is an older API than what JamKit builds against.
-  RIPPLE_GIT_URL: "https://github.com/123tris/Ripple.git#feature/abstraction+runtime-registry"
+  RIPPLE_GIT_URL: "https://github.com/123tris/Ripple.git#feature/jamkit"
 
 jobs:
   test:

@@ -25,7 +25,7 @@ When considering a new primitive, check it against the classics. A primitive tha
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
 | Input mover | ✓ | ✓ | | ✓ | | ✓ | ✓ | ✓ | ✓ | ✅ Mover2D/3D |
 | First-person look | | | | | | | | | ✓ | ✅ FirstPersonLook |
-| Dash/dodge | | | | | | | ✓ | ✓ | ✓ | ✅ Dasher |
+| Dash/dodge | | | | | | | ✓ | ✓ | ✓ | ⛔ cut 1.0 — see CHANGELOG |
 | Ball bounce | ✓ | ✓ | | | | | | | | 📦 sample 04 (Bouncer2D) |
 | Grid step | | | ✓ | | | | | | | 📦 sample 04 (GridMover) |
 | Rotate+thrust | | | | | ✓ | | | | | 📦 sample 04 (ThrustMover2D) |
@@ -38,7 +38,7 @@ When considering a new primitive, check it against the classics. A primitive tha
 | Respawn/checkpoint | ✓ | ✓ | ✓ | | ✓ | | ✓ | | ✓ | ✅ Respawner |
 | Press-E interact | | | | | | | ✓ | ✓ | ✓ | ✅ Interactor/-able |
 | Shoot (visible projectile) | | | | ✓ | ✓ | | ✓ | ✓ | ✓ | ✅ ProjectileShooter |
-| Shoot (hitscan) | | | | ~ | | | | ✓ | ✓ | ✅ HitscanShooter |
+| Shoot (hitscan) | | | | ~ | | | | ✓ | ✓ | ⛔ cut 1.0 — see CHANGELOG |
 | Health-as-timer drain | | | | | | | ~ | ✓ | ✓ | ✅ HealthDrain |
 | Sequenced waves | | | | ✓ | | | | ✓ | ✓ | 📦 sample 02 (WaveSpawner) |
 | HP/damage/pickups/score/menus | — | — | — | — | — | — | — | — | — | ✅ core |
@@ -94,4 +94,11 @@ Genres still thin: **card/board** (drag-drop, hand layout), **puzzle-match** (gr
 
 ## Non-goals (the identity fence)
 
-No tween library, no node graphs, no netcode, no ECS, no Feel clone. JamKit is the wiring and the 80% defaults — depth lives in dedicated assets.
+No netcode, no ECS, no Feel clone. JamKit ships a one-file tween and a single graph (Game Flow); depth lives in dedicated assets.
+
+## Open after 1.0.0-pre.1
+
+- Re-author the five samples and the project template in the editor; replace the code-built wizard with a copied template.
+- Move settings sliders and HUD bindings to UXML data bindings on Ripple variables, then delete `MenuSettingsBinder`, `LabelBinding`, `BarBinding`.
+- Turn the WebGL build into a Build Profile.
+- Compile and run the FMOD backend in a project with FMOD installed.

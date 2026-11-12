@@ -1,20 +1,14 @@
+using Sirenix.OdinInspector;
 using UnityEngine;
+using UnityEngine.InputSystem;
 
 namespace Metz.JamKit
 {
-    /// <summary>
-    /// Rotate + thrust movement (asteroids, lunar lander). Move.x turns the ship, Move.y &gt; 0
-    /// thrusts along the ship's up axis (2D sprite convention: nose points up). Zero damping
-    /// drifts forever like Asteroids; raise it for a lander feel. Pair with
-    /// <see cref="ScreenWrap2D"/> and a <see cref="ProjectileShooter"/> whose muzzle's right
-    /// axis points along the nose.
-    /// </summary>
     [DisallowMultipleComponent]
     [RequireComponent(typeof(Rigidbody2D))]
     public sealed class ThrustMover2D : MonoBehaviour
     {
-        [Header("Service")]
-        public InputServiceSO InputService;
+        [Required] public InputActionReference Move;
 
         [Header("Tuning")]
         [Min(0f)] public float ThrustForce = 10f;
@@ -39,9 +33,7 @@ namespace Metz.JamKit
 
         void FixedUpdate()
         {
-            Vector2 input = (InputService == null || InputService.Move == null)
-                ? Vector2.zero
-                : InputService.Move.ReadValue<Vector2>();
+            Vector2 input = Move.action.ReadValue<Vector2>();
 
             if (Mathf.Abs(input.x) > 0.01f)
                 _rb.MoveRotation(_rb.rotation - input.x * TurnSpeed * Time.fixedDeltaTime);

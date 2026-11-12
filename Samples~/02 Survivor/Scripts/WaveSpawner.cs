@@ -6,10 +6,6 @@ using UnityEngine;
 
 namespace Metz.JamKit
 {
-    /// <summary>
-    /// Plays through a sequence of waves; each wave spawns N copies of a prefab over a duration,
-    /// then waits before the next wave. Fires Ripple events on wave boundaries.
-    /// </summary>
     public sealed class WaveSpawner : MonoBehaviour
     {
         [Serializable]

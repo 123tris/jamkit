@@ -3,127 +3,80 @@ using UnityEngine;
 
 namespace Metz.JamKit
 {
-    /// <summary>
-    /// Moves straight toward a target — survivor hordes, zombies, homing pickups. Give it a
-    /// <see cref="Target"/>, a <see cref="Targets"/> runtime set (preferred — data-driven, no
-    /// scene scans), or leave both empty and it falls back to finding the nearest object with
-    /// <see cref="TargetTag"/>. Re-scans on an interval so it survives player respawns and
-    /// spawned reuse. Drives a Rigidbody2D or Rigidbody when present, else the transform.
-    /// </summary>
     [DisallowMultipleComponent]
     public sealed class ChaseMover : MonoBehaviour
     {
-        [Header("Target")]
-        [Tooltip("Explicit target. Null = use the runtime set / tag scan below.")]
+        [Tooltip("Leave empty to chase the nearest member of Targets.")]
         public Transform Target;
-        [Tooltip("Preferred: a Ripple runtime set of candidates (objects join via RuntimeSetMember). Beats tag strings — designers retarget by swapping the asset.")]
-        public GameObjectListSO Targets;
-        [Tooltip("Fallback when no runtime set is assigned.")]
-        public string TargetTag = "Player";
-        [Tooltip("Seconds between retarget scans while untargeted.")]
-        [Min(0.05f)] public float RetargetInterval = 0.5f;
 
-        [Header("Move")]
-        [Tooltip("Chase speed. Constant or a shared Ripple variable (difficulty ramp).")]
+        [Tooltip("Runtime set of candidates. Objects join it with a Runtime Set Member component.")]
+        public GameObjectListSO Targets;
+
         public FloatReference Speed = new(3f);
-        [Tooltip("Stop when closer than this (keeps melee enemies from vibrating inside the player). Constant or a shared Ripple variable.")]
         public FloatReference StopDistance = new(0.6f);
-        [Tooltip("Rotate to face the move direction (3D: LookRotation, 2D: right axis toward target).")]
         public bool FaceTarget = true;
-        [Tooltip("3D only: chase on the ground plane and let gravity own the Y axis.")]
+
+        [Tooltip("3D only: chase on the ground plane and leave the Y axis to gravity.")]
         public bool LockY = true;
 
-        Rigidbody2D _rb2d;
-        Rigidbody _rb;
-        float _nextScan;
+        Body body;
 
-        void Awake()
-        {
-            _rb2d = GetComponent<Rigidbody2D>();
-            _rb = GetComponent<Rigidbody>();
-        }
+        bool Grounded => LockY && body.Is3D;
 
-        void OnEnable() => _nextScan = 0f; // a freshly spawned copy re-scans immediately
+        void Awake() => body = new Body(gameObject);
 
         void FixedUpdate()
         {
+            if (Target == null) Target = Nearest();
             if (Target == null)
             {
-                if (Time.time >= _nextScan)
-                {
-                    Target = Targets != null ? FindNearestInSet() : FindNearestByTag();
-                    _nextScan = Time.time + RetargetInterval;
-                }
-                if (Target == null) { Halt(); return; }
+                Drive(Vector3.zero);
+                return;
             }
 
-            Vector3 to = Target.position - transform.position;
-            if (LockY && _rb != null) to.y = 0f;
-            float dist = to.magnitude;
-            if (dist <= StopDistance.Value) { Halt(); return; }
-            Vector3 dir = to / dist;
+            Vector3 toTarget = Target.position - transform.position;
+            if (Grounded) toTarget.y = 0f;
+            float distance = toTarget.magnitude;
+            if (distance <= StopDistance.Value)
+            {
+                Drive(Vector3.zero);
+                return;
+            }
 
-            if (_rb2d != null)
-            {
-                _rb2d.linearVelocity = (Vector2)dir * Speed.Value;
-                if (FaceTarget)
-                    _rb2d.MoveRotation(Mathf.Atan2(dir.y, dir.x) * Mathf.Rad2Deg);
-            }
-            else if (_rb != null)
-            {
-                var v = dir * Speed.Value;
-                if (LockY) v.y = _rb.linearVelocity.y;
-                _rb.linearVelocity = v;
-                if (FaceTarget && dir.sqrMagnitude > 0.001f)
-                {
-                    var flat = LockY ? new Vector3(dir.x, 0f, dir.z) : dir;
-                    if (flat.sqrMagnitude > 0.001f)
-                        _rb.MoveRotation(Quaternion.Slerp(_rb.rotation, Quaternion.LookRotation(flat, Vector3.up), 0.2f));
-                }
-            }
-            else
-            {
-                transform.position += dir * (Speed.Value * Time.fixedDeltaTime);
-                if (FaceTarget) transform.right = dir;
-            }
+            Vector3 direction = toTarget / distance;
+            Drive(direction * Speed.Value);
+            if (FaceTarget) Face(direction);
         }
 
-        void Halt()
+        void Drive(Vector3 velocity)
         {
-            if (_rb2d != null) _rb2d.linearVelocity = Vector2.zero;
-            else if (_rb != null)
-            {
-                var v = _rb.linearVelocity;
-                _rb.linearVelocity = LockY ? new Vector3(0f, v.y, 0f) : Vector3.zero;
-            }
+            if (Grounded) velocity.y = body.Velocity.y;
+            if (body.Is2D || body.Is3D) body.Velocity = velocity;
+            else transform.position += velocity * Time.fixedDeltaTime;
         }
 
-        Transform FindNearestInSet()
+        void Face(Vector3 direction)
         {
-            Transform best = null;
-            float bestSqr = float.MaxValue;
-            for (int i = 0; i < Targets.Count; i++)
-            {
-                var go = Targets[i];
-                if (go == null || !go.activeInHierarchy) continue;
-                float sqr = (go.transform.position - transform.position).sqrMagnitude;
-                if (sqr < bestSqr) { bestSqr = sqr; best = go.transform; }
-            }
-            return best;
+            Quaternion facing = body.Is3D
+                ? Quaternion.Slerp(transform.rotation, Quaternion.LookRotation(direction, Vector3.up), 0.2f)
+                : Quaternion.Euler(0f, 0f, Mathf.Atan2(direction.y, direction.x) * Mathf.Rad2Deg);
+            body.RotateTo(facing);
         }
 
-        Transform FindNearestByTag()
+        Transform Nearest()
         {
-            if (string.IsNullOrEmpty(TargetTag)) return null;
-            var candidates = GameObject.FindGameObjectsWithTag(TargetTag);
-            Transform best = null;
-            float bestSqr = float.MaxValue;
-            foreach (var go in candidates)
+            if (Targets == null) return null;
+
+            Transform nearest = null;
+            float nearestDistance = float.MaxValue;
+            foreach (GameObject candidate in Targets)
             {
-                float sqr = (go.transform.position - transform.position).sqrMagnitude;
-                if (sqr < bestSqr) { bestSqr = sqr; best = go.transform; }
+                float distance = (candidate.transform.position - transform.position).sqrMagnitude;
+                if (distance >= nearestDistance) continue;
+                nearestDistance = distance;
+                nearest = candidate.transform;
             }
-            return best;
+            return nearest;
         }
     }
 }
