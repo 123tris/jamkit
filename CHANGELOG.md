@@ -6,7 +6,7 @@ All notable changes to JamKit are documented here. Format follows [Keep a Change
 
 ### 1.0.0-pre.1: overhaul
 
-Minimum Unity is now 6.6. Ripple must be on its `feature/jamkit` branch (0.2.0).
+Minimum Unity is now 6.6. Requires Ripple 0.2.0 (tag `v0.2.0`).
 
 **Breaking: UltEvents is gone.** Every component event is a Ripple `Signal`: a `UnityEvent`, a list of Ripple events to raise, and code listeners. All `Broadcast*` and `PlayOn` fields are removed; raise a Ripple event from the Signal instead. Existing UltEvent wiring in prefabs and scenes is not migrated.
 

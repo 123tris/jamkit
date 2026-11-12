@@ -18,8 +18,7 @@ on:
 
 env:
   UNITY_VERSION: 6000.0.26f1
-  # Branch pin matters: Ripple's main is an older API than what JamKit builds against.
-  RIPPLE_GIT_URL: "https://github.com/123tris/Ripple.git#feature/jamkit"
+  RIPPLE_GIT_URL: "https://github.com/123tris/Ripple.git#v0.2.0"
 
 jobs:
   test:
