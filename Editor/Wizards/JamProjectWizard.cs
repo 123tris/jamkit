@@ -104,8 +104,7 @@ namespace Metz.JamKit.Editor
             FloatVariableSO score = Variable("Score", 0f, 999999f, 0f);
             FloatVariableSO highScore = Variable("HighScore", 0f, 999999f, 0f, persist: true);
             Variable("Timer", 0f, 999999f, 0f);
-            GameObjectListSO players = Asset<GameObjectListSO>($"{VariablesDir}/Players.asset",
-                set => SetBool(set, "_runtimeSet", true));
+            GameObjectListSO players = Asset<GameObjectListSO>($"{VariablesDir}/Players.asset");
 
             var time = Asset<TimeServiceSO>($"{ServicesDir}/TimeService.asset");
             var fade = Asset<ScreenFadeSO>($"{ServicesDir}/ScreenFade.asset");
@@ -204,13 +203,6 @@ namespace Metz.JamKit.Editor
                 serialized.FindProperty("_persist").boolValue = persist;
                 serialized.ApplyModifiedPropertiesWithoutUndo();
             });
-
-        static void SetBool(Object target, string propertyName, bool value)
-        {
-            var serialized = new SerializedObject(target);
-            serialized.FindProperty(propertyName).boolValue = value;
-            serialized.ApplyModifiedPropertiesWithoutUndo();
-        }
 
         static GameObject CorePrefab(TimeServiceSO time, SceneServiceSO scenes, GameFlow flow, FloatVariableSO score,
             FloatVariableSO highScore, Volumes volumes)
