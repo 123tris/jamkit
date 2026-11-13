@@ -6,8 +6,8 @@
     <ui:Template name="JamKitGameOverMenu" src="JamKitGameOverMenu.uxml" />
     <ui:VisualElement name="root" picking-mode="Ignore" class="jk-root">
         <ui:Instance template="JamKitStartMenu" name="start-instance" picking-mode="Ignore" class="jk-instance" />
-        <ui:Instance template="JamKitPauseMenu" name="pause-instance" picking-mode="Ignore" class="jk-instance" />
-        <ui:Instance template="JamKitSettingsMenu" name="settings-instance" picking-mode="Ignore" class="jk-instance" />
-        <ui:Instance template="JamKitGameOverMenu" name="gameover-instance" picking-mode="Ignore" class="jk-instance" />
+        <ui:Instance template="JamKitPauseMenu" name="pause-instance" picking-mode="Ignore" class="jk-instance jk-instance--hidden" />
+        <ui:Instance template="JamKitSettingsMenu" name="settings-instance" picking-mode="Ignore" class="jk-instance jk-instance--hidden" />
+        <ui:Instance template="JamKitGameOverMenu" name="gameover-instance" picking-mode="Ignore" class="jk-instance jk-instance--hidden" />
     </ui:VisualElement>
 </ui:UXML>

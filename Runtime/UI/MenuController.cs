@@ -8,9 +8,11 @@ using UnityEngine.UIElements;
 
 namespace Metz.JamKit
 {
-    [RequireComponent(typeof(UIDocument))]
+    [RequireComponent(typeof(PanelRenderer))]
     public sealed class MenuController : MonoBehaviour
     {
+        const string WebGLClass = "jk-webgl";
+
         [BoxGroup("Services"), Required] public TimeServiceSO TimeService;
         [BoxGroup("Services"), Required] public InputServiceSO InputService;
 
@@ -35,31 +37,52 @@ namespace Metz.JamKit
         [BoxGroup("Screens")] public MenuView SettingsView;
 
         readonly Stack<MenuView> stack = new();
+        PanelRenderer panel;
         MenuSettingsBinder settings;
+        int boundVersion = -1;
+        bool showInitial;
 
         public MenuView Current => stack.Count > 0 ? stack.Peek() : null;
 
         void OnEnable()
         {
-            VisualElement root = GetComponent<UIDocument>().rootVisualElement;
-            settings = new MenuSettingsBinder(root, MasterVolume, MusicVolume, SfxVolume);
-            foreach (MenuView view in Views) view.Bind(root);
-
-            if (Application.platform == RuntimePlatform.WebGLPlayer)
-                root.Query<Button>(className: "jk-quit").ForEach(quit => quit.style.display = DisplayStyle.None);
+            showInitial = true;
+            panel = GetComponent<PanelRenderer>();
+            panel.RegisterUIReloadCallback(OnUIReload);
 
             if (Pause != null) Pause.action.performed += OnBack;
             if (Cancel != null) Cancel.action.performed += OnBack;
-
-            ShowOnly(InitialView);
         }
 
         void OnDisable()
         {
+            panel.UnregisterUIReloadCallback(OnUIReload);
             if (Pause != null) Pause.action.performed -= OnBack;
             if (Cancel != null) Cancel.action.performed -= OnBack;
-            settings.Dispose();
             TimeService.Resume();
+        }
+
+        void OnDestroy() => settings?.Dispose();
+
+        void OnUIReload(PanelRenderer renderer, VisualElement root, int version)
+        {
+            if (version != boundVersion)
+            {
+                boundVersion = version;
+                root.EnableInClassList(WebGLClass, Application.platform == RuntimePlatform.WebGLPlayer);
+                settings?.Dispose();
+                settings = new MenuSettingsBinder(root, MasterVolume, MusicVolume, SfxVolume);
+                foreach (MenuView view in Views) view.Bind(root);
+            }
+
+            if (!showInitial)
+            {
+                Apply();
+                return;
+            }
+
+            showInitial = false;
+            ShowOnly(InitialView);
         }
 
         public void Show(MenuView view)
@@ -129,7 +152,7 @@ namespace Metz.JamKit
             else InputService.SwitchToGameplay();
 
             if (top == null) return;
-            if (top == SettingsView) settings.SyncToUI();
+            if (top == SettingsView) settings?.SyncToUI();
             top.Focus();
         }
     }

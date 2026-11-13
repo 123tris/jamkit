@@ -1,0 +1,51 @@
+.jk-doctor {
+    flex-grow: 1;
+}
+
+.jk-doctor__spacer {
+    flex-grow: 1;
+}
+
+.jk-doctor__all-green {
+    display: none;
+    margin: 6px;
+}
+
+.jk-doctor__issues {
+    flex-grow: 1;
+}
+
+.jk-doctor--clean .jk-doctor__all-green {
+    display: flex;
+}
+
+.jk-doctor--clean .jk-doctor__issues {
+    display: none;
+}
+
+.jk-issue {
+    flex-direction: row;
+    align-items: flex-start;
+    margin: 2px 4px;
+}
+
+.jk-issue__message {
+    flex-grow: 1;
+    flex-shrink: 1;
+    margin: 2px;
+}
+
+.jk-issue__actions {
+    width: 120px;
+    flex-shrink: 0;
+}
+
+.jk-issue__fix,
+.jk-issue__select {
+    display: none;
+}
+
+.jk-issue--fixable .jk-issue__fix,
+.jk-issue--selectable .jk-issue__select {
+    display: flex;
+}

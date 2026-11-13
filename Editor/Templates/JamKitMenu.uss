@@ -1,62 +1,69 @@
-/* JamKit menu styling. Tweak to taste — class hooks: jk-root, jk-view, jk-panel, jk-button, jk-title, jk-row, etc. */
-
-.jk-root {
-    position: absolute;
-    left: 0;
-    top: 0;
-    right: 0;
-    bottom: 0;
-    -unity-font-style: normal;
-    color: rgb(240, 240, 240);
+:root {
+    --jk-text: rgb(240, 240, 240);
+    --jk-title: rgb(255, 255, 255);
+    --jk-accent: rgb(200, 220, 255);
+    --jk-backdrop: rgb(12, 14, 22);
+    --jk-dim: rgba(0, 0, 0, 0.65);
+    --jk-panel: rgba(24, 26, 36, 0.95);
+    --jk-panel-border: rgba(255, 255, 255, 0.08);
+    --jk-button: rgba(255, 255, 255, 0.08);
+    --jk-button-hover: rgba(255, 255, 255, 0.18);
+    --jk-button-active: rgba(255, 255, 255, 0.28);
+    --jk-radius: 8px;
+    --jk-button-width: 280px;
+    --jk-button-height: 56px;
+    --jk-title-size: 56px;
+    --jk-title-small-size: 36px;
+    --jk-button-text-size: 22px;
+    --jk-row-label-width: 140px;
 }
 
-/* --------- split-view instances ---------
-   Each view (start / pause / settings) lives in its own UXML, pulled into
-   JamKitMenu.uxml via <ui:Instance>. The generated container must fill jk-root
-   so each .jk-view's absolute fill has a full-size parent. The instances also
-   set picking-mode="Ignore" so the always-present containers never swallow
-   clicks meant for the active view. */
-.jk-instance {
-    position: absolute;
-    left: 0;
-    top: 0;
-    right: 0;
-    bottom: 0;
-}
-
-/* --------- view containers --------- */
-.jk-view {
-    position: absolute;
-    left: 0;
-    top: 0;
-    right: 0;
-    bottom: 0;
-    align-items: center;
-    justify-content: center;
-}
-
-.jk-view--start {
-    background-color: rgba(12, 14, 22, 1);
-}
-
-/* --------- dim layer behind pause/settings panel --------- */
+.jk-root,
+.jk-instance,
+.jk-view,
 .jk-dim {
     position: absolute;
     left: 0;
     top: 0;
     right: 0;
     bottom: 0;
-    background-color: rgba(0, 0, 0, 0.65);
 }
 
-/* --------- panel containers --------- */
+.jk-root {
+    -unity-font-style: normal;
+    color: var(--jk-text);
+}
+
+.jk-view {
+    align-items: center;
+    justify-content: center;
+    color: var(--jk-text);
+}
+
+.jk-view--start {
+    background-color: var(--jk-backdrop);
+}
+
+.jk-view--hidden,
+.jk-instance--hidden .jk-view {
+    display: none;
+}
+
+.jk-instance--hidden .jk-view--shown {
+    display: flex;
+}
+
+.jk-dim {
+    background-color: var(--jk-dim);
+}
+
 .jk-panel {
     min-width: 360px;
     padding: 32px;
-    background-color: rgba(24, 26, 36, 0.95);
+    background-color: var(--jk-panel);
     border-radius: 10px;
     border-width: 1px;
-    border-color: rgba(255, 255, 255, 0.08);
+    border-color: var(--jk-panel-border);
     align-items: stretch;
 }
 
@@ -65,55 +72,53 @@
     max-width: 640px;
 }
 
-/* --------- titles --------- */
 .jk-title {
-    font-size: 56px;
+    font-size: var(--jk-title-size);
     -unity-text-align: middle-center;
     -unity-font-style: bold;
     margin-bottom: 24px;
-    color: rgb(255, 255, 255);
+    color: var(--jk-title);
 }
 
 .jk-title--small {
-    font-size: 36px;
+    font-size: var(--jk-title-small-size);
     margin-bottom: 16px;
 }
 
-.jk-section-title {
-    font-size: 20px;
+.jk-score {
+    font-size: 28px;
+    -unity-text-align: middle-center;
     -unity-font-style: bold;
-    margin-top: 12px;
-    margin-bottom: 8px;
-    color: rgb(200, 220, 255);
+    margin-bottom: 16px;
+    color: var(--jk-accent);
 }
 
-/* --------- buttons --------- */
-.jk-button-column {
+.jk-buttons {
     align-items: center;
     flex-direction: column;
 }
 
 .jk-button {
-    width: 280px;
-    height: 56px;
+    width: var(--jk-button-width);
+    height: var(--jk-button-height);
     margin: 6px 0;
-    font-size: 22px;
+    font-size: var(--jk-button-text-size);
     -unity-font-style: bold;
-    background-color: rgba(255, 255, 255, 0.08);
+    background-color: var(--jk-button);
     border-width: 0;
-    border-radius: 8px;
-    color: rgb(240, 240, 240);
+    border-radius: var(--jk-radius);
+    color: var(--jk-text);
     transition-duration: 80ms;
     transition-property: background-color, scale;
 }
 
 .jk-button:hover {
-    background-color: rgba(255, 255, 255, 0.18);
+    background-color: var(--jk-button-hover);
     scale: 1.03 1.03;
 }
 
 .jk-button:active {
-    background-color: rgba(255, 255, 255, 0.28);
+    background-color: var(--jk-button-active);
     scale: 0.98 0.98;
 }
 
@@ -123,9 +128,16 @@
     align-self: center;
 }
 
-/* --------- rows (label + control) --------- */
 .jk-section {
     margin-bottom: 16px;
+}
+
+.jk-section__title {
+    font-size: 20px;
+    -unity-font-style: bold;
+    margin-top: 12px;
+    margin-bottom: 8px;
+    color: var(--jk-accent);
 }
 
 .jk-row {
@@ -134,14 +146,19 @@
     margin: 4px 0;
 }
 
-.jk-row-label {
-    width: 140px;
+.jk-row__label {
+    width: var(--jk-row-label-width);
     font-size: 18px;
     -unity-text-align: middle-right;
     margin-right: 16px;
 }
 
-.jk-row-control {
+.jk-row__control {
     flex-grow: 1;
     min-height: 32px;
+}
+
+.jk-webgl .jk-button--quit,
+.jk-webgl .jk-row--desktop {
+    display: none;
 }

@@ -1,66 +1,79 @@
 using System.Collections.Generic;
 using System.IO;
 using UnityEditor;
-using UnityEngine;
+using UnityEditor.UIElements;
+using UnityEngine.UIElements;
 
 namespace Metz.JamKit.Editor
 {
     [CustomPropertyDrawer(typeof(SceneRef))]
     public sealed class SceneRefDrawer : PropertyDrawer
     {
-        public override void OnGUI(Rect position, SerializedProperty property, GUIContent label)
+        const string None = "(none)";
+        const string NotInBuild = "  (not in Build Settings)";
+
+        public override VisualElement CreatePropertyGUI(SerializedProperty property)
         {
-            var nameProp = property.FindPropertyRelative("_name");
-            var guidProp = property.FindPropertyRelative("_guid");
+            SerializedProperty sceneName = property.FindPropertyRelative("_name");
+            SerializedProperty sceneGuid = property.FindPropertyRelative("_guid");
+            var field = new DropdownField(preferredLabel);
+            field.AddToClassList(BaseField<string>.alignedFieldUssClassName);
 
-            var names = new List<string>();
-            var guids = new List<string>();
-            foreach (var s in EditorBuildSettings.scenes)
+            void Refresh()
             {
-                if (!s.enabled) continue;
-                names.Add(Path.GetFileNameWithoutExtension(s.path));
-                guids.Add(s.guid.ToString());
-            }
+                BuildScenes(out List<string> names, out List<string> guids);
+                int current = string.IsNullOrEmpty(sceneGuid.stringValue) ? -1 : guids.IndexOf(sceneGuid.stringValue);
+                if (current < 0 && !string.IsNullOrEmpty(sceneName.stringValue)) current = names.IndexOf(sceneName.stringValue);
 
-            int current = -1;
-            if (!string.IsNullOrEmpty(guidProp.stringValue)) current = guids.IndexOf(guidProp.stringValue);
-            if (current < 0 && !string.IsNullOrEmpty(nameProp.stringValue)) current = names.IndexOf(nameProp.stringValue);
-
-            var options = new List<string> { "(none)" };
-            options.AddRange(names);
-
-            int popupIndex = current >= 0 ? current + 1 : 0;
-            bool hasMissing = current < 0 && !string.IsNullOrEmpty(nameProp.stringValue);
-            if (hasMissing)
-            {
-                options.Add($"{nameProp.stringValue}  (not in Build Settings)");
-                popupIndex = options.Count - 1;
-            }
-
-            EditorGUI.BeginProperty(position, label, property);
-
-            int chosen = EditorGUI.Popup(position, label.text, popupIndex, options.ToArray());
-            if (chosen != popupIndex)
-            {
-                if (chosen == 0)
+                var choices = new List<string> { None };
+                choices.AddRange(names);
+                string shown = None;
+                if (current >= 0)
                 {
-                    nameProp.stringValue = string.Empty;
-                    guidProp.stringValue = string.Empty;
+                    shown = names[current];
+                    if (sceneName.stringValue != names[current] || sceneGuid.stringValue != guids[current])
+                    {
+                        sceneName.stringValue = names[current];
+                        sceneGuid.stringValue = guids[current];
+                        property.serializedObject.ApplyModifiedProperties();
+                    }
                 }
-                else if (!hasMissing || chosen != options.Count - 1)
+                else if (!string.IsNullOrEmpty(sceneName.stringValue))
                 {
-                    int idx = chosen - 1;
-                    nameProp.stringValue = names[idx];
-                    guidProp.stringValue = guids[idx];
+                    shown = sceneName.stringValue + NotInBuild;
+                    choices.Add(shown);
                 }
-            }
-            else if (current >= 0)
-            {
-                if (nameProp.stringValue != names[current]) nameProp.stringValue = names[current];
-                if (guidProp.stringValue != guids[current]) guidProp.stringValue = guids[current];
+
+                field.choices = choices;
+                field.SetValueWithoutNotify(shown);
             }
 
-            EditorGUI.EndProperty();
+            field.RegisterValueChangedCallback(change =>
+            {
+                if (change.newValue.EndsWith(NotInBuild)) return;
+                BuildScenes(out List<string> names, out List<string> guids);
+                int index = names.IndexOf(change.newValue);
+                sceneName.stringValue = index < 0 ? string.Empty : names[index];
+                sceneGuid.stringValue = index < 0 ? string.Empty : guids[index];
+                property.serializedObject.ApplyModifiedProperties();
+            });
+            field.TrackPropertyValue(property, _ => Refresh());
+            field.RegisterCallback<AttachToPanelEvent>(_ => EditorBuildSettings.sceneListChanged += Refresh);
+            field.RegisterCallback<DetachFromPanelEvent>(_ => EditorBuildSettings.sceneListChanged -= Refresh);
+            Refresh();
+            return field;
+        }
+
+        static void BuildScenes(out List<string> names, out List<string> guids)
+        {
+            names = new List<string>();
+            guids = new List<string>();
+            foreach (EditorBuildSettingsScene scene in EditorBuildSettings.scenes)
+            {
+                if (!scene.enabled) continue;
+                names.Add(Path.GetFileNameWithoutExtension(scene.path));
+                guids.Add(scene.guid.ToString());
+            }
         }
     }
 }

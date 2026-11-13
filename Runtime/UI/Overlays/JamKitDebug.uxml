@@ -1,0 +1,14 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements" editor-extension-mode="False">
+    <Style src="JamKitOverlays.uss" />
+    <ui:VisualElement picking-mode="Ignore" class="jk-overlay">
+        <ui:VisualElement name="debug-panel" class="jk-debug">
+            <ui:Label name="debug-fps" text="FPS: 60" class="jk-debug__fps" />
+            <ui:Slider name="debug-time-scale" label="Time Scale" low-value="0" high-value="2" value="1" class="jk-debug__slider" />
+            <ui:Button name="debug-reload" text="Reload Scene" class="jk-debug__button" />
+            <ui:VisualElement name="debug-scenes" class="jk-debug__scenes">
+                <ui:Button text="Load: Game" class="jk-debug__button" />
+            </ui:VisualElement>
+            <ui:Button name="debug-quit" text="Quit" class="jk-debug__button" />
+        </ui:VisualElement>
+    </ui:VisualElement>
+</ui:UXML>

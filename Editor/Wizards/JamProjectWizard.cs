@@ -37,7 +37,7 @@ namespace Metz.JamKit.Editor
 
         static readonly string[] Folders =
         {
-            "Scenes", "Scripts", "Prefabs", "Audio/Resources", "UI/Resources", "Art", "Services", "Variables", "Events",
+            "Scenes", "Scripts", "Prefabs", "Audio/Resources", "UI", "Art", "Services", "Variables", "Events",
         };
 
         public static readonly List<Action> PostScaffold = new();
@@ -92,8 +92,7 @@ namespace Metz.JamKit.Editor
             AssetDatabase.Refresh();
             EnsureGameAsmdef();
 
-            PanelSettings panelSettings = TemplateAssets.EnsurePanelSettings();
-            VisualTreeAsset menuUxml = TemplateAssets.EnsureMenuDocument();
+            TemplateAssets.EnsurePanelSettings();
 
             var volumes = new Volumes
             {
@@ -102,12 +101,14 @@ namespace Metz.JamKit.Editor
                 Sfx = Variable("SfxVolume", persist: true),
             };
             FloatVariableSO score = Variable("Score", 0f, 999999f, 0f);
+            TemplateAssets.EnsureMenuDocument(score);
             FloatVariableSO highScore = Variable("HighScore", 0f, 999999f, 0f, persist: true);
             Variable("Timer", 0f, 999999f, 0f);
             GameObjectListSO players = Asset<GameObjectListSO>($"{VariablesDir}/Players.asset");
 
             var time = Asset<TimeServiceSO>($"{ServicesDir}/TimeService.asset");
             var fade = Asset<ScreenFadeSO>($"{ServicesDir}/ScreenFade.asset");
+            UseFadeOverlay(fade);
             var scenes = Asset<SceneServiceSO>($"{ServicesDir}/SceneService.asset", service => service.Fade = fade);
             var input = Asset<InputServiceSO>($"{ServicesDir}/InputService.asset",
                 service => service.Actions = Resources.Load<InputActionAsset>("JamKitInput"));
@@ -128,13 +129,16 @@ namespace Metz.JamKit.Editor
             });
             AssetDatabase.SaveAssets();
 
+            UsePanelRenderers(CorePrefabPath);
+            UsePanelRenderers(MenuPrefabPath);
+
             EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
             GameObject core = CorePrefab(time, scenes, flow, score, highScore, volumes);
-            GameObject menu = MenuPrefab(time, input, events, panelSettings, menuUxml, volumes);
+            GameObject menu = MenuPrefab(time, input, events, volumes);
             StarterPrefabLibrary.EnsureAll(new StarterPrefabLibrary.Context { Time = time, Score = score, Players = players });
 
             if (overwriteScenes || !File.Exists(GameScenePath)) CreateGameScene(core, menu);
-            if (overwriteScenes || !File.Exists(GameOverScenePath)) CreateGameOverScene(core, menu, score);
+            if (overwriteScenes || !File.Exists(GameOverScenePath)) CreateGameOverScene(core, menu);
             if (overwriteScenes || !File.Exists(BootstrapScenePath)) CreateBootstrapScene(core, menu);
 
             EditorBuildSettings.scenes = EditorBuildSettings.scenes
@@ -233,25 +237,25 @@ namespace Metz.JamKit.Editor
             }
 #endif
 
-            Child(core, "Toast").AddComponent<Toast>();
+            UseOverlay(Child(core, "Toast").AddComponent<Toast>(), "JamKitToast");
 
             var debug = Child(core, "DebugPanel").AddComponent<DebugPanel>();
             debug.TimeService = time;
             debug.SceneService = scenes;
+            UseOverlay(debug, "JamKitDebug");
 
             return SaveAsPrefab(core, CorePrefabPath);
         }
 
-        static GameObject MenuPrefab(TimeServiceSO time, InputServiceSO input, FlowEvents events,
-            PanelSettings panelSettings, VisualTreeAsset menuUxml, Volumes volumes)
+        static GameObject MenuPrefab(TimeServiceSO time, InputServiceSO input, FlowEvents events, Volumes volumes)
         {
             var existing = AssetDatabase.LoadAssetAtPath<GameObject>(MenuPrefabPath);
             if (existing != null) return existing;
 
             var root = new GameObject("JamKitMenu");
-            var document = root.AddComponent<UIDocument>();
-            document.visualTreeAsset = menuUxml;
-            document.panelSettings = panelSettings;
+            var panel = root.AddComponent<PanelRenderer>();
+            panel.panelSettings = AssetDatabase.LoadAssetAtPath<PanelSettings>(TemplateAssets.PanelSettingsDest);
+            panel.visualTreeAsset = AssetDatabase.LoadAssetAtPath<VisualTreeAsset>(TemplateAssets.MenuUxmlDest);
 
             var controller = root.AddComponent<MenuController>();
             controller.TimeService = time;
@@ -287,6 +291,54 @@ namespace Metz.JamKit.Editor
             controller.SettingsView = settings;
 
             return SaveAsPrefab(root, MenuPrefabPath);
+        }
+
+        internal static bool UseOverlay(Component owner, string overlay)
+        {
+            var panel = owner.GetComponent<PanelRenderer>();
+            if (panel == null) panel = owner.gameObject.AddComponent<PanelRenderer>();
+            if (panel.panelSettings != null && panel.visualTreeAsset != null) return false;
+            if (panel.panelSettings == null) panel.panelSettings = TemplateAssets.OverlayPanel(overlay);
+            if (panel.visualTreeAsset == null) panel.visualTreeAsset = TemplateAssets.Overlay(overlay);
+            return true;
+        }
+
+        internal static void UseFadeOverlay(ScreenFadeSO fade)
+        {
+            if (fade.Document != null && fade.Panel != null) return;
+            if (fade.Document == null) fade.Document = TemplateAssets.Overlay("JamKitFade");
+            if (fade.Panel == null) fade.Panel = TemplateAssets.OverlayPanel("JamKitFade");
+            EditorUtility.SetDirty(fade);
+        }
+
+        static void UsePanelRenderers(string prefabPath)
+        {
+            if (AssetDatabase.LoadAssetAtPath<GameObject>(prefabPath) == null) return;
+
+            GameObject root = PrefabUtility.LoadPrefabContents(prefabPath);
+            bool changed = false;
+            foreach (UIDocument document in root.GetComponentsInChildren<UIDocument>(true))
+            {
+                GameObject owner = document.gameObject;
+                VisualTreeAsset tree = document.visualTreeAsset;
+                PanelSettings settings = document.panelSettings;
+                int order = (int)document.sortingOrder;
+                Object.DestroyImmediate(document);
+
+                if (!owner.TryGetComponent(out PanelRenderer panel)) panel = owner.AddComponent<PanelRenderer>();
+                if (panel.panelSettings == null) panel.panelSettings = settings;
+                if (panel.visualTreeAsset == null) panel.visualTreeAsset = tree;
+                if (panel.sortingOrder == 0) panel.sortingOrder = order;
+                changed = true;
+            }
+
+            foreach (Toast toast in root.GetComponentsInChildren<Toast>(true)) changed |= UseOverlay(toast, "JamKitToast");
+            foreach (DebugPanel debug in root.GetComponentsInChildren<DebugPanel>(true)) changed |= UseOverlay(debug, "JamKitDebug");
+            foreach (Transform child in root.GetComponentsInChildren<Transform>(true))
+                changed |= GameObjectUtility.RemoveMonoBehavioursWithMissingScript(child.gameObject) > 0;
+
+            if (changed) PrefabUtility.SaveAsPrefabAsset(root, prefabPath);
+            PrefabUtility.UnloadPrefabContents(root);
         }
 
         static MenuView View(GameObject menu, string name, string rootElement)
@@ -338,7 +390,7 @@ namespace Metz.JamKit.Editor
             EditorSceneManager.SaveScene(scene, GameScenePath);
         }
 
-        static void CreateGameOverScene(GameObject core, GameObject menu, FloatVariableSO score)
+        static void CreateGameOverScene(GameObject core, GameObject menu)
         {
             Scene scene = NewScene(cinemachine: false);
             PrefabUtility.InstantiatePrefab(core);
@@ -347,12 +399,6 @@ namespace Metz.JamKit.Editor
             gameOverMenu.name = "JamKitGameOverUI";
             var controller = gameOverMenu.GetComponent<MenuController>();
             controller.InitialView = controller.Views.First(view => view.RootElementName == "gameover-menu");
-
-            var scoreLabel = gameOverMenu.AddComponent<LabelBinding>();
-            scoreLabel.Document = gameOverMenu.GetComponent<UIDocument>();
-            scoreLabel.ElementName = "gameover-score";
-            scoreLabel.Variable = score;
-            scoreLabel.Format = "Score: {0:0}";
             EditorSceneManager.SaveScene(scene, GameOverScenePath);
         }
 

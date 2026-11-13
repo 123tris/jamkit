@@ -1,0 +1,10 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" editor-extension-mode="True">
+    <Style src="JamKitDoctor.uss" />
+    <ui:VisualElement class="jk-issue jk-issue--fixable jk-issue--selectable">
+        <ui:HelpBox name="message" text="InputService 'InputService' has no InputActionAsset, so every mover is dead." message-type="Error" class="jk-issue__message" />
+        <ui:VisualElement class="jk-issue__actions">
+            <ui:Button name="fix" text="Assign JamKitInput" class="jk-issue__fix" />
+            <ui:Button name="select" text="Select" class="jk-issue__select" />
+        </ui:VisualElement>
+    </ui:VisualElement>
+</ui:UXML>

@@ -11,6 +11,7 @@ namespace Metz.JamKit
     [DisallowMultipleComponent]
     public sealed class MenuView : MonoBehaviour
     {
+        const string HiddenClass = "jk-view--hidden";
         const string ShownClass = "jk-view--shown";
 
         [Serializable]
@@ -39,20 +40,21 @@ namespace Metz.JamKit
         VisualElement root;
 
         [ShowInInspector, ReadOnly, HideInEditorMode, FoldoutGroup("Debug")]
-        public bool IsVisible => root.style.display == DisplayStyle.Flex;
+        public bool IsVisible => root != null && root.ClassListContains(ShownClass);
 
         internal void Bind(VisualElement documentRoot)
         {
             root = documentRoot.Q(RootElementName);
-            root.style.display = DisplayStyle.None;
+            root.AddToClassList(HiddenClass);
+            root.RemoveFromClassList(ShownClass);
             foreach (ButtonBinding button in Buttons)
                 root.Q<Button>(button.ElementName).clicked += button.OnClicked.Invoke;
         }
 
         internal void SetVisible(bool visible)
         {
-            if (visible == IsVisible) return;
-            root.style.display = visible ? DisplayStyle.Flex : DisplayStyle.None;
+            if (root == null || visible == IsVisible) return;
+            root.EnableInClassList(HiddenClass, !visible);
             root.EnableInClassList(ShownClass, visible);
             if (visible) OnShown.Invoke();
             else OnHidden.Invoke();
@@ -60,7 +62,7 @@ namespace Metz.JamKit
 
         internal void Focus()
         {
-            VisualElement first = root.Query().Where(element => element.focusable).First();
+            VisualElement first = root?.Query().Where(element => element.focusable).First();
             first?.schedule.Execute(first.Focus);
         }
 
@@ -71,8 +73,8 @@ namespace Metz.JamKit
 
         VisualElement MenuTree()
         {
-            var document = GetComponentInParent<UIDocument>();
-            return document == null || document.visualTreeAsset == null ? null : document.visualTreeAsset.CloneTree();
+            var panel = GetComponentInParent<PanelRenderer>();
+            return panel == null || panel.visualTreeAsset == null ? null : panel.visualTreeAsset.CloneTree();
         }
 
         static IEnumerable<string> Named<T>(VisualElement scope) where T : VisualElement

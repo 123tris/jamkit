@@ -82,12 +82,6 @@ namespace Metz.JamKit
             if (_vsync != null)
                 _vsync.RegisterValueChangedCallback(e => { PlayerPrefs.SetInt(PrefsVSync, e.newValue ? 1 : 0); QualitySettings.vSyncCount = e.newValue ? 1 : 0; });
 
-            if (_isWebGL)
-            {
-                HideRow(_resolution);
-                HideRow(_vsync);
-            }
-
             QualitySettings.SetQualityLevel(Mathf.Clamp(PlayerPrefs.GetInt(PrefsQuality, QualitySettings.GetQualityLevel()), 0, QualitySettings.names.Length - 1), true);
             if (!_isWebGL)
             {
@@ -115,12 +109,6 @@ namespace Metz.JamKit
             _teardown.Add(() => variable.OnValueChanged -= OnVarChanged);
 
             slider.SetValueWithoutNotify(variable.CurrentValue);
-        }
-
-        static void HideRow(VisualElement control)
-        {
-            var row = control?.parent;
-            if (row != null) row.style.display = DisplayStyle.None;
         }
 
         void BuildResolutions()

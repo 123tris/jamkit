@@ -1,4 +1,3 @@
-using System;
 using System.IO;
 using Sirenix.OdinInspector;
 using UnityEngine;
@@ -8,10 +7,11 @@ using UnityEngine.UIElements;
 
 namespace Metz.JamKit
 {
-    [RequireComponent(typeof(UIDocument))]
+    [RequireComponent(typeof(PanelRenderer))]
     public sealed class DebugPanel : MonoBehaviour
     {
-        const int SortingOrder = 30000;
+        const string HiddenClass = "jk-debug--hidden";
+        const string ButtonClass = "jk-debug__button";
 
         [Required] public TimeServiceSO TimeService;
         [Required] public SceneServiceSO SceneService;
@@ -21,25 +21,63 @@ namespace Metz.JamKit
 
         public bool VisibleAtStart;
 
-        VisualElement root;
+        PanelRenderer panel;
+        VisualElement window;
         Label fps;
+        int boundVersion = -1;
+        bool visible;
         float elapsed;
         int frames;
 
-        void Awake() => GetComponent<UIDocument>().panelSettings =
-            JamKitUI.CreatePanelSettings(PanelScaleMode.ConstantPixelSize, SortingOrder);
-
         void OnEnable()
         {
-            root = GetComponent<UIDocument>().rootVisualElement;
-            Build();
-            SetVisible(VisibleAtStart);
+            visible = VisibleAtStart;
+            panel = GetComponent<PanelRenderer>();
+            panel.RegisterUIReloadCallback(OnUIReload);
+        }
+
+        void OnDisable() => panel.UnregisterUIReloadCallback(OnUIReload);
+
+        void OnUIReload(PanelRenderer renderer, VisualElement root, int version)
+        {
+            if (version != boundVersion)
+            {
+                boundVersion = version;
+                Bind(root);
+            }
+
+            SetVisible(visible);
+        }
+
+        void Bind(VisualElement root)
+        {
+            root.pickingMode = PickingMode.Ignore;
+            window = root.Q("debug-panel");
+            fps = root.Q<Label>("debug-fps");
+
+            var timeScale = root.Q<Slider>("debug-time-scale");
+            timeScale.SetValueWithoutNotify(TimeService.BaseScale);
+            timeScale.RegisterValueChangedCallback(change => TimeService.BaseScale = change.newValue);
+            root.Q<Button>("debug-reload").clicked += SceneService.Reload;
+            root.Q<Button>("debug-quit").clicked += Quit;
+
+            VisualElement scenes = root.Q("debug-scenes");
+            scenes.Clear();
+            for (int i = 0; i < SceneManager.sceneCountInBuildSettings; i++)
+            {
+                string sceneName = Path.GetFileNameWithoutExtension(SceneUtility.GetScenePathByBuildIndex(i));
+                var load = new Button(() => SceneService.Load(sceneName)) { text = $"Load: {sceneName}" };
+                load.AddToClassList(ButtonClass);
+                scenes.Add(load);
+            }
         }
 
         void Update()
         {
+            if (window == null) return;
+
             Keyboard keyboard = Keyboard.current;
-            if (keyboard != null && keyboard[ToggleKey].wasPressedThisFrame) SetVisible(root.style.display == DisplayStyle.None);
+            if (keyboard != null && keyboard[ToggleKey].wasPressedThisFrame) SetVisible(!visible);
 
             elapsed += Time.unscaledDeltaTime;
             frames++;
@@ -49,37 +87,11 @@ namespace Metz.JamKit
             frames = 0;
         }
 
-        void Build()
+        void SetVisible(bool on)
         {
-            root.Clear();
-
-            var panel = new VisualElement();
-            panel.style.position = Position.Absolute;
-            panel.style.top = panel.style.left = 8;
-            panel.style.paddingLeft = panel.style.paddingRight = 12;
-            panel.style.paddingTop = panel.style.paddingBottom = 12;
-            panel.style.minWidth = 220;
-            panel.style.backgroundColor = new Color(0f, 0f, 0f, 0.8f);
-            root.Add(panel);
-
-            fps = new Label("FPS: --");
-            fps.style.color = Color.white;
-            panel.Add(fps);
-
-            var timeScale = new Slider("Time Scale", 0f, 2f) { value = 1f };
-            timeScale.RegisterValueChangedCallback(change => TimeService.BaseScale = change.newValue);
-            panel.Add(timeScale);
-
-            panel.Add(new Button(SceneService.Reload) { text = "Reload Scene" });
-            for (int i = 0; i < SceneManager.sceneCountInBuildSettings; i++)
-            {
-                string sceneName = Path.GetFileNameWithoutExtension(SceneUtility.GetScenePathByBuildIndex(i));
-                panel.Add(new Button(() => SceneService.Load(sceneName)) { text = $"Load: {sceneName}" });
-            }
-            panel.Add(new Button(Quit) { text = "Quit" });
+            visible = on;
+            window.EnableInClassList(HiddenClass, !on);
         }
-
-        void SetVisible(bool visible) => root.style.display = visible ? DisplayStyle.Flex : DisplayStyle.None;
 
         static void Quit()
         {

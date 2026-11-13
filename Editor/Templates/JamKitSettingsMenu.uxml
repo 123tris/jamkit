@@ -1,41 +1,41 @@
 <ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" editor-extension-mode="False">
     <Style src="JamKitMenu.uss" />
-    <ui:VisualElement name="settings-menu" class="jk-view jk-view--settings" style="display: none;">
+    <ui:VisualElement name="settings-menu" class="jk-view jk-view--settings">
         <ui:VisualElement picking-mode="Ignore" class="jk-dim" />
         <ui:VisualElement class="jk-panel jk-panel--wide">
             <ui:Label text="Settings" class="jk-title jk-title--small" />
             <ui:VisualElement class="jk-section">
-                <ui:Label text="Audio" class="jk-section-title" />
+                <ui:Label text="Audio" class="jk-section__title" />
                 <ui:VisualElement class="jk-row">
-                    <ui:Label text="Master" class="jk-row-label" />
-                    <ui:Slider name="settings-master" low-value="0" high-value="1" value="1" class="jk-row-control" />
+                    <ui:Label text="Master" class="jk-row__label" />
+                    <ui:Slider name="settings-master" low-value="0" high-value="1" value="1" class="jk-row__control" />
                 </ui:VisualElement>
                 <ui:VisualElement class="jk-row">
-                    <ui:Label text="Music" class="jk-row-label" />
-                    <ui:Slider name="settings-music" low-value="0" high-value="1" value="1" class="jk-row-control" />
+                    <ui:Label text="Music" class="jk-row__label" />
+                    <ui:Slider name="settings-music" low-value="0" high-value="1" value="1" class="jk-row__control" />
                 </ui:VisualElement>
                 <ui:VisualElement class="jk-row">
-                    <ui:Label text="SFX" class="jk-row-label" />
-                    <ui:Slider name="settings-sfx" low-value="0" high-value="1" value="1" class="jk-row-control" />
+                    <ui:Label text="SFX" class="jk-row__label" />
+                    <ui:Slider name="settings-sfx" low-value="0" high-value="1" value="1" class="jk-row__control" />
                 </ui:VisualElement>
             </ui:VisualElement>
             <ui:VisualElement class="jk-section">
-                <ui:Label text="Graphics" class="jk-section-title" />
+                <ui:Label text="Graphics" class="jk-section__title" />
                 <ui:VisualElement class="jk-row">
-                    <ui:Label text="Quality" class="jk-row-label" />
-                    <ui:DropdownField name="settings-quality" class="jk-row-control" />
+                    <ui:Label text="Quality" class="jk-row__label" />
+                    <ui:DropdownField name="settings-quality" choices="Low,Medium,High" index="2" class="jk-row__control" />
+                </ui:VisualElement>
+                <ui:VisualElement class="jk-row jk-row--desktop">
+                    <ui:Label text="Resolution" class="jk-row__label" />
+                    <ui:DropdownField name="settings-resolution" choices="1920 x 1080" index="0" class="jk-row__control" />
                 </ui:VisualElement>
                 <ui:VisualElement class="jk-row">
-                    <ui:Label text="Resolution" class="jk-row-label" />
-                    <ui:DropdownField name="settings-resolution" class="jk-row-control" />
+                    <ui:Label text="Fullscreen" class="jk-row__label" />
+                    <ui:Toggle name="settings-fullscreen" value="true" class="jk-row__control" />
                 </ui:VisualElement>
-                <ui:VisualElement class="jk-row">
-                    <ui:Label text="Fullscreen" class="jk-row-label" />
-                    <ui:Toggle name="settings-fullscreen" class="jk-row-control" />
-                </ui:VisualElement>
-                <ui:VisualElement class="jk-row">
-                    <ui:Label text="VSync" class="jk-row-label" />
-                    <ui:Toggle name="settings-vsync" class="jk-row-control" />
+                <ui:VisualElement class="jk-row jk-row--desktop">
+                    <ui:Label text="VSync" class="jk-row__label" />
+                    <ui:Toggle name="settings-vsync" value="true" class="jk-row__control" />
                 </ui:VisualElement>
             </ui:VisualElement>
             <ui:Button text="Back" name="settings-back" class="jk-button jk-button--back" />

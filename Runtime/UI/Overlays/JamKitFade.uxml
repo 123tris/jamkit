@@ -1,0 +1,4 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements" editor-extension-mode="False">
+    <Style src="JamKitOverlays.uss" />
+    <ui:VisualElement name="fade" picking-mode="Ignore" class="jk-overlay jk-fade" />
+</ui:UXML>

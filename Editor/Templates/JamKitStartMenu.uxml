@@ -2,10 +2,10 @@
     <Style src="JamKitMenu.uss" />
     <ui:VisualElement name="start-menu" class="jk-view jk-view--start">
         <ui:Label text="JAM TITLE" name="start-title" class="jk-title" />
-        <ui:VisualElement class="jk-button-column">
+        <ui:VisualElement class="jk-buttons">
             <ui:Button text="Play" name="start-play" class="jk-button" />
             <ui:Button text="Settings" name="start-settings" class="jk-button" />
-            <ui:Button text="Quit" name="start-quit" class="jk-button jk-quit" />
+            <ui:Button text="Quit" name="start-quit" class="jk-button jk-button--quit" />
         </ui:VisualElement>
     </ui:VisualElement>
 </ui:UXML>

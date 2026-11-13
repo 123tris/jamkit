@@ -19,6 +19,18 @@ Minimum Unity is now 6.6. Requires Ripple 0.2.0 (tag `v0.2.0`).
 
 **Breaking: audio.** `AudioServiceSO`, `AudioServiceRunner` and `SfxOnEvent` are removed. Sounds are `Sound` / `Music` assets (`ClipSound`, `ClipMusic`, and `FmodSound`, `FmodMusic` under `JAMKIT_FMOD`). Music survives scene loads. Music ducking and stingers are not carried over.
 
+**Breaking: UI on the Unity 6.6 model.** Every document opens in UI Builder looking like the game.
+
+- Menus, `Toast`, `DebugPanel` and the screen fade use `PanelRenderer` instead of `UIDocument`, and find their elements in its reload callback. Editing a document while playing reloads it in place. Re-run `JamKit > New Jam Project` to convert the scaffolded prefabs.
+- `LabelBinding`, `BarBinding` and `UIBindingBase` are removed. Use the `ValueLabel` and `ValueBar` controls with a UXML data binding to a variable's `CurrentValue`. The wizard binds the Game Over score in `JamKitGameOverMenu.uxml`.
+- `Toast`, `DebugPanel` and the fade are UXML and USS in `Runtime/UI/Overlays/`, each with its own panel settings. `Toast.FontSize`, `Color` and `ScreenY` moved to `JamKitOverlays.uss`. `ScreenFadeSO` gains `Document` and `Panel`.
+- `JamKitUI` is removed. The theme, `Runtime/UI/JamKitDefaultTheme.tss`, is referenced by the panel settings instead of loaded from `Resources`, and imports `JamKitControls.uss`.
+- The wizard copies the menu documents to `Assets/_Project/UI/` instead of `Assets/_Project/UI/Resources/`, and moves copies it finds in the old folder.
+- Screens hide with the class `jk-view--hidden` instead of an inline style. In `JamKitMenu.uxml` the other screens' instances carry `jk-instance--hidden`, so that document previews the Start screen while each screen's own document previews itself.
+- Menu classes follow block, element and modifier: `jk-row__label`, `jk-row__control`, `jk-section__title`, `jk-buttons`, `jk-button--quit` (was `jk-quit`). Colors and sizes are variables on `:root`.
+- On WebGL the menu adds `jk-webgl` to its panel root and the stylesheet hides Quit and the `jk-row--desktop` settings, instead of the code setting styles.
+- The Doctor window and the `SceneRef` drawer are UI Toolkit. The Doctor also flags a `PanelRenderer` with no document and a `ScreenFade` with no overlay, with fixes for JamKit's own.
+
 **Added**
 
 - Juice: `Ease`, `Tween`, `PunchScale`, `ColorFlash`, `CameraShake`.

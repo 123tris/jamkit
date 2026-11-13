@@ -1,0 +1,15 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" editor-extension-mode="True">
+    <ui:Template name="JamKitDoctorIssue" src="JamKitDoctorIssue.uxml" />
+    <Style src="JamKitDoctor.uss" />
+    <ui:VisualElement class="jk-doctor">
+        <uie:Toolbar>
+            <uie:ToolbarButton name="rescan" text="Rescan" />
+            <ui:VisualElement class="jk-doctor__spacer" />
+            <uie:ToolbarButton name="auto-assign" text="Auto-Assign All" />
+        </uie:Toolbar>
+        <ui:HelpBox text="All green. Go make the game." message-type="Info" class="jk-doctor__all-green" />
+        <ui:ScrollView name="issues" class="jk-doctor__issues">
+            <ui:Instance template="JamKitDoctorIssue" />
+        </ui:ScrollView>
+    </ui:VisualElement>
+</ui:UXML>

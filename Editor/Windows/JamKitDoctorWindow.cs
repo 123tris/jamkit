@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using UnityEditor;
+using UnityEditor.UIElements;
 using UnityEngine;
 using UnityEngine.UIElements;
 using Object = UnityEngine.Object;
@@ -10,6 +11,10 @@ namespace Metz.JamKit.Editor
 {
     public sealed class JamKitDoctorWindow : EditorWindow
     {
+        const string CleanClass = "jk-doctor--clean";
+        const string FixableClass = "jk-issue--fixable";
+        const string SelectableClass = "jk-issue--selectable";
+
         class Issue
         {
             public MessageType Severity;
@@ -19,9 +24,12 @@ namespace Metz.JamKit.Editor
             public Object Context;
         }
 
+        [SerializeField] VisualTreeAsset layout;
+        [SerializeField] VisualTreeAsset issueRow;
+
         readonly List<Issue> _issues = new();
-        Vector2 _scroll;
-        bool _scanned;
+        VisualElement _root;
+        ScrollView _list;
 
         public delegate void IssueReporter(MessageType severity, string message, string fixLabel = null, Action fix = null, Object context = null);
 
@@ -35,55 +43,22 @@ namespace Metz.JamKit.Editor
             window.Scan();
         }
 
-        void OnGUI()
+        void CreateGUI()
         {
-            using (new EditorGUILayout.HorizontalScope(EditorStyles.toolbar))
+            layout.CloneTree(rootVisualElement);
+            _root = rootVisualElement.Q(className: "jk-doctor");
+            _list = _root.Q<ScrollView>("issues");
+            _root.Q<ToolbarButton>("rescan").clicked += Scan;
+            _root.Q<ToolbarButton>("auto-assign").clicked += () =>
             {
-                if (GUILayout.Button("Rescan", EditorStyles.toolbarButton, GUILayout.Width(70f))) Scan();
-                GUILayout.FlexibleSpace();
-                if (GUILayout.Button("Auto-Assign All", EditorStyles.toolbarButton, GUILayout.Width(110f)))
-                {
-                    JamKitAutoAssign.FillOpenScenes();
-                    Scan();
-                }
-            }
-
-            if (!_scanned) Scan();
-
-            if (_issues.Count == 0)
-            {
-                EditorGUILayout.HelpBox("All green. Go make the game.", MessageType.Info);
-                return;
-            }
-
-            _scroll = EditorGUILayout.BeginScrollView(_scroll);
-            foreach (var issue in _issues)
-            {
-                using (new EditorGUILayout.HorizontalScope())
-                {
-                    EditorGUILayout.HelpBox(issue.Message, issue.Severity);
-                    using (new EditorGUILayout.VerticalScope(GUILayout.Width(90f)))
-                    {
-                        if (issue.Fix != null && GUILayout.Button(issue.FixLabel ?? "Fix"))
-                        {
-                            issue.Fix();
-                            Scan();
-                            GUIUtility.ExitGUI();
-                        }
-                        if (issue.Context != null && GUILayout.Button("Select"))
-                        {
-                            Selection.activeObject = issue.Context;
-                            EditorGUIUtility.PingObject(issue.Context);
-                        }
-                    }
-                }
-            }
-            EditorGUILayout.EndScrollView();
+                JamKitAutoAssign.FillOpenScenes();
+                Scan();
+            };
+            Scan();
         }
 
         void Scan()
         {
-            _scanned = true;
             _issues.Clear();
             ScanServices();
             ScanInput();
@@ -93,7 +68,41 @@ namespace Metz.JamKit.Editor
             ScanGameAsmdef();
             ScanEmbeddedPackageEdits();
             foreach (var scan in ExtraScans) scan(Add);
-            Repaint();
+            ShowIssues();
+        }
+
+        void ShowIssues()
+        {
+            if (_root == null) return;
+            _list.Clear();
+            _root.EnableInClassList(CleanClass, _issues.Count == 0);
+            foreach (var issue in _issues) _list.Add(Row(issue));
+        }
+
+        VisualElement Row(Issue issue)
+        {
+            VisualElement row = issueRow.CloneTree();
+            var message = row.Q<HelpBox>("message");
+            message.text = issue.Message;
+            message.messageType = (HelpBoxMessageType)issue.Severity;
+
+            VisualElement body = row.Q(className: "jk-issue");
+            body.EnableInClassList(FixableClass, issue.Fix != null);
+            body.EnableInClassList(SelectableClass, issue.Context != null);
+
+            var fix = row.Q<Button>("fix");
+            fix.text = issue.FixLabel ?? "Fix";
+            fix.clicked += () =>
+            {
+                issue.Fix();
+                Scan();
+            };
+            row.Q<Button>("select").clicked += () =>
+            {
+                Selection.activeObject = issue.Context;
+                EditorGUIUtility.PingObject(issue.Context);
+            };
+            return row;
         }
 
         void Add(MessageType severity, string message, string fixLabel = null, Action fix = null, Object context = null)
@@ -114,6 +123,15 @@ namespace Metz.JamKit.Editor
                 Add(MessageType.Warning,
                     $"Missing service assets: {string.Join(", ", missing)}. Run the wizard to create the full set.",
                     "Run Wizard", JamProjectWizard.Run);
+
+            foreach (var fade in FindAssets<ScreenFadeSO>())
+                if (fade.Document == null || fade.Panel == null)
+                    Add(MessageType.Error, $"ScreenFade '{fade.name}' has no overlay document or panel, so fades never show.",
+                        "Use JamKit's", () =>
+                        {
+                            JamProjectWizard.UseFadeOverlay(fade);
+                            AssetDatabase.SaveAssets();
+                        }, fade);
         }
 
         void ScanInput()
@@ -155,7 +173,7 @@ namespace Metz.JamKit.Editor
                 Add(MessageType.Error, $"PanelSettings '{ps.name}' has no theme — UI renders unstyled.",
                     "Assign Theme", () =>
                     {
-                        ps.themeStyleSheet = JamKitUI.DefaultTheme;
+                        ps.themeStyleSheet = TemplateAssets.Theme;
                         EditorUtility.SetDirty(ps);
                         AssetDatabase.SaveAssets();
                     }, ps);
@@ -191,8 +209,9 @@ namespace Metz.JamKit.Editor
 
         void ScanOpenScenes()
         {
-            bool hasUIDoc = Object.FindObjectsByType<UIDocument>(FindObjectsInactive.Include, FindObjectsSortMode.None).Length > 0
-                || Object.FindObjectsByType<MenuController>(FindObjectsInactive.Include, FindObjectsSortMode.None).Length > 0;
+            var panels = Object.FindObjectsByType<PanelRenderer>(FindObjectsInactive.Include, FindObjectsSortMode.None);
+            bool hasUIDoc = panels.Length > 0
+                || Object.FindObjectsByType<UIDocument>(FindObjectsInactive.Include, FindObjectsSortMode.None).Length > 0;
             bool hasEventSystem = Object.FindObjectsByType<UnityEngine.EventSystems.EventSystem>(FindObjectsInactive.Include, FindObjectsSortMode.None).Length > 0;
             if (hasUIDoc && !hasEventSystem)
                 Add(MessageType.Error, "Scene has UI but no EventSystem — clicks and gamepad nav are dead.",
@@ -203,6 +222,18 @@ namespace Metz.JamKit.Editor
                         es.AddComponent<UnityEngine.InputSystem.UI.InputSystemUIInputModule>();
                         Undo.RegisterCreatedObjectUndo(es, "Create EventSystem");
                     });
+
+            foreach (var panel in panels)
+            {
+                if (panel.visualTreeAsset != null && panel.panelSettings != null) continue;
+                var overlay = panel.TryGetComponent(out Toast _) ? "JamKitToast" : panel.TryGetComponent(out DebugPanel _) ? "JamKitDebug" : null;
+                Add(MessageType.Error, $"Panel Renderer on '{panel.name}' has no document or no panel settings, so it shows nothing.",
+                    overlay == null ? null : "Use JamKit's", overlay == null ? null : () =>
+                    {
+                        Undo.RecordObject(panel, "Use JamKit Overlay");
+                        JamProjectWizard.UseOverlay(panel, overlay);
+                    }, panel.gameObject);
+            }
 
             var looseObjects = new HashSet<GameObject>();
             foreach (var mb in JamKitAutoAssign.AllJamKitComponentsInOpenScenes())

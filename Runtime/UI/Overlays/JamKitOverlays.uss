@@ -1,0 +1,61 @@
+:root {
+    --jk-overlay-text: rgb(255, 255, 255);
+    --jk-overlay-panel: rgba(0, 0, 0, 0.8);
+    --jk-toast-size: 44px;
+    --jk-toast-top: 28%;
+}
+
+.jk-overlay {
+    position: absolute;
+    left: 0;
+    top: 0;
+    right: 0;
+    bottom: 0;
+}
+
+.jk-toast {
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: var(--jk-toast-top);
+    align-items: center;
+}
+
+.jk-toast__message {
+    font-size: var(--jk-toast-size);
+    -unity-font-style: bold;
+    -unity-text-align: middle-center;
+    color: var(--jk-overlay-text);
+}
+
+.jk-debug {
+    position: absolute;
+    left: 8px;
+    top: 8px;
+    min-width: 260px;
+    padding: 12px;
+    background-color: var(--jk-overlay-panel);
+}
+
+.jk-debug--hidden {
+    display: none;
+}
+
+.jk-debug__fps {
+    color: var(--jk-overlay-text);
+    margin-bottom: 4px;
+}
+
+.jk-debug__slider .unity-base-field__label {
+    min-width: 80px;
+    color: var(--jk-overlay-text);
+}
+
+.jk-debug__button {
+    margin-left: 0;
+    margin-right: 0;
+}
+
+.jk-fade {
+    background-color: rgb(0, 0, 0);
+}
