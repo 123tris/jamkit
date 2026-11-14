@@ -9,10 +9,17 @@ namespace Metz.JamKit.Tests
         public void ValueLabelShowsItsValueInItsFormat()
         {
             var label = new ValueLabel { format = "Score: {0:0}", value = 41.6f };
-            Assert.AreEqual("Score: 42", label.text);
+            Label text = label.Q<Label>(className: ValueLabel.textUssClassName);
+            Assert.AreEqual("Score: 42", text.text);
 
             label.format = "{0:0} HP";
-            Assert.AreEqual("42 HP", label.text);
+            Assert.AreEqual("42 HP", text.text);
+        }
+
+        [Test]
+        public void ValueLabelInheritsNoStringValueToClashWithItsFloat()
+        {
+            Assert.IsFalse(typeof(INotifyValueChanged<string>).IsAssignableFrom(typeof(ValueLabel)));
         }
 
         [Test]

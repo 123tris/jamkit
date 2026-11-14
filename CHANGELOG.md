@@ -23,6 +23,7 @@ Minimum Unity is now 6.6. Requires Ripple 0.2.0 (tag `v0.2.0`).
 
 - Menus, `Toast`, `DebugPanel` and the screen fade use `PanelRenderer` instead of `UIDocument`, and find their elements in its reload callback. Editing a document while playing reloads it in place. Re-run `JamKit > New Jam Project` to convert the scaffolded prefabs.
 - `LabelBinding`, `BarBinding` and `UIBindingBase` are removed. Use the `ValueLabel` and `ValueBar` controls with a UXML data binding to a variable's `CurrentValue`. The wizard binds the Game Over score in `JamKitGameOverMenu.uxml`.
+- `ValueLabel` is a `VisualElement` holding a `Label` (`jk-value-label__text`), like `ValueBar` holds its fill, instead of being a `Label`. A `Label` already has a string `value` through `INotifyValueChanged<string>`, so the float `value` on top of it made Unity log "Detected multiple return types for PropertyBag=[ValueLabel]" whenever one was bound. Its UXML attributes, bindings and text styling are unchanged.
 - `Toast`, `DebugPanel` and the fade are UXML and USS in `Runtime/UI/Overlays/`, each with its own panel settings. `Toast.FontSize`, `Color` and `ScreenY` moved to `JamKitOverlays.uss`. `ScreenFadeSO` gains `Document` and `Panel`.
 - `JamKitUI` is removed. The theme, `Runtime/UI/JamKitDefaultTheme.tss`, is referenced by the panel settings instead of loaded from `Resources`, and imports `JamKitControls.uss`.
 - The wizard copies the menu documents to `Assets/_Project/UI/` instead of `Assets/_Project/UI/Resources/`, and moves copies it finds in the old folder.

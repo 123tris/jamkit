@@ -82,7 +82,7 @@ Scene changes are not the menu's job. Buttons raise Ripple events and the `GameF
 </ui:UXML>
 ```
 
-In UI Builder, set the data source by dragging the variable asset onto the control's Data Source field. `ValueLabel` formats its value with `format`. `ValueBar` fills the share of `min`..`max` the value covers, from the left, or from the bottom with `vertical`. The bar's look (`jk-bar`, `jk-bar__fill`, `--jk-bar-fill`…) comes from `JamKitControls.uss`, which the JamKit theme imports.
+In UI Builder, set the data source by dragging the variable asset onto the control's Data Source field. `ValueLabel` formats its value with `format` into the `Label` it holds (`jk-value-label__text`); text styles set on the `ValueLabel`, such as font size, color and alignment, carry down to it. `ValueBar` fills the share of `min`..`max` the value covers, from the left, or from the bottom with `vertical`. The bar's look (`jk-bar`, `jk-bar__fill`, `--jk-bar-fill`…) comes from `JamKitControls.uss`, which the JamKit theme imports.
 
 ## Overlays
 

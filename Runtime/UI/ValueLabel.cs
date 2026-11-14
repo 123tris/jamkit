@@ -4,16 +4,20 @@ using UnityEngine.UIElements;
 namespace Metz.JamKit
 {
     [UxmlElement]
-    public partial class ValueLabel : Label
+    public partial class ValueLabel : VisualElement
     {
-        public new const string ussClassName = "jk-value-label";
+        public const string ussClassName = "jk-value-label";
+        public const string textUssClassName = ussClassName + "__text";
 
+        readonly Label label = new() { name = "text", pickingMode = PickingMode.Ignore };
         string pattern = "{0:0}";
         float shown;
 
         public ValueLabel()
         {
             AddToClassList(ussClassName);
+            label.AddToClassList(textUssClassName);
+            Add(label);
             Refresh();
         }
 
@@ -39,6 +43,6 @@ namespace Metz.JamKit
             }
         }
 
-        void Refresh() => text = string.Format(pattern, shown);
+        void Refresh() => label.text = string.Format(pattern, shown);
     }
 }
