@@ -88,7 +88,7 @@ namespace Metz.JamKit.Editor
                 zone.RequiredTag = "Player";
                 zone.OneShot = true;
                 zone.DestroySelf = true;
-                UnityEventTools.AddFloatPersistentListener(zone.OnEntered.Response, context.Score.Add, 1f);
+                UnityEventTools.AddFloatPersistentListener(zone.OnEntered.Calls(), context.Score.Add, 1f);
                 return pickup;
             }),
             ("Spawner", _ =>
@@ -162,7 +162,7 @@ namespace Metz.JamKit.Editor
             var health = player.AddComponent<Health>();
             var hitStop = player.AddComponent<HitStop>();
             hitStop.TimeService = context.Time;
-            UnityEventTools.AddPersistentListener(health.OnDamaged.Response, hitStop.Play);
+            UnityEventTools.AddPersistentListener(health.OnDamaged.Calls(), hitStop.Play);
             AddJuice(player, health);
         }
 
@@ -178,20 +178,20 @@ namespace Metz.JamKit.Editor
 
             var burst = enemy.AddComponent<SpawnBurst>();
             burst.Is2D = is2D;
-            UnityEventTools.AddVoidPersistentListener(health.OnDied.Response, burst.Burst);
+            UnityEventTools.AddVoidPersistentListener(health.OnDied.Calls(), burst.Burst);
             AddJuice(enemy, health);
         }
 
         static void AddJuice(GameObject target, Health health)
         {
             var punch = target.AddComponent<PunchScale>();
-            UnityEventTools.AddVoidPersistentListener(health.OnDamaged.Response, punch.Play);
+            UnityEventTools.AddVoidPersistentListener(health.OnDamaged.Calls(), punch.Play);
 
             if (FeelPlayerType == null) return;
             Component feel = target.AddComponent(FeelPlayerType);
             var play = (UnityAction)Delegate.CreateDelegate(typeof(UnityAction), feel,
                 FeelPlayerType.GetMethod("PlayFeedbacks", Type.EmptyTypes));
-            UnityEventTools.AddVoidPersistentListener(health.OnDamaged.Response, play);
+            UnityEventTools.AddVoidPersistentListener(health.OnDamaged.Calls(), play);
         }
 
         internal static void SetReference(Object target, string propertyName, Object value)

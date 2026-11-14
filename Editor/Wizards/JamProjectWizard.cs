@@ -351,7 +351,7 @@ namespace Metz.JamKit.Editor
         static void Button(MenuView view, string elementName, UnityAction action)
         {
             var binding = new MenuView.ButtonBinding { ElementName = elementName };
-            UnityEventTools.AddPersistentListener(binding.OnClicked.Response, action);
+            UnityEventTools.AddPersistentListener(binding.OnClicked.Calls(), action);
             view.Buttons.Add(binding);
         }
 

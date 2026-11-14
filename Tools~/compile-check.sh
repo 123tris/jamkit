@@ -58,7 +58,7 @@ build_asm () {
 RR="$OUT/Metz.Ripple.Runtime.dll"
 JR="$OUT/Metz.JamKit.Runtime.dll"
 JE="$OUT/Metz.JamKit.Editor.dll"
-build_asm "$PROJ/Metz.Ripple.Runtime.csproj" "$RIPPLE/Runtime" "$RR" || exit 1
+build_asm "$PROJ/Metz.Ripple.Runtime.csproj" "$RIPPLE/Runtime" "$RR" "" "*/Runtime/UltEvents/*" || exit 1
 build_asm "$PROJ/Metz.Ripple.Editor.csproj" "$RIPPLE/Editor" "$OUT/Metz.Ripple.Editor.dll" "$RR" "*/Dependency Resolver/*" || exit 1
 build_asm "$PROJ/Metz.JamKit.Runtime.csproj" "$PKG/Runtime" "$JR" "$RR" "*/Fmod/*" || exit 1
 build_asm "$PROJ/Metz.JamKit.Editor.csproj" "$PKG/Editor" "$JE" "$JR $RR" "*/Editor/[FT][lo]*/*" || exit 1

@@ -26,6 +26,7 @@ namespace Metz.JamKit.Editor
             FillComponent(component, log: true);
         }
 
+        [Obsolete("Obsolete")]
         static void OnChangesPublished(ref ObjectChangeEventStream stream)
         {
             if (EditorApplication.isPlayingOrWillChangePlaymode) return;
