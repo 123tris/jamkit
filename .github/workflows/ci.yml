@@ -18,7 +18,7 @@ on:
 
 env:
   UNITY_VERSION: 6000.0.26f1
-  RIPPLE_GIT_URL: "https://github.com/123tris/Ripple.git#v0.2.0"
+  RIPPLE_GIT_URL: "https://github.com/123tris/Ripple.git#v0.3.0"
 
 jobs:
   test:

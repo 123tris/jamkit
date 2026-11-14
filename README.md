@@ -14,7 +14,7 @@ Read [PILLARS.md](PILLARS.md) for the rules the kit is built to.
 
 - Unity 6.6 (6000.6) or newer, with URP, Cinemachine 3 and the Input System
 - **Odin Inspector**
-- **`com.metz.ripple`** 0.2.0: `https://github.com/123tris/Ripple.git#v0.2.0`
+- **`com.metz.ripple`** 0.3.0: `https://github.com/123tris/Ripple.git#v0.3.0`
 
 UltEvents is no longer used anywhere in the stack.
 
