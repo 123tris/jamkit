@@ -19,10 +19,19 @@ namespace Metz.JamKit.Editor
             public Object Context;
         }
 
+        const string RuntimeUI = "Packages/com.metz.jamkit/Runtime/UI";
+
         static readonly Type[] ServiceTypes =
         {
             typeof(TimeServiceSO), typeof(SceneServiceSO), typeof(InputServiceSO), typeof(ScreenFadeSO),
         };
+
+        static ThemeStyleSheet Theme => AssetDatabase.LoadAssetAtPath<ThemeStyleSheet>($"{RuntimeUI}/JamKitDefaultTheme.tss");
+
+        static VisualTreeAsset Overlay(string name) => AssetDatabase.LoadAssetAtPath<VisualTreeAsset>($"{RuntimeUI}/Overlays/{name}.uxml");
+
+        static PanelSettings OverlayPanel(string name)
+            => AssetDatabase.LoadAssetAtPath<PanelSettings>($"{RuntimeUI}/Overlays/{name}PanelSettings.asset");
 
         public static List<Issue> Scan() => Scan(openScenes: true);
 
@@ -60,7 +69,9 @@ namespace Metz.JamKit.Editor
                     Add(issues, MessageType.Error, $"ScreenFade '{fade.name}' has no overlay document or panel, so fades never show.",
                         "Use JamKit's", () =>
                         {
-                            JamProjectWizard.UseFadeOverlay(fade);
+                            if (fade.Document == null) fade.Document = Overlay("JamKitFade");
+                            if (fade.Panel == null) fade.Panel = OverlayPanel("JamKitFade");
+                            EditorUtility.SetDirty(fade);
                             AssetDatabase.SaveAssets();
                         }, fade);
         }
@@ -104,7 +115,7 @@ namespace Metz.JamKit.Editor
                 Add(issues, MessageType.Error, $"PanelSettings '{ps.name}' has no theme — UI renders unstyled.",
                     "Assign Theme", () =>
                     {
-                        ps.themeStyleSheet = TemplateAssets.Theme;
+                        ps.themeStyleSheet = Theme;
                         EditorUtility.SetDirty(ps);
                         AssetDatabase.SaveAssets();
                     }, ps);
@@ -156,7 +167,8 @@ namespace Metz.JamKit.Editor
                     overlay == null ? null : "Use JamKit's", overlay == null ? null : () =>
                     {
                         Undo.RecordObject(panel, "Use JamKit Overlay");
-                        JamProjectWizard.UseOverlay(panel, overlay);
+                        if (panel.panelSettings == null) panel.panelSettings = OverlayPanel(overlay);
+                        if (panel.visualTreeAsset == null) panel.visualTreeAsset = Overlay(overlay);
                     }, panel.gameObject);
             }
 

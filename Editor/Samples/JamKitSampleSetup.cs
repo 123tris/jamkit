@@ -87,9 +87,9 @@ namespace Metz.JamKit.Editor
             if (!EditorSceneManager.SaveCurrentModifiedScenesIfUserWantsTo()) return;
 
             bool scaffolded = false;
-            if (!ProjectIsScaffolded())
+            if (!ProjectTemplate.IsScaffolded)
             {
-                JamProjectWizard.Scaffold(overwriteScenes: false);
+                ProjectTemplate.Scaffold();
                 scaffolded = true;
             }
 
@@ -100,7 +100,7 @@ namespace Metz.JamKit.Editor
             string scenePath;
             if (spec.InGameScene)
             {
-                scenePath = JamProjectWizard.GameScenePath;
+                scenePath = ProjectTemplate.GameScene;
                 EditorSceneManager.OpenScene(scenePath);
                 InstantiateArenaIfAbsent(spec, folder);
             }
@@ -120,18 +120,11 @@ namespace Metz.JamKit.Editor
             ReportReady(spec, scenePath, scaffolded, wired);
         }
 
-        static bool ProjectIsScaffolded()
-            => File.Exists(JamProjectWizard.BootstrapScenePath)
-            && File.Exists(JamProjectWizard.GameScenePath)
-            && File.Exists(JamProjectWizard.GameOverScenePath)
-            && AssetDatabase.LoadAssetAtPath<GameObject>(JamProjectWizard.CorePrefabPath) != null
-            && AssetDatabase.LoadAssetAtPath<InputServiceSO>(JamProjectWizard.ServicesDir + "/InputService.asset") != null;
-
         static void InstantiateCoreIfAbsent()
         {
             if (Object.FindObjectsByType<HighScoreTracker>(FindObjectsInactive.Include, FindObjectsSortMode.None).Length > 0)
                 return;
-            var core = AssetDatabase.LoadAssetAtPath<GameObject>(JamProjectWizard.CorePrefabPath);
+            var core = AssetDatabase.LoadAssetAtPath<GameObject>(ProjectTemplate.CorePrefab);
             if (core != null) PrefabUtility.InstantiatePrefab(core);
         }
 
