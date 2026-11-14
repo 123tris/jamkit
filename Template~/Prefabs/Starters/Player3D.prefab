@@ -1,0 +1,309 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!1 &7970217377611834179
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 2209354208182698474}
+  - component: {fileID: 7504989920940771885}
+  - component: {fileID: 4570663710203454907}
+  - component: {fileID: 4801163724795235363}
+  - component: {fileID: 1862539682483908740}
+  - component: {fileID: 5884161566147771270}
+  - component: {fileID: 2214061555955236738}
+  - component: {fileID: 4421868437714968460}
+  - component: {fileID: 5800980570315960293}
+  - component: {fileID: 5954476322519811597}
+  m_Layer: 0
+  m_Name: Player3D
+  m_TagString: Player
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &2209354208182698474
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7970217377611834179}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!33 &7504989920940771885
+MeshFilter:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7970217377611834179}
+  m_Mesh: {fileID: 10208, guid: 0000000000000000e000000000000000, type: 0}
+--- !u!136 &4570663710203454907
+CapsuleCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7970217377611834179}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 0
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 2
+  m_Radius: 0.5
+  m_Height: 2
+  m_Direction: 1
+  m_Center: {x: 0, y: 0, z: 0}
+--- !u!23 &4801163724795235363
+MeshRenderer:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7970217377611834179}
+  m_Enabled: 1
+  m_CastShadows: 1
+  m_ReceiveShadows: 1
+  m_DynamicOccludee: 1
+  m_StaticShadowCaster: 0
+  m_MotionVectors: 1
+  m_LightProbeUsage: 1
+  m_ReflectionProbeUsage: 1
+  m_RayTracingMode: 2
+  m_RayTraceProcedural: 0
+  m_RayTracingAccelStructBuildFlagsOverride: 0
+  m_RayTracingAccelStructBuildFlags: 1
+  m_SmallMeshCulling: 1
+  m_ForceMeshLod: -1
+  m_MeshLodSelectionBias: 0
+  m_RenderingLayerMask: 1
+  m_RendererPriority: 0
+  m_Materials:
+  - {fileID: 2100000, guid: 1f7fd0156694b0c46afb870a907fcb2d, type: 2}
+  m_StaticBatchInfo:
+    firstSubMesh: 0
+    subMeshCount: 0
+  m_StaticBatchRoot: {fileID: 0}
+  m_ProbeAnchor: {fileID: 0}
+  m_LightProbeVolumeOverride: {fileID: 0}
+  m_ScaleInLightmap: 1
+  m_ReceiveGI: 1
+  m_PreserveUVs: 1
+  m_IgnoreNormalsForChartDetection: 0
+  m_ImportantGI: 0
+  m_StitchLightmapSeams: 1
+  m_SelectedEditorRenderState: 3
+  m_MinimumChartSize: 4
+  m_AutoUVMaxDistance: 0.5
+  m_AutoUVMaxAngle: 89
+  m_LightmapParameters: {fileID: 0}
+  m_GlobalIlluminationMeshLod: 0
+  m_SortingLayerID: 0
+  m_SortingLayer: 0
+  m_SortingOrder: 0
+  m_MaskInteraction: 0
+  m_AdditionalVertexStreams: {fileID: 0}
+--- !u!54 &1862539682483908740
+Rigidbody:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7970217377611834179}
+  serializedVersion: 5
+  m_Mass: 1
+  m_LinearDamping: 0
+  m_AngularDamping: 0.05
+  m_CenterOfMass: {x: 0, y: 0, z: 0}
+  m_InertiaTensor: {x: 1, y: 1, z: 1}
+  m_InertiaRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ImplicitCom: 1
+  m_ImplicitTensor: 1
+  m_UseGravity: 1
+  m_IsKinematic: 0
+  m_Interpolate: 0
+  m_Constraints: 0
+  m_CollisionDetection: 0
+--- !u!114 &5884161566147771270
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7970217377611834179}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d418d638f7de0014781d1b5216b71609, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Metz.JamKit.Runtime::Metz.JamKit.Mover3D
+  Move: {fileID: -4881875888453920900, guid: 9ba5a4e8c4bd1f643b7451c0b7d8a9d0, type: 3}
+  Jump: {fileID: 120797999441025959, guid: 9ba5a4e8c4bd1f643b7451c0b7d8a9d0, type: 3}
+  MoveSpeed:
+    useConstant: 1
+    _constantValue: 5
+    _variable: {fileID: 0}
+  JumpSpeed:
+    useConstant: 1
+    _constantValue: 6
+    _variable: {fileID: 0}
+  RotateToFaceMove: 1
+  CameraReference: {fileID: 0}
+  GroundLayers:
+    serializedVersion: 2
+    m_Bits: 4294967295
+  GroundCheckDistance: 0.2
+--- !u!114 &2214061555955236738
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7970217377611834179}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ebeb03a165395379fe05fcb01418ed58, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Metz.Ripple.Runtime::Ripple.RuntimeSetMember
+  set: {fileID: 11400000, guid: e37f81e1299dfce4cad2714f75d3a46f, type: 2}
+--- !u!114 &4421868437714968460
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7970217377611834179}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 227acace9ca711e4281c2fed430d70c4, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Metz.JamKit.Runtime::Metz.JamKit.Health
+  Max:
+    useConstant: 1
+    _constantValue: 10
+    _variable: {fileID: 0}
+  Current: 10
+  CurrentVariable: {fileID: 0}
+  DestroyOnDeath: 0
+  OnDamaged:
+    calls:
+      rid: 6320427472478011541
+    raise: []
+    response:
+      m_PersistentCalls:
+        m_Calls: []
+  OnHealed:
+    calls:
+      rid: 6320427472478011542
+    raise: []
+    response:
+      m_PersistentCalls:
+        m_Calls: []
+  OnDied:
+    calls:
+      rid: 6320427472478011543
+    raise: []
+    response:
+      m_PersistentCalls:
+        m_Calls: []
+  references:
+    version: 2
+    RefIds:
+    - rid: 6320427472478011541
+      type: {class: 'UnityEventResponse`1[[System.Single, mscorlib]]', ns: Ripple, asm: Metz.Ripple.Runtime}
+      data:
+        calls:
+          m_PersistentCalls:
+            m_Calls:
+            - m_Target: {fileID: 5800980570315960293}
+              m_TargetAssemblyTypeName: Metz.JamKit.HitStop, Metz.JamKit.Runtime
+              m_MethodName: Play
+              m_Mode: 0
+              m_Arguments:
+                m_ObjectArgument: {fileID: 0}
+                m_ObjectArgumentAssemblyTypeName: 
+                m_IntArgument: 0
+                m_FloatArgument: 0
+                m_StringArgument: 
+                m_BoolArgument: 0
+              m_CallState: 2
+            - m_Target: {fileID: 5954476322519811597}
+              m_TargetAssemblyTypeName: Metz.JamKit.PunchScale, Metz.JamKit.Runtime
+              m_MethodName: Play
+              m_Mode: 1
+              m_Arguments:
+                m_ObjectArgument: {fileID: 0}
+                m_ObjectArgumentAssemblyTypeName: 
+                m_IntArgument: 0
+                m_FloatArgument: 0
+                m_StringArgument: 
+                m_BoolArgument: 0
+              m_CallState: 2
+    - rid: 6320427472478011542
+      type: {class: 'UnityEventResponse`1[[System.Single, mscorlib]]', ns: Ripple, asm: Metz.Ripple.Runtime}
+      data:
+        calls:
+          m_PersistentCalls:
+            m_Calls: []
+    - rid: 6320427472478011543
+      type: {class: UnityEventResponse, ns: Ripple, asm: Metz.Ripple.Runtime}
+      data:
+        calls:
+          m_PersistentCalls:
+            m_Calls: []
+--- !u!114 &5800980570315960293
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7970217377611834179}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: bbc944c75cab07447b315c33ca176c26, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Metz.JamKit.Runtime::Metz.JamKit.HitStop
+  TimeService: {fileID: 11400000, guid: 92e574229d5996c4fa7f111cfbac6773, type: 2}
+  Duration:
+    useConstant: 1
+    _constantValue: 0.05
+    _variable: {fileID: 0}
+  MaxDuration: 0.25
+  TimeScale: 0
+--- !u!114 &5954476322519811597
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7970217377611834179}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: aa1b44c66e734393ab9a4092694f9dd4, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Metz.JamKit.Runtime::Metz.JamKit.PunchScale
+  Punch: {x: 0.3, y: 0.3, z: 0.3}
+  Seconds: 0.3
+  Unscaled: 0

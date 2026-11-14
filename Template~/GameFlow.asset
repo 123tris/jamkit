@@ -1,0 +1,43 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0ff9ad970ad64d9a8a3bb2fc80d647fc, type: 3}
+  m_Name: GameFlow
+  m_EditorClassIdentifier: Metz.JamKit.Runtime::Metz.JamKit.GameFlow
+  Transitions:
+  - From:
+      _name: 
+      _guid: 
+    On: {fileID: 11400000, guid: 749b9a1c6cdc5764ca63c6d71b05c500, type: 2}
+    To:
+      _name: Game
+      _guid: 
+  - From:
+      _name: 
+      _guid: 
+    On: {fileID: 11400000, guid: 9963cb87e5a9a5d4f9ade455345ea843, type: 2}
+    To:
+      _name: Bootstrap
+      _guid: 
+  - From:
+      _name: 
+      _guid: 
+    On: {fileID: 11400000, guid: 8a21b354388ef13479059aa890ae1817, type: 2}
+    To:
+      _name: GameOver
+      _guid: 
+  - From:
+      _name: 
+      _guid: 
+    On: {fileID: 11400000, guid: a55f298a11c95ab4da02ecbf8e049118, type: 2}
+    To:
+      _name: 
+      _guid: 

@@ -1,0 +1,11 @@
+{
+    "name": "Game",
+    "references": [
+        "Metz.JamKit.Runtime",
+        "Metz.Ripple.Runtime",
+        "Unity.Cinemachine",
+        "Unity.InputSystem",
+        "Unity.RenderPipelines.Universal.Runtime"
+    ],
+    "autoReferenced": true
+}
