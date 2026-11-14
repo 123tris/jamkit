@@ -38,6 +38,14 @@ Work that spans frames runs as a coroutine on `JamKitHost`, one persistent objec
 
 On Unity 6.4+ a `.gameflow` graph asset (Graph Toolkit) imports to the same `GameFlow` object: Scene nodes, an Any Scene node, and Transition nodes holding the event.
 
+## Project template
+
+`Template~/` holds the project template: the scenes, prefabs, assets and UI documents a new project starts from, each with its `.meta` file. `JamKit > New Jam Project` scaffolds a project by copying every template file the project does not have into `Assets/_Project`, then registering the three scenes in the build. It never overwrites a file.
+
+Because the `.meta` files travel with the assets, an asset has the same GUID in every project and references inside the template survive the copy. Unity ignores `Template~/`, so the template is edited in a scaffolded project and written back with `Tools~/export-template.sh`. `docs/adr/0001` records why.
+
+`ProjectTemplate` scaffolds and names the pieces other tooling needs: the three scenes, `JamKitCore`, the starters folder and the scripts folder. The Doctor's checks live in `JamKitDoctor` and run without its window.
+
 ## Audio
 
 `Sound` and `Music` are abstract ScriptableObjects. `ClipSound` / `ClipMusic` play through `AudioPlayer` on the host. `FmodSound` / `FmodMusic` live in the `Metz.JamKit.Fmod` assembly, compiled only when the `JAMKIT_FMOD` define is set by `FmodDefineSync`.
@@ -56,7 +64,7 @@ Components hold `InputActionReference` fields and enable their actions on enable
 | --- | --- |
 | `Metz.JamKit.Runtime` | |
 | `Metz.JamKit.Fmod` | Requires `JAMKIT_FMOD` |
-| `Metz.JamKit.Editor` | Wizard, starter prefabs, Doctor, auto-assign, drawers |
+| `Metz.JamKit.Editor` | Project template, wizard, Doctor, auto-assign, drawers |
 | `Metz.JamKit.Toolbar.Editor` | Main toolbar elements (Unity 6.3+ API) |
 | `Metz.JamKit.Flow.Editor` | Game Flow graph and importer (Unity 6.4+ API) |
 | `Metz.JamKit.Tests`, `Metz.JamKit.EditorTests` | |
@@ -64,3 +72,5 @@ Components hold `InputActionReference` fields and enable their actions on enable
 ## Verifying changes
 
 `Tools~/compile-check.sh` compiles Ripple from source and then every JamKit assembly with Roslyn against the host project's reference assemblies. It does not run tests; use the Test Runner for that.
+
+After editing the project template in a scaffolded project, save in Unity and run `Tools~/export-template.sh` to mirror `Assets/_Project` back into `Template~/`.

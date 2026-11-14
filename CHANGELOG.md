@@ -21,16 +21,26 @@ Minimum Unity is now 6.6. Requires Ripple 0.2.0 (tag `v0.2.0`).
 
 **Breaking: UI on the Unity 6.6 model.** Every document opens in UI Builder looking like the game.
 
-- Menus, `Toast`, `DebugPanel` and the screen fade use `PanelRenderer` instead of `UIDocument`, and find their elements in its reload callback. Editing a document while playing reloads it in place. Re-run `JamKit > New Jam Project` to convert the scaffolded prefabs.
-- `LabelBinding`, `BarBinding` and `UIBindingBase` are removed. Use the `ValueLabel` and `ValueBar` controls with a UXML data binding to a variable's `CurrentValue`. The wizard binds the Game Over score in `JamKitGameOverMenu.uxml`.
+- Menus, `Toast`, `DebugPanel` and the screen fade use `PanelRenderer` instead of `UIDocument`, and find their elements in its reload callback. Editing a document while playing reloads it in place. Prefabs scaffolded before this are not converted.
+- `LabelBinding`, `BarBinding` and `UIBindingBase` are removed. Use the `ValueLabel` and `ValueBar` controls with a UXML data binding to a variable's `CurrentValue`. The Game Over score is bound in `JamKitGameOverMenu.uxml`.
 - `ValueLabel` is a `VisualElement` holding a `Label` (`jk-value-label__text`), like `ValueBar` holds its fill, instead of being a `Label`. A `Label` already has a string `value` through `INotifyValueChanged<string>`, so the float `value` on top of it made Unity log "Detected multiple return types for PropertyBag=[ValueLabel]" whenever one was bound. Its UXML attributes, bindings and text styling are unchanged.
 - `Toast`, `DebugPanel` and the fade are UXML and USS in `Runtime/UI/Overlays/`, each with its own panel settings. `Toast.FontSize`, `Color` and `ScreenY` moved to `JamKitOverlays.uss`. `ScreenFadeSO` gains `Document` and `Panel`.
 - `JamKitUI` is removed. The theme, `Runtime/UI/JamKitDefaultTheme.tss`, is referenced by the panel settings instead of loaded from `Resources`, and imports `JamKitControls.uss`.
-- The wizard copies the menu documents to `Assets/_Project/UI/` instead of `Assets/_Project/UI/Resources/`, and moves copies it finds in the old folder.
+- The menu documents go to `Assets/_Project/UI/` instead of `Assets/_Project/UI/Resources/`.
 - Screens hide with the class `jk-view--hidden` instead of an inline style. In `JamKitMenu.uxml` the other screens' instances carry `jk-instance--hidden`, so that document previews the Start screen while each screen's own document previews itself.
 - Menu classes follow block, element and modifier: `jk-row__label`, `jk-row__control`, `jk-section__title`, `jk-buttons`, `jk-button--quit` (was `jk-quit`). Colors and sizes are variables on `:root`.
 - On WebGL the menu adds `jk-webgl` to its panel root and the stylesheet hides Quit and the `jk-row--desktop` settings, instead of the code setting styles.
 - The Doctor window and the `SceneRef` drawer are UI Toolkit. The Doctor also flags a `PanelRenderer` with no document and a `ScreenFade` with no overlay, with fixes for JamKit's own.
+
+**Breaking: the scaffold is a copied project template.** `JamKit > New Jam Project` no longer builds prefabs, scenes and assets in code. The project template ships in `Template~/` with its `.meta` files, and scaffolding copies every file the project does not have into `Assets/_Project`. An asset therefore has the same GUID in every project, so references inside the template survive the copy and nothing is patched afterwards. The code that built the scaffold restated every path, prefab and element name the Doctor and the sample setup also needed, and wired references by hand. `docs/adr/0001` records why the template is a hidden folder rather than a visible one.
+
+- Scaffolding never overwrites or migrates a file. The "Keep Existing / Overwrite All" choice is gone, and so are the `UIDocument` to `PanelRenderer` conversion and the move out of `UI/Resources/`. Delete a file and run the wizard again to get the template's copy back.
+- The template is the baseline only: Unity audio and `PunchScale`. The starters no longer gain an `MMF_Player` when Feel is installed, and there is no FMOD variant.
+- `ProjectTemplate` scaffolds, answers `IsScaffolded` and names the three scenes, `JamKitCore`, the starters folder and the scripts folder. `JamProjectWizard` keeps `Run`; its paths and `Scaffold` moved there.
+- `JamKitDoctor` holds the Doctor's checks, so they run without the window.
+- Removed: `StarterPrefabLibrary`, `TemplateAssets`, `Editor/Templates/`, and two hooks nothing ever used, `JamProjectWizard.PostScaffold` and `JamKitDoctorWindow.ExtraScans`.
+- The template is edited in a scaffolded project and written back with `Tools~/export-template.sh`.
+- New tests: the copy rules; every template file has its `.meta` and every asset it refers to exists; every starter in the Create menu is in the template; the Doctor finds nothing wrong with a scaffolded project. The menu-document tests now read the template's UXML as XML.
 
 **Added**
 

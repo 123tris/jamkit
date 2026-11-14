@@ -98,7 +98,8 @@ No netcode, no ECS, no Feel clone. JamKit ships a one-file tween and a single gr
 
 ## Open after 1.0.0-pre.1
 
-- Re-author the five samples and the project template in the editor; replace the code-built wizard with a copied template.
+- Re-author the five samples in the editor, against the project template's assets.
+- Polish the project template in the editor and re-export it. What ships is the last code-built scaffold, exported unchanged.
 - Move the volume sliders to UXML data bindings on their Ripple variables, then drop the slider code from `MenuSettingsBinder`. The HUD already binds in UXML through `ValueLabel` and `ValueBar`.
 - Turn the WebGL build into a Build Profile.
 - Compile and run the FMOD backend in a project with FMOD installed.

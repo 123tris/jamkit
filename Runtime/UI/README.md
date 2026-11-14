@@ -4,7 +4,7 @@ Menus, the HUD controls and the overlays are UI Toolkit. Each one is a UXML docu
 
 ## The menu markup is yours
 
-`JamKit > New Jam Project` copies the menu documents, `JamKitMenu.uss` and `JamKitPanelSettings.asset` into `Assets/_Project/UI/`. Edit them in UI Builder; the wizard never overwrites them. Copies left in `Assets/_Project/UI/Resources/` by an older wizard are moved there, references intact.
+`JamKit > New Jam Project` copies the menu documents, `JamKitMenu.uss` and `JamKitPanelSettings.asset` into `Assets/_Project/UI/` with the rest of the project template. Edit them in UI Builder; the wizard never overwrites them.
 
 `JamKitMenu.uxml` instances one document per screen (`JamKitStartMenu`, `JamKitPauseMenu`, `JamKitSettingsMenu`, `JamKitGameOverMenu`). The references are relative, so keep the files in one folder.
 

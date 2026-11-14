@@ -21,13 +21,16 @@ UltEvents is no longer used anywhere in the stack.
 ## Quickstart
 
 1. Install Odin, Ripple, then JamKit.
-2. Run `JamKit > New Jam Project`. It creates, under `Assets/_Project`:
+2. Run `JamKit > New Jam Project`. It copies the project template into `Assets/_Project`:
    - `Services/`: Time, Scene, Input and Screen Fade service assets
    - `Variables/`: volumes and high score (persistent), score, timer, and a `Players` runtime set
    - `Events/` and `GameFlow.asset`: the Play, MainMenu, Restart and GameOver events and which scene each one leads to
-   - `Prefabs/`: `JamKitCore`, `JamKitMenu` and the starter prefabs
+   - `Prefabs/`: `JamKitCore`, `JamKitMenu` and the starters
    - `Scenes/`: Bootstrap, Game and GameOver
+   - `UI/`: the menu documents, their stylesheet and panel settings
 3. Press Play. Start, Settings, Game (Esc pauses), GameOver and Retry work end to end.
+
+Everything it copies is yours to edit. It never overwrites a file, so running it again only brings back what you deleted.
 
 To end a run, raise the `GameOver` event from anything, for example by adding it to a `Health.OnDied` signal.
 
@@ -88,10 +91,10 @@ A pickup is a `TriggerZone` with `DestroySelf` and `OnEntered → Score.Add`. A 
 ## Editor tooling
 
 - **Main toolbar:** scene switcher, play-from-first-scene toggle, time scale slider, Doctor and Build buttons
-- **`JamKit > New Jam Project`:** the scaffold above
+- **`JamKit > New Jam Project`:** scaffolds the project from the template, as above
 - **`JamKit > Doctor`:** project checks with fix buttons
 - **Auto-assign:** adding a JamKit component fills its service references, and its required `InputActionReference` fields by name, when there is exactly one candidate
-- **`GameObject > JamKit`:** places starter prefabs
+- **`GameObject > JamKit`:** places starters
 
 ## Known gaps
 
