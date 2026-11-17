@@ -36,11 +36,15 @@ Minimum Unity is now 6.6. Requires Ripple 0.3.0 (tag `v0.3.0`): the project temp
 
 - Scaffolding never overwrites or migrates a file. The "Keep Existing / Overwrite All" choice is gone, and so are the `UIDocument` to `PanelRenderer` conversion and the move out of `UI/Resources/`. Delete a file and run the wizard again to get the template's copy back.
 - The template is the baseline only: Unity audio and `PunchScale`. The starters no longer gain an `MMF_Player` when Feel is installed, and there is no FMOD variant.
-- `ProjectTemplate` scaffolds, answers `IsScaffolded` and names the three scenes, `JamKitCore`, the starters folder and the scripts folder. `JamProjectWizard` keeps `Run`; its paths and `Scaffold` moved there.
+- A template scene that Build Settings lacks goes in right after the template scene before it, so Bootstrap is the first scene of a build it joins. Scenes already in the build keep their place, and the Doctor's Add To Build fix works the same way.
+- Scaffolding stops with a message on a Ripple older than 0.3.0, and the Doctor reports one.
+- Scaffolding also stops, copying nothing, when a template file the project lacks refers to a file the project has under another GUID, as the files an older JamKit made do. The copy would point at nothing. The project's own files at template paths don't stop it otherwise.
+- Setting up a sample copies whatever template files the project lacks, as New Jam Project does, instead of scaffolding only when a template scene or `JamKitCore` is missing. It stops with the same messages.
+- `ProjectTemplate` scaffolds and names the three scenes, `JamKitCore`, the starters folder and the scripts folder. `JamProjectWizard` keeps `Run`; its paths and `Scaffold` moved there.
 - `JamKitDoctor` holds the Doctor's checks, so they run without the window.
 - Removed: `StarterPrefabLibrary`, `TemplateAssets`, `Editor/Templates/`, and two hooks nothing ever used, `JamProjectWizard.PostScaffold` and `JamKitDoctorWindow.ExtraScans`.
 - The template is edited in a scaffolded project and written back with `Tools~/export-template.sh`.
-- New tests: the copy rules; every template file has its `.meta` and every asset it refers to exists; every starter in the Create menu is in the template; the Doctor finds nothing wrong with a scaffolded project. The menu-document tests now read the template's UXML as XML.
+- New tests: the copy rules, the GUID conflict check and the build order; every template file has its `.meta`, every `.meta` its file or folder, and every asset the template refers to is in the template, JamKit, Ripple or a package JamKit depends on; every starter in the Create menu is in the template. `ScaffoldedProjectTests` scaffolds into a project without `Assets/_Project` (and is skipped in one that has it): the Doctor finds nothing wrong, the menu holds every screen, and the Game Over score loads as a `ValueLabel` bound to `Score`. The menu-document tests read the template's UXML as XML, so they run in any project.
 
 **Added**
 

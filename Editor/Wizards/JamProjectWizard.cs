@@ -9,6 +9,12 @@ namespace Metz.JamKit.Editor
         [MenuItem("JamKit/New Jam Project", priority = 0)]
         public static void Run()
         {
+            if (ProjectTemplate.ScaffoldProblem is string problem)
+            {
+                EditorUtility.DisplayDialog("JamKit: New Jam Project", problem, "OK");
+                return;
+            }
+
             if (!EditorUtility.DisplayDialog("JamKit: New Jam Project",
                     $"Copies the project template into {ProjectTemplate.Root}: the Bootstrap, Game and GameOver scenes, " +
                     "the service assets, the Ripple variables, the menu and the starter prefabs. " +
@@ -18,10 +24,14 @@ namespace Metz.JamKit.Editor
 
             if (!EditorSceneManager.SaveCurrentModifiedScenesIfUserWantsTo()) return;
 
-            ProjectTemplate.Scaffold();
+            int copied = ProjectTemplate.Scaffold();
             EditorSceneManager.OpenScene(ProjectTemplate.BootstrapScene);
             OfferFastPlayMode();
-            Debug.Log("[JamKit] Setup complete. Press Play: Start, Settings, Game (Esc pauses) and GameOver work end to end.");
+            Debug.Log(copied > 0
+                ? $"[JamKit] Copied {copied} project template file(s) into {ProjectTemplate.Root}. " +
+                  "Press Play: Start, Settings, Game (Esc pauses) and GameOver work end to end."
+                : $"[JamKit] {ProjectTemplate.Root} already has every project template file, so nothing was copied. " +
+                  "To get the template's copy of a file back, delete yours and run New Jam Project again.");
         }
 
         static void OfferFastPlayMode()

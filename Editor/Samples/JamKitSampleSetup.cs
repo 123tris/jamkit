@@ -84,14 +84,15 @@ namespace Metz.JamKit.Editor
                 return;
             }
 
+            if (ProjectTemplate.ScaffoldProblem is string problem)
+            {
+                EditorUtility.DisplayDialog($"JamKit: Set Up {spec.Name}", problem, "OK");
+                return;
+            }
+
             if (!EditorSceneManager.SaveCurrentModifiedScenesIfUserWantsTo()) return;
 
-            bool scaffolded = false;
-            if (!ProjectTemplate.IsScaffolded)
-            {
-                ProjectTemplate.Scaffold();
-                scaffolded = true;
-            }
+            int copied = ProjectTemplate.Scaffold();
 
             int wired = 0;
             foreach (var guid in AssetDatabase.FindAssets("t:Prefab", new[] { folder }))
@@ -117,12 +118,12 @@ namespace Metz.JamKit.Editor
             EditorSceneManager.MarkSceneDirty(scene);
             EditorSceneManager.SaveScene(scene);
 
-            ReportReady(spec, scenePath, scaffolded, wired);
+            ReportReady(spec, scenePath, copied, wired);
         }
 
         static void InstantiateCoreIfAbsent()
         {
-            if (Object.FindObjectsByType<HighScoreTracker>(FindObjectsInactive.Include, FindObjectsSortMode.None).Length > 0)
+            if (Object.FindObjectsByType<HighScoreTracker>(FindObjectsInactive.Include).Length > 0)
                 return;
             var core = AssetDatabase.LoadAssetAtPath<GameObject>(ProjectTemplate.CorePrefab);
             if (core != null) PrefabUtility.InstantiatePrefab(core);
@@ -138,19 +139,19 @@ namespace Metz.JamKit.Editor
                 Debug.LogWarning($"[JamKit] Arena prefab not found at {path}.");
                 return;
             }
-            foreach (var go in Object.FindObjectsByType<Transform>(FindObjectsInactive.Include, FindObjectsSortMode.None))
+            foreach (var go in Object.FindObjectsByType<Transform>(FindObjectsInactive.Include))
                 if (PrefabUtility.GetCorrespondingObjectFromSource(go.gameObject) == prefab)
                     return;
             PrefabUtility.InstantiatePrefab(prefab);
         }
 
-        static void ReportReady(Spec spec, string scenePath, bool scaffolded, int wired)
+        static void ReportReady(Spec spec, string scenePath, int copied, int wired)
         {
             var sb = new StringBuilder($"[JamKit] Sample ready — {spec.Name}. Press Play. {spec.PlayHint}");
             sb.Append($"\n  Scene: {scenePath}");
             if (wired > 0) sb.Append($"\n  Wired {wired} service reference(s) into the sample's prefabs.");
-            if (scaffolded)
-                sb.Append("\n  Scaffolded Assets/_Project first (services, prefabs, scenes — same as JamKit > New Jam Project).");
+            if (copied > 0)
+                sb.Append($"\n  Copied {copied} project template file(s) into {ProjectTemplate.Root} first, as JamKit > New Jam Project does.");
             Debug.Log(sb.ToString());
         }
     }

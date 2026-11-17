@@ -40,6 +40,7 @@ namespace Metz.JamKit.Editor
         static List<Issue> Scan(bool openScenes)
         {
             var issues = new List<Issue>();
+            ScanRipple(issues);
             ScanServices(issues);
             ScanInput(issues);
             ScanPanelSettings(issues);
@@ -52,6 +53,11 @@ namespace Metz.JamKit.Editor
 
         static void Add(List<Issue> issues, MessageType severity, string message, string fixLabel = null, Action fix = null, Object context = null)
             => issues.Add(new Issue { Severity = severity, Message = message, FixLabel = fixLabel, Fix = fix, Context = context });
+
+        static void ScanRipple(List<Issue> issues)
+        {
+            if (ProjectTemplate.RippleProblem is string problem) Add(issues, MessageType.Error, problem);
+        }
 
         static void ScanServices(List<Issue> issues)
         {
@@ -135,20 +141,21 @@ namespace Metz.JamKit.Editor
                 Add(issues, MessageType.Error, $"{Path.GetFileName(path)} exists but is not enabled in Build Settings.",
                     "Add To Build", () =>
                     {
-                        var list = new List<EditorBuildSettingsScene>(EditorBuildSettings.scenes);
-                        list.RemoveAll(s => s.path == scenePath);
-                        list.Add(new EditorBuildSettingsScene(scenePath, true));
-                        EditorBuildSettings.scenes = list.ToArray();
+                        EditorBuildSettingsScene[] build = EditorBuildSettings.scenes;
+                        foreach (var s in build)
+                            if (s.path == scenePath) s.enabled = true;
+                        EditorBuildSettings.scenes = build;
+                        ProjectTemplate.RegisterScenes();
                     });
             }
         }
 
         static void ScanOpenScenes(List<Issue> issues)
         {
-            var panels = Object.FindObjectsByType<PanelRenderer>(FindObjectsInactive.Include, FindObjectsSortMode.None);
+            var panels = Object.FindObjectsByType<PanelRenderer>(FindObjectsInactive.Include);
             bool hasUIDoc = panels.Length > 0
-                || Object.FindObjectsByType<UIDocument>(FindObjectsInactive.Include, FindObjectsSortMode.None).Length > 0;
-            bool hasEventSystem = Object.FindObjectsByType<UnityEngine.EventSystems.EventSystem>(FindObjectsInactive.Include, FindObjectsSortMode.None).Length > 0;
+                || Object.FindObjectsByType<UIDocument>(FindObjectsInactive.Include).Length > 0;
+            bool hasEventSystem = Object.FindObjectsByType<UnityEngine.EventSystems.EventSystem>(FindObjectsInactive.Include).Length > 0;
             if (hasUIDoc && !hasEventSystem)
                 Add(issues, MessageType.Error, "Scene has UI but no EventSystem — clicks and gamepad nav are dead.",
                     "Create EventSystem", () =>

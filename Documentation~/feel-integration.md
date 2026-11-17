@@ -17,9 +17,8 @@ UltEvents, all wireable straight to an `MMF_Player`. Global reactions (any-enemy
 subscribe a Feel player to the `Broadcast*` Ripple event assets instead (Ripple's
 `EventListenerVoid` → `PlayFeedbacks`).
 
-Starters from the wizard come pre-wired when Feel is installed: the `MMF_Player` is on the
-prefab, `OnDamaged → PlayFeedbacks()` is connected, the stack is empty — author the feel, the
-plumbing is done.
+Starters carry no `MMF_Player`: the project template is the same with or without Feel. Add one
+to a starter and connect its `OnDamaged` signal to `PlayFeedbacks()`.
 
 For **damage-scaled intensity** (big hits feel bigger), route through the ten-line `FeelPlayer`
 shim from sample 03: `OnDamaged(float) → FeelPlayer.Play(float)` →
@@ -48,7 +47,6 @@ Still JamKit's (because Feel can't):
 ## The asmdef wall (why the package never references Feel)
 
 Feel's MMFeedbacks ships without an asmdef — it compiles into `Assembly-CSharp`, which package
-code can never reference. Integration is therefore: inspector wiring (UltEvents), one editor
-reflection hook (the starter pre-wiring), and sample-shipped scripts (`MMF_JamKitHitStop`,
-`FeelPlayer` — they live in your project, where Feel is visible). This is a feature: your Feel
-version can never break the package.
+code can never reference. Integration is therefore inspector wiring and sample-shipped scripts
+(`MMF_JamKitHitStop`, `FeelPlayer` — they live in your project, where Feel is visible). This is a
+feature: your Feel version can never break the package.

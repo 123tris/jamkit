@@ -24,6 +24,7 @@ namespace Metz.JamKit.Tests.Editor
 
         static VisualElement Clone(string path) => AssetDatabase.LoadAssetAtPath<VisualTreeAsset>(path).CloneTree();
 
+        // Unity doesn't import Template~, so these read the menu documents as XML. ScaffoldedProjectTests loads them as assets.
         static XElement Document(string name) => XDocument.Load(Path.Combine(TemplateUI, name + ".uxml")).Root;
 
         static IEnumerable<string> Documents() =>

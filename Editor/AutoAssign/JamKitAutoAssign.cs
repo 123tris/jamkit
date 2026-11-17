@@ -26,7 +26,6 @@ namespace Metz.JamKit.Editor
             FillComponent(component, log: true);
         }
 
-        [Obsolete("Obsolete")]
         static void OnChangesPublished(ref ObjectChangeEventStream stream)
         {
             if (EditorApplication.isPlayingOrWillChangePlaymode) return;
@@ -34,7 +33,7 @@ namespace Metz.JamKit.Editor
             {
                 if (stream.GetEventType(i) != ObjectChangeKind.CreateGameObjectHierarchy) continue;
                 stream.GetCreateGameObjectHierarchyEvent(i, out var created);
-                if (EditorUtility.InstanceIDToObject(created.instanceId) is GameObject root) FillHierarchy(root, log: false);
+                if (EditorUtility.EntityIdToObject(created.entityId) is GameObject root) FillHierarchy(root, log: false);
             }
         }
 
@@ -66,7 +65,7 @@ namespace Metz.JamKit.Editor
 
         public static IEnumerable<MonoBehaviour> AllJamKitComponentsInOpenScenes()
         {
-            foreach (MonoBehaviour component in Object.FindObjectsByType<MonoBehaviour>(FindObjectsInactive.Include, FindObjectsSortMode.None))
+            foreach (MonoBehaviour component in Object.FindObjectsByType<MonoBehaviour>(FindObjectsInactive.Include))
                 if (component != null && IsJamKitType(component.GetType()))
                     yield return component;
         }
@@ -124,7 +123,7 @@ namespace Metz.JamKit.Editor
             }
 
             if (isolated || !typeof(Component).IsAssignableFrom(type)) return null;
-            Object[] inScene = Object.FindObjectsByType(type, FindObjectsInactive.Include, FindObjectsSortMode.None);
+            Object[] inScene = Object.FindObjectsByType(type, FindObjectsInactive.Include);
             return inScene.Length == 1 ? inScene[0] : null;
         }
     }
