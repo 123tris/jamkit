@@ -12,7 +12,7 @@ namespace Metz.JamKit
         [Min(0)]
         public float Current = 10f;
 
-        [Tooltip("Mirrors current HP for HUD binding. Leave empty when several objects share this prefab.")]
+        [Tooltip("Mirrors current HP for HUD binding. When several objects share this prefab, a LocalVariables listing it gives each one its own copy.")]
         public FloatVariableSO CurrentVariable;
 
         public bool DestroyOnDeath;
@@ -74,7 +74,7 @@ namespace Metz.JamKit
 
         void Publish()
         {
-            if (CurrentVariable != null) CurrentVariable.SetCurrentValue(Current, this);
+            if (CurrentVariable != null) CurrentVariable.For(this).SetCurrentValue(Current, this);
         }
     }
 }

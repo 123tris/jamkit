@@ -65,8 +65,6 @@ Items leave this list when they land; the CHANGELOG records each one with its re
 ### Phase 2: a simpler core
 
 - **Settings are data.** The settings menu binds in UXML to Ripple persistent variables, and a `DisplaySettings` component applies them. `MenuSettingsBinder` goes, along with the PlayerPrefs keys it wrote beside Ripple's persistence. A new setting is a variable and a UXML row.
-- **The UI silences every gameplay map,** not only the map named `Gameplay`, so two-player maps pause too.
-- **Per-instance variables.** Components resolve the variables they write through Ripple's `variable.For(this)`, so `LocalVariables` gives each enemy its own HP variable for a bar above its head.
 - **The Doctor learns the FAQ.** A Sound with no mixer output, a camera shake nobody listens to, a build scene without JamKitCore, a Game Flow transition to a scene outside the build, a first-person rig whose mover fights its yaw.
 
 ### Phase 3: iteration and shipping

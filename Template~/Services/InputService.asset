@@ -13,6 +13,5 @@ MonoBehaviour:
   m_Name: InputService
   m_EditorClassIdentifier: Metz.JamKit.Runtime::Metz.JamKit.InputServiceSO
   Actions: {fileID: -944628639613478452, guid: 9ba5a4e8c4bd1f643b7451c0b7d8a9d0, type: 3}
-  GameplayMapName: Gameplay
   UIMapName: UI
   ManageCursor: 1

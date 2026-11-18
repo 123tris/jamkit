@@ -58,7 +58,7 @@ Because the `.meta` files travel with the assets, an asset has the same GUID in 
 
 ## Input
 
-Components hold `InputActionReference` fields and enable their actions on enable. `InputServiceSO` enables or disables whole maps, so UI mode silences gameplay actions.
+Components hold `InputActionReference` fields and enable their actions on enable. `InputServiceSO` enables or disables whole maps: in UI mode only the UI map is on, and in gameplay mode every other map is. However many player maps an asset has, a menu silences them all.
 
 ## Bodies
 

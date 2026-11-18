@@ -58,7 +58,7 @@ Services are ScriptableObject assets. They host themselves: nothing has to be in
 | `TimeServiceSO` | The one owner of `Time.timeScale`. `Push(scale)` returns a modifier you `Release()`; the lowest active modifier wins, so pause always beats slow-mo and hit-stop. `Pause`, `Resume`, `FreezeForSeconds`, `PushSmooth`. |
 | `SceneServiceSO` | `Load(name)` and `Reload()`, fading out and back in through an optional `ScreenFadeSO`. `OnLoadStarted` and `OnLoadCompleted` signals. `LoadAsync` returns an `Awaitable`. |
 | `ScreenFadeSO` | `FadeOut`, `FadeIn`, `Flash`, callable from any Signal. |
-| `InputServiceSO` | Owns the input mode: `SwitchToGameplay` and `SwitchToUI` enable one action map and release or lock the cursor. |
+| `InputServiceSO` | Owns the input mode. `SwitchToUI` turns on the UI map and silences every other map, so two-player maps pause too; `SwitchToGameplay` turns them back on. It also locks or releases the cursor. |
 
 Components read input through `InputActionReference` fields, so a custom action needs no kit change.
 

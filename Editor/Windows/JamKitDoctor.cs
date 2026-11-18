@@ -101,13 +101,13 @@ namespace Metz.JamKit.Editor
                         }, input);
                     continue;
                 }
-                if (input.Actions.FindActionMap(input.GameplayMapName, false) == null)
-                    Add(issues, MessageType.Error,
-                        $"InputService '{input.name}': action map '{input.GameplayMapName}' not found in '{input.Actions.name}'.",
-                        context: input);
                 if (input.Actions.FindActionMap(input.UIMapName, false) == null)
-                    Add(issues, MessageType.Warning,
-                        $"InputService '{input.name}': UI map '{input.UIMapName}' not found — menu gamepad nav breaks.",
+                    Add(issues, MessageType.Error,
+                        $"InputService '{input.name}': '{input.Actions.name}' has no map named '{input.UIMapName}', so switching between menus and gameplay throws.",
+                        context: input);
+                if (input.Actions.actionMaps.All(map => map.name == input.UIMapName))
+                    Add(issues, MessageType.Error,
+                        $"InputService '{input.name}': '{input.Actions.name}' has no map besides '{input.UIMapName}', so nothing reads gameplay input.",
                         context: input);
             }
         }

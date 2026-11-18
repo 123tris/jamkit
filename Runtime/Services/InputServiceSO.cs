@@ -8,7 +8,8 @@ namespace Metz.JamKit
     public sealed class InputServiceSO : ServiceSO
     {
         [Required] public InputActionAsset Actions;
-        public string GameplayMapName = "Gameplay";
+
+        [Tooltip("The map menus use. Every other map is gameplay: on in gameplay, off while a menu takes UI input.")]
         public string UIMapName = "UI";
 
         [Tooltip("Lock and hide the cursor in gameplay, release it in UI.")]
@@ -18,17 +19,22 @@ namespace Metz.JamKit
         public bool InGameplay { get; private set; }
 
         [Button]
-        public void SwitchToGameplay() => Switch(GameplayMapName, UIMapName, true);
+        public void SwitchToGameplay() => Switch(true);
 
         [Button]
-        public void SwitchToUI() => Switch(UIMapName, GameplayMapName, false);
+        public void SwitchToUI() => Switch(false);
 
         public override void ResetState() => InGameplay = false;
 
-        void Switch(string enable, string disable, bool gameplay)
+        void Switch(bool gameplay)
         {
-            Actions.FindActionMap(disable, true).Disable();
-            Actions.FindActionMap(enable, true).Enable();
+            Actions.FindActionMap(UIMapName, true);
+            foreach (InputActionMap map in Actions.actionMaps)
+            {
+                bool on = map.name == UIMapName ? !gameplay : gameplay;
+                if (on) map.Enable();
+                else map.Disable();
+            }
             InGameplay = gameplay;
 
             if (!ManageCursor) return;

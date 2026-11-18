@@ -20,7 +20,7 @@ namespace Metz.JamKit
         public bool Unscaled;
         public bool AutoStart = true;
 
-        [Tooltip("Mirrors the current time for HUD binding.")]
+        [Tooltip("Mirrors the current time for HUD binding. A LocalVariables listing it gives this timer its own copy.")]
         public FloatVariableSO TimeVariable;
 
         public Signal OnCompleted = new();
@@ -99,7 +99,7 @@ namespace Metz.JamKit
         void SetTime(float time)
         {
             CurrentTime = time;
-            if (TimeVariable != null) TimeVariable.CurrentValue = time;
+            if (TimeVariable != null) TimeVariable.For(this).CurrentValue = time;
         }
     }
 }

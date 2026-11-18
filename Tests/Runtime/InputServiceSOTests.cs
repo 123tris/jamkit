@@ -56,9 +56,22 @@ namespace Metz.JamKit.Tests
         }
 
         [Test]
-        public void UnknownMapNameThrows()
+        public void SwitchToUI_SilencesEveryGameplayMap()
         {
-            input.GameplayMapName = "Missing";
+            actions.AddActionMap("Gameplay1").AddAction("Move");
+            actions.AddActionMap("Gameplay2").AddAction("Move");
+
+            input.SwitchToGameplay();
+            Assert.IsTrue(actions.FindActionMap("Gameplay1").enabled && actions.FindActionMap("Gameplay2").enabled);
+
+            input.SwitchToUI();
+            Assert.IsFalse(actions.FindActionMap("Gameplay1").enabled || actions.FindActionMap("Gameplay2").enabled);
+        }
+
+        [Test]
+        public void UnknownUIMapNameThrows()
+        {
+            input.UIMapName = "Missing";
 
             Assert.Throws<ArgumentException>(() => input.SwitchToGameplay());
         }

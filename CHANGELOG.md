@@ -8,6 +8,10 @@ All notable changes to JamKit are documented here. Format follows [Keep a Change
 
 **Minimum Unity is 6.5 (6000.5).** 1.0.0-pre.1 named 6.6 before anything had run in Unity, and nothing in the kit needs it: JamKit is compiled and its project template authored and played in 6000.5.7f1. The toolbar (6.3) and the Game Flow graph (6.4) stay in their version-gated assemblies.
 
+**Changed: UI mode silences every gameplay map.** `InputServiceSO` switched one map named by `GameplayMapName`, so the two-player `Gameplay1` and `Gameplay2` maps in `JamKitInput` kept reading input under the pause menu. Now the UI map is the only one on in UI mode, and every other map is on in gameplay mode. `GameplayMapName` is removed; an action asset that has a UI map and no other map is a Doctor error, and so is a missing UI map, since switching modes throws without it.
+
+**Changed: Health and GameTimer write their mirror variable through Ripple's `LocalVariables`.** `Health.CurrentVariable` told you to leave it empty on prefabs several objects share. With a `LocalVariables` on the object listing that variable, each copy now writes its own, so every enemy can drive its own health bar through a `VariableListener`. Without one, nothing changes.
+
 **CI** builds a project on 6000.5.7f1 with JamKit listed as testable. Before, the test project left JamKit out of `testables`, so Unity would not have built a single JamKit test. It still waits for Ripple's `v0.3.0` tag and a `UNITY_LICENSE` secret.
 
 **Breaking: Odin Inspector is no longer used.** Since Ripple 0.3.0 dropped it, JamKit was the only reason a project needed Odin, and every JamKit assembly refused to compile without it. Odin is licensed per seat, so a teammate without a license could not open a JamKit project, and CI could not build it. JamKit now needs nothing from the Asset Store.
