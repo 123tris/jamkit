@@ -27,17 +27,27 @@ namespace Metz.JamKit.Tests.Editor
         }
 
         [Test]
-        public void EverySampleFolderIsRegistered()
+        public void EverySampleWithASceneIsRegistered()
         {
             foreach (var dir in Directory.GetDirectories(SamplesRoot))
             {
                 var name = Path.GetFileName(dir);
+                if (!File.Exists(Path.Combine(dir, name + ".unity"))) continue;
                 bool registered = false;
                 foreach (var spec in JamKitSampleSetup.Specs)
                     if (spec.Name == name) registered = true;
                 Assert.IsTrue(registered,
                     $"Samples~/{name} has no JamKitSampleSetup spec — one-click setup won't cover it.");
             }
+        }
+
+        [Test]
+        public void PackageJsonListsEverySampleFolder()
+        {
+            var json = File.ReadAllText(Path.Combine(PackageRoot, "package.json"));
+            foreach (var dir in Directory.GetDirectories(SamplesRoot))
+                StringAssert.Contains($"\"path\": \"Samples~/{Path.GetFileName(dir)}\"", json,
+                    $"package.json samples[] is missing Samples~/{Path.GetFileName(dir)}.");
         }
 
         [Test]

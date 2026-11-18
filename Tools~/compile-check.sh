@@ -71,7 +71,7 @@ cp -f "$PROJ/Library/ScriptAssemblies/UnityEngine.TestRunner.dll" "$PROJ/Library
 TESTREFS="$RR $OUT/nunit.framework.dll $OUT/UnityEngine.TestRunner.dll $OUT/UnityEditor.TestRunner.dll"
 build_asm "$PROJ/Metz.JamKit.Runtime.csproj" "$PKG/Tests/Runtime" "$OUT/Metz.JamKit.Tests.dll" "$JR $TESTREFS" || exit 1
 build_asm "$PROJ/Metz.JamKit.Runtime.csproj" "$PKG/Tests/Editor" "$OUT/Metz.JamKit.EditorTests.dll" "$JR $JE $TESTREFS" || exit 1
-build_asm "$PROJ/Metz.JamKit.Runtime.csproj" "$PKG/Samples~" "$OUT/Metz.JamKit.Samples.dll" "$JR $RR" "*/03 Feel Showcase/*" || exit 1
+build_asm "$PROJ/Metz.JamKit.Runtime.csproj" "$PKG/Samples~" "$OUT/Metz.JamKit.Samples.dll" "$JR $RR" "*/03 Feel Bridge/*" || exit 1
 
 if grep -q "UnityEditor.GraphToolkitModule.dll" "$PROJ/Metz.JamKit.Editor.csproj"; then
   build_asm "$PROJ/Metz.JamKit.Editor.csproj" "$PKG/Editor/Toolbar" "$OUT/Metz.JamKit.Toolbar.Editor.dll" "$JR $JE" || exit 1

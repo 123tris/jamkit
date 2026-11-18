@@ -24,7 +24,7 @@ the starter's own juice (`PunchScale` on players and enemies, `HitStop` on playe
 on enemies), so remove whatever your Feel stack replaces.
 
 For **damage-scaled intensity** (big hits feel bigger), route through the ten-line `FeelPlayer`
-shim from sample 03: `OnDamaged(float) → FeelPlayer.Play(float)` →
+shim from the Feel Bridge sample (03): `OnDamaged(float) → FeelPlayer.Play(float)` →
 `PlayFeedbacks(position, intensity)`.
 
 ## Coverage map (JamKit's juice, and where Feel goes further)
@@ -45,7 +45,7 @@ Still JamKit's (because Feel can't):
 - **`HitStop`** — freeze-frames MUST go through `TimeServiceSO`. `HitStop` pushes a time modifier
   and releases it, and the lowest active modifier wins, so a freeze and the pause menu never undo
   each other. Feel's time feedbacks set `Time.timeScale` directly and will fight the pause menu.
-  Use `HitStop`, or drop sample 03's `MMF_JamKitHitStop` feedback into your stacks — it plays a
+  Use `HitStop`, or drop the Feel Bridge sample's `MMF_JamKitHitStop` feedback into your stacks — it plays a
   scene `HitStop` and slots into Feel like any other feedback. **This is a hard rule**: PILLARS.md
   makes `TimeServiceSO` the one owner of `Time.timeScale`.
 - **Sounds** — `Sound` and `Music` assets: `ClipSound` and `ClipMusic` for Unity audio, `FmodSound`

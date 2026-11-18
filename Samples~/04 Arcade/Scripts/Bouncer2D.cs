@@ -27,9 +27,8 @@ namespace Metz.JamKit
         [Range(0f, 40f)] public float MinAngleFromAxis = 10f;
 
         [Header("Events")]
-        [Tooltip("Raised on every bounce — wire SFX / CameraShake / ParticleBurst here.")]
-        public VoidEventSO OnBounce;
-        public event System.Action<Vector2> Bounced;
+        [Tooltip("Raised on every bounce with the surface normal. Wire a Sound, CameraShake or SpawnBurst here.")]
+        public Signal<Vector2> OnBounce = new();
 
         Rigidbody2D _rb;
         Vector2 _lastVelocity;
@@ -92,8 +91,7 @@ namespace Metz.JamKit
             _rb.linearVelocity = outDir * _speed;
             _lastVelocity = _rb.linearVelocity;
 
-            Bounced?.Invoke(contact.normal);
-            if (OnBounce != null) OnBounce.Invoke();
+            OnBounce.Invoke(contact.normal);
         }
 
         public static Vector2 ClampAwayFromAxes(Vector2 dir, float minAngleDeg)

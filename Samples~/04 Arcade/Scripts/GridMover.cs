@@ -30,8 +30,7 @@ namespace Metz.JamKit
 
         [Header("Events")]
         [Tooltip("Raised when a step starts — hop SFX, dust puffs.")]
-        public VoidEventSO OnStep;
-        public event System.Action<Vector3> Stepped;
+        public Signal<Vector3> OnStep = new();
 
         Vector3 _from, _to;
         float _moveT = -1f;
@@ -85,8 +84,7 @@ namespace Metz.JamKit
             _from = transform.position;
             _to = target;
             _moveT = 0f;
-            Stepped?.Invoke(target);
-            if (OnStep != null) OnStep.Invoke();
+            OnStep.Invoke(target);
             return true;
         }
 

@@ -34,8 +34,6 @@ namespace Metz.JamKit.Editor
                 "WASD/arrows + Space; hazards hurt, the pit kills, the flag respawns you."),
             new Spec("02 Survivor", true, "SurvivorArena",
                 "WASD / left stick; survive the chasers, grab pickups before the timer ends."),
-            new Spec("03 Feel Showcase", false, null,
-                "Requires the Feel asset. Click Damage on a target's Health to watch the wired MMF_Player stacks fire."),
             new Spec("04 Arcade", false, null,
                 "Pong + breakout, built from the sample-local arcade components (Bouncer2D, Paddle, GridMover…)."),
         };
@@ -48,10 +46,8 @@ namespace Metz.JamKit.Editor
         [MenuItem(MenuRoot + "Set Up 01 Platformer", true)] static bool Can01() => IsImported(Specs[1]);
         [MenuItem(MenuRoot + "Set Up 02 Survivor", false, 43)] static void Setup02() => SetUp(Specs[2]);
         [MenuItem(MenuRoot + "Set Up 02 Survivor", true)] static bool Can02() => IsImported(Specs[2]);
-        [MenuItem(MenuRoot + "Set Up 03 Feel Showcase", false, 44)] static void Setup03() => SetUp(Specs[3]);
-        [MenuItem(MenuRoot + "Set Up 03 Feel Showcase", true)] static bool Can03() => IsImported(Specs[3]);
-        [MenuItem(MenuRoot + "Set Up 04 Arcade", false, 45)] static void Setup04() => SetUp(Specs[4]);
-        [MenuItem(MenuRoot + "Set Up 04 Arcade", true)] static bool Can04() => IsImported(Specs[4]);
+        [MenuItem(MenuRoot + "Set Up 04 Arcade", false, 45)] static void Setup04() => SetUp(Specs[3]);
+        [MenuItem(MenuRoot + "Set Up 04 Arcade", true)] static bool Can04() => IsImported(Specs[3]);
 
         [MenuItem(MenuRoot + "Import Samples (Package Manager)…", false, 60)]
         static void OpenPackageManager() => UnityEditor.PackageManager.UI.Window.Open("com.metz.jamkit");

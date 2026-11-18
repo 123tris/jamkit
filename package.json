@@ -50,9 +50,9 @@
       "path": "Samples~/02 Survivor"
     },
     {
-      "displayName": "03 Feel Showcase",
-      "description": "Requires Feel. Health signals driving MMF_Player stacks. Needs re-authoring for 1.0.",
-      "path": "Samples~/03 Feel Showcase"
+      "displayName": "03 Feel Bridge",
+      "description": "Requires Feel. Two scripts connecting Feel to JamKit: damage-scaled feedback intensity, and freeze frames through the time service.",
+      "path": "Samples~/03 Feel Bridge"
     },
     {
       "displayName": "04 Arcade",

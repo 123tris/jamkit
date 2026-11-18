@@ -8,6 +8,13 @@ All notable changes to JamKit are documented here. Format follows [Keep a Change
 
 **Minimum Unity is 6.5 (6000.5).** 1.0.0-pre.1 named 6.6 before anything had run in Unity, and nothing in the kit needs it: JamKit is compiled and its project template authored and played in 6000.5.7f1. The toolbar (6.3) and the Game Flow graph (6.4) stay in their version-gated assemblies.
 
+**Changed: the samples' scripts are on 1.0.** Re-authoring the sample scenes and prefabs is editor work still to do.
+
+- `WaveSpawner` raises `OnWaveStarted` and `OnWaveEnded` (`Signal<int>`) and `OnAllWavesDone` Signals instead of Ripple event fields.
+- `Bouncer2D.OnBounce` and `GridMover.OnStep` are `Signal`s carrying the surface normal and the target cell. Each replaces a `VoidEventSO` field and a C# event that did the same job.
+- `Knockback` leaves the Survivor sample: `ChaseMover` sets velocity every physics step, so its impulse never showed. It returns as a kit component with the game-feel track.
+- `03 Feel Showcase` becomes `03 Feel Bridge`: `FeelPlayer`, `MMF_JamKitHitStop` and a README on wiring them to a starter, with no scene or prefab, since every JamKit signal already wires straight to an `MMF_Player`. Sample setup no longer lists it, and its registry test now covers only samples with a scene.
+
 **Added: popup text.** `PopupText` shows a number or a word above its object (`Show(float)`, `Show(int)`, `Show(string)`), so `Health.OnDamaged → Show` is a damage number with no code. It goes through the new `PopupServiceSO`, which owns a UI Toolkit overlay under the `[JamKit]` host, the same way the screen fade does: each popup rises from its point in the world and fades, unaffected by pause and hit stop unless you untick Unscaled. The overlay is `Runtime/UI/Overlays/JamKitPopups.uxml` on its own panel at sort order 50, under the toast and the menus, styled by `.jk-popup` and `--jk-popup-size` in `JamKitOverlays.uss`. A new Popups asset comes wired to it, and the Doctor offers JamKit's when one isn't. The project template adds `Services/Popups`, and the chaser starters show their damage in yellow.
 
 - `DisplaySettings` had no `JamKitEditor` registration, which `InspectorTests` would have failed on.

@@ -109,7 +109,7 @@ A pickup is a `TriggerZone` with `DestroySelf` and `OnEntered → Score.Add`. A 
 
 ## Known gaps
 
-- The five samples still reference components and event data from before 1.0 and need re-authoring in the editor.
+- Hour Zero, Platformer, Survivor and Arcade still hold scenes and prefabs from before 1.0 and need re-authoring in the editor; their scripts are on 1.0. The Feel Bridge (03) is scripts only.
 - The project template ships no WebGL Build Profile yet, so Publish builds from Build Settings unless you assign one.
 
 ## License

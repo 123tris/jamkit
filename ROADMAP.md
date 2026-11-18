@@ -64,7 +64,7 @@ Items leave this list when they land; the CHANGELOG records each one with its re
 
 ### Samples
 
-Hour Zero, Platformer, Survivor and Arcade are re-authored on the project template's fixed GUIDs, which makes sample setup "scaffold and open the scene". The Feel showcase becomes the two bridge scripts and a README, since Feel is a paid asset.
+The sample scripts are on 1.0 and the Feel showcase is the scripts-only Feel Bridge. Re-author the scenes and prefabs of Hour Zero, Platformer, Survivor and Arcade in the editor, on the project template's fixed GUIDs and starters. Sample setup can then shrink to "scaffold and open the scene".
 
 ## Backlog
 
