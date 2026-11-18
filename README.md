@@ -1,6 +1,6 @@
 # JamKit
 
-Rapid game-jam toolkit for Unity 6.6. It ships the parts every jam rebuilds in hour one, so that hour goes to the game instead: menus, pause, settings, scene flow, screen fades, audio, tweens, camera shake and a small set of gameplay components.
+Rapid game-jam toolkit for Unity 6.5. It ships the parts every jam rebuilds in hour one, so that hour goes to the game instead: menus, pause, settings, scene flow, screen fades, audio, tweens, camera shake and a small set of gameplay components.
 
 Read [PILLARS.md](PILLARS.md) for the rules the kit is built to.
 
@@ -12,7 +12,7 @@ Read [PILLARS.md](PILLARS.md) for the rules the kit is built to.
 
 ## Requirements
 
-- Unity 6.6 (6000.6) or newer, with URP, Cinemachine 3 and the Input System
+- Unity 6.5 (6000.5) or newer, with URP, Cinemachine 3 and the Input System
 - **`com.metz.ripple`** 0.3.0: `https://github.com/123tris/Ripple.git#v0.3.0`
 
 Nothing from the Asset Store: Odin Inspector and UltEvents are no longer used anywhere in the stack.

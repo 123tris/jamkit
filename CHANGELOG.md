@@ -6,6 +6,10 @@ All notable changes to JamKit are documented here. Format follows [Keep a Change
 
 ### Since 1.0.0-pre.1
 
+**Minimum Unity is 6.5 (6000.5).** 1.0.0-pre.1 named 6.6 before anything had run in Unity, and nothing in the kit needs it: JamKit is compiled and its project template authored and played in 6000.5.7f1. The toolbar (6.3) and the Game Flow graph (6.4) stay in their version-gated assemblies.
+
+**CI** builds a project on 6000.5.7f1 with JamKit listed as testable. Before, the test project left JamKit out of `testables`, so Unity would not have built a single JamKit test. It still waits for Ripple's `v0.3.0` tag and a `UNITY_LICENSE` secret.
+
 **Breaking: Odin Inspector is no longer used.** Since Ripple 0.3.0 dropped it, JamKit was the only reason a project needed Odin, and every JamKit assembly refused to compile without it. Odin is licensed per seat, so a teammate without a license could not open a JamKit project, and CI could not build it. JamKit now needs nothing from the Asset Store.
 
 - New attributes in `Metz.JamKit.Inspector`: `[Required]`, `[Button]`, `[ShowInInspector]`, `[ShowIf]`, `[HideIf]` and `[UxmlName]`. They live in their own namespace so that game code using Odin or NaughtyAttributes beside `using Metz.JamKit;` sees no ambiguous names.

@@ -59,9 +59,8 @@ Items leave this list when they land; the CHANGELOG records each one with its re
 ### Phase 1: 1.0 installs and works for anyone
 
 - **Release Ripple 0.3.0.** README, `ProjectTemplate.RippleProblem` and ci.yml point at `#v0.3.0`, a tag that does not exist yet, so the documented install fails. Merge `feature/0.3.0` into Ripple's `main` and tag it.
-- **One Unity floor.** package.json, README and ci.yml name the oldest editor the template has been played in. Newer editor APIs stay in version-gated assemblies, as the toolbar (6.3) and the Game Flow graph (6.4) already do.
-- **The score resets each run.** Nothing in the template reset `Score`, so Retry showed the previous run's total.
-- **CI runs.** It was blocked first by UltEvents, then by Odin. With both gone it needs only the `UNITY_LICENSE` secret.
+- **Confirm the 6.5 floor** by playing the template once in a fresh 6000.5 project; it is what the kit is compiled and authored in.
+- **CI runs** once Ripple is tagged and the repository has a `UNITY_LICENSE` secret; then delete its `if: ${{ false }}` line.
 
 ### Phase 2: a simpler core
 
