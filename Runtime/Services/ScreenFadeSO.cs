@@ -11,6 +11,9 @@ namespace Metz.JamKit
         public Color Color = Color.black;
         [Min(0f)] public float Seconds = 0.35f;
 
+        [Range(0f, 1f), Tooltip("How opaque Flash gets at its peak. A hit flash is usually well below 1.")]
+        public float FlashAlpha = 1f;
+
         [Required, Tooltip("The document the fade colors. Its element named fade covers the screen.")]
         public VisualTreeAsset Document;
 
@@ -18,6 +21,16 @@ namespace Metz.JamKit
         public PanelSettings Panel;
 
         int latest;
+        FadeOverlay overlay;
+
+        FadeOverlay Overlay
+        {
+            get
+            {
+                if (overlay == null) overlay = FadeOverlay.Create(name);
+                return overlay;
+            }
+        }
 
         [Button]
         public void FadeOut() => FadeOutAsync();
@@ -36,22 +49,22 @@ namespace Metz.JamKit
 
         IEnumerator FlashRoutine()
         {
-            yield return Fade(1f);
+            yield return Fade(FlashAlpha);
             yield return Fade(0f);
         }
 
         IEnumerator Fade(float targetAlpha)
         {
             int mine = ++latest;
-            var overlay = JamKitHost.Get<FadeOverlay>();
-            overlay.Load(Document, Panel);
-            float from = overlay.Alpha;
+            FadeOverlay layer = Overlay;
+            layer.Load(Document, Panel);
+            float from = layer.Alpha;
             for (float t = 0f; t < Seconds && mine == latest; t += Time.unscaledDeltaTime)
             {
-                overlay.Show(Color, Mathf.Lerp(from, targetAlpha, t / Seconds));
+                layer.Show(Color, Mathf.Lerp(from, targetAlpha, t / Seconds));
                 yield return null;
             }
-            if (mine == latest) overlay.Show(Color, targetAlpha);
+            if (mine == latest) layer.Show(Color, targetAlpha);
         }
     }
 }

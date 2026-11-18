@@ -11,6 +11,13 @@ namespace Metz.JamKit
 
         public float Alpha { get; private set; }
 
+        public static FadeOverlay Create(string owner)
+        {
+            var child = new GameObject($"Fade ({owner})");
+            child.transform.SetParent(JamKitHost.Root, false);
+            return child.AddComponent<FadeOverlay>();
+        }
+
         public void Load(VisualTreeAsset document, PanelSettings settings)
         {
             if (panel != null) return;

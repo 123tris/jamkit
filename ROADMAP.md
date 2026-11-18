@@ -65,7 +65,6 @@ Items leave this list when they land; the CHANGELOG records each one with its re
 ### Phase 4: zero-asset juice
 
 - **`PopupText`**: damage numbers and pickup text that rise and fade on a UI Toolkit overlay.
-- **Damage flash**: a screen fade can peak below full opacity and has an overlay of its own, so a red hit flash and a scene fade never cancel each other.
 
 ### Samples
 

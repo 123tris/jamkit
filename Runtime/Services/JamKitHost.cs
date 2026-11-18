@@ -19,6 +19,8 @@ namespace Metz.JamKit
             }
         }
 
+        public static Transform Root => Instance.transform;
+
         public static T Get<T>() where T : Component
             => Instance.TryGetComponent(out T component) ? component : Instance.gameObject.AddComponent<T>();
 
