@@ -695,9 +695,6 @@ MonoBehaviour:
   InputService: {fileID: 11400000, guid: 015b8966d19eafe4eba92cde4dab3a37, type: 2}
   Pause: {fileID: 6861574918747352623, guid: 9ba5a4e8c4bd1f643b7451c0b7d8a9d0, type: 3}
   Cancel: {fileID: -1234749352743907785, guid: 9ba5a4e8c4bd1f643b7451c0b7d8a9d0, type: 3}
-  MasterVolume: {fileID: 11400000, guid: 265441624955caa4ea4d064e179c23c2, type: 2}
-  MusicVolume: {fileID: 11400000, guid: ef48be90e8d9e4f4f812cb2d0f7778fa, type: 2}
-  SfxVolume: {fileID: 11400000, guid: e6142b8b970dcbc4c9412a91e64fe92a, type: 2}
   Views:
   - {fileID: 7774826338166608379}
   - {fileID: 5475404693984292870}

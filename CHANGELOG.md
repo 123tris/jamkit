@@ -8,6 +8,14 @@ All notable changes to JamKit are documented here. Format follows [Keep a Change
 
 **Minimum Unity is 6.5 (6000.5).** 1.0.0-pre.1 named 6.6 before anything had run in Unity, and nothing in the kit needs it: JamKit is compiled and its project template authored and played in 6000.5.7f1. The toolbar (6.3) and the Game Flow graph (6.4) stay in their version-gated assemblies.
 
+**Breaking: the settings screen is data.** `MenuSettingsBinder` found the settings controls by name in C# and wrote graphics settings straight to PlayerPrefs (`JamKit.Gfx.*`), beside the Ripple persistent variables PILLARS names as the only owner of saved data. Now every control in `JamKitSettingsMenu.uxml` binds two-way to a persistent Ripple variable: the three volumes as before, plus the new `QualityLevel`, `ResolutionIndex`, `Fullscreen` and `VSync` in `Variables/`.
+
+- New `DisplaySettings` on `JamKitCore` applies quality, resolution, full screen and VSync once per session and again on every change. A level or resolution below 0 takes the current one on first launch. WebGL skips resolution and VSync.
+- New UXML controls `QualityDropdown` and `ResolutionDropdown` fill their own choices. Their `value` is the index, so they bind like any field.
+- `MenuSettingsBinder` and `MenuController`'s `MasterVolume`, `MusicVolume` and `SfxVolume` fields are removed; the settings screen needs nothing from the controller.
+- Adding a setting is a persistent variable and a bound row, with no code.
+- Graphics settings saved under the old `JamKit.Gfx.*` keys are not carried over.
+
 **Added: the Doctor checks what the hour-zero FAQ answered by hand.** Each of these failed silently at runtime:
 
 - A build scene without `JamKitCore`, found from the scene's dependencies without loading it. Game Flow transitions, the volume settings, the DebugPanel and toasts don't work there. Fix: add it, saving the scene only if it wasn't open.

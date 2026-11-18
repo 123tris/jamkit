@@ -86,6 +86,7 @@ Wire `Health.OnDamaged → HitSound.Play()` directly; there is no audio service 
 - **Spawning:** `Spawner`, `SpawnBurst`, `ProjectileShooter`, `AutoDespawn`
 - **Triggers and rules:** `TriggerZone`, `Interactor` and `Interactable`, `GameTimer`, `HighScoreTracker`, `LifecycleSignals`, `SceneLoader`
 - **UI:** `MenuController` and `MenuView`, `Toast`, `DebugPanel`, and the `ValueLabel` and `ValueBar` controls for HUDs bound in UXML
+- **Settings:** the settings screen is UXML bound two-way to persistent Ripple variables (volumes, `QualityLevel`, `ResolutionIndex`, `Fullscreen`, `VSync`). `DisplaySettings` on `JamKitCore` applies the display ones; `QualityDropdown` and `ResolutionDropdown` fill their own choices. To add a setting, add a persistent variable and a bound row: mouse sensitivity is a slider bound to the variable `FirstPersonLook.MouseSensitivity` points at.
 
 A pickup is a `TriggerZone` with `DestroySelf` and `OnEntered → Score.Add`. A kill zone is a trigger collider with a `Damager` set to `Kill`.
 
@@ -101,7 +102,6 @@ A pickup is a `TriggerZone` with `DestroySelf` and `OnEntered → Score.Add`. A 
 ## Known gaps
 
 - The five samples still reference components and event data from before 1.0 and need re-authoring in the editor.
-- The settings sliders are bound from C# (`MenuSettingsBinder`). Ripple variables are UI Toolkit data sources, so they can move to UXML bindings like the HUD values did.
 - The WebGL build is still a menu command, not a Build Profile.
 
 ## License

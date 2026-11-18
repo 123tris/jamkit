@@ -1,9 +1,7 @@
 using System.Collections.Generic;
 using Metz.JamKit.Inspector;
-using Ripple;
 using UnityEngine;
 using UnityEngine.InputSystem;
-using UnityEngine.Serialization;
 using UnityEngine.UIElements;
 
 namespace Metz.JamKit
@@ -22,10 +20,6 @@ namespace Metz.JamKit
         [Tooltip("UI action that closes the top screen.")]
         public InputActionReference Cancel;
 
-        [Header("Volume"), FormerlySerializedAs("masterVolume")] public FloatVariableSO MasterVolume;
-        [FormerlySerializedAs("musicVolume")] public FloatVariableSO MusicVolume;
-        [FormerlySerializedAs("sfxVolume")] public FloatVariableSO SfxVolume;
-
         [Header("Screens")] public List<MenuView> Views = new();
 
         [Tooltip("Shown on enable. Empty starts hidden.")]
@@ -38,7 +32,6 @@ namespace Metz.JamKit
 
         readonly Stack<MenuView> stack = new();
         PanelRenderer panel;
-        MenuSettingsBinder settings;
         int boundVersion = -1;
         bool showInitial;
 
@@ -62,16 +55,12 @@ namespace Metz.JamKit
             TimeService.Resume();
         }
 
-        void OnDestroy() => settings?.Dispose();
-
         void OnUIReload(PanelRenderer renderer, VisualElement root, int version)
         {
             if (version != boundVersion)
             {
                 boundVersion = version;
                 root.EnableInClassList(WebGLClass, Application.platform == RuntimePlatform.WebGLPlayer);
-                settings?.Dispose();
-                settings = new MenuSettingsBinder(root, MasterVolume, MusicVolume, SfxVolume);
                 foreach (MenuView view in Views) view.Bind(root);
             }
 
@@ -151,9 +140,7 @@ namespace Metz.JamKit
             if (top != null && top.SwitchesToUIInput) InputService.SwitchToUI();
             else InputService.SwitchToGameplay();
 
-            if (top == null) return;
-            if (top == SettingsView) settings?.SyncToUI();
-            top.Focus();
+            if (top != null) top.Focus();
         }
     }
 }

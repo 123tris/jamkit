@@ -227,6 +227,7 @@ GameObject:
   - component: {fileID: 1423670531633192453}
   - component: {fileID: 7882083777745346554}
   - component: {fileID: 5916082208059279644}
+  - component: {fileID: 1756137459546577717}
   m_Layer: 0
   m_Name: JamKitCore
   m_TagString: Untagged
@@ -340,3 +341,19 @@ MonoBehaviour:
   Mixer: {fileID: 24100000, guid: 4cb4d3d60d0ee4a469b275d23c8d780b, type: 2}
   Parameter: SfxVol
   Volume: {fileID: 11400000, guid: e6142b8b970dcbc4c9412a91e64fe92a, type: 2}
+--- !u!114 &1756137459546577717
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5981983444815988611}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1bb36134444e4708bdfa4d3eacacaf99, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Metz.JamKit.Runtime::Metz.JamKit.DisplaySettings
+  QualityLevel: {fileID: 11400000, guid: c4a276f9aae095649c16e3ba88923c02, type: 2}
+  ResolutionIndex: {fileID: 11400000, guid: c763064745427df08f24c8b176ed3bc1, type: 2}
+  Fullscreen: {fileID: 11400000, guid: 75d314b2e0f2d1bc18036707a66934f7, type: 2}
+  VSync: {fileID: 11400000, guid: f02fb9c60dd5dae4228bfcef9ab5f5a2, type: 2}

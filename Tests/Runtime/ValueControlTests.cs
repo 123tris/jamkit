@@ -1,4 +1,6 @@
+using System.Linq;
 using NUnit.Framework;
+using UnityEngine;
 using UnityEngine.UIElements;
 
 namespace Metz.JamKit.Tests
@@ -36,6 +38,26 @@ namespace Metz.JamKit.Tests
 
             bar.value = 500f;
             Assert.AreEqual(Length.Percent(100f), fill.style.height.value);
+        }
+
+        [Test]
+        public void QualityDropdownOffersEveryLevelAndShowsTheCurrentOneForAnUnsetValue()
+        {
+            var dropdown = new QualityDropdown();
+            CollectionAssert.AreEqual(Enumerable.Range(0, QualitySettings.names.Length), dropdown.choices);
+            Assert.AreEqual(QualitySettings.GetQualityLevel(), dropdown.value);
+
+            dropdown.SetValueWithoutNotify(-1);
+            Assert.AreEqual(QualitySettings.GetQualityLevel(), dropdown.value);
+        }
+
+        [Test]
+        public void ResolutionDropdownOffersEveryDistinctResolution()
+        {
+            var dropdown = new ResolutionDropdown();
+            Assert.AreEqual(DisplaySettings.Resolutions.Count, dropdown.choices.Count);
+            Assert.AreEqual(DisplaySettings.Resolutions.Count,
+                DisplaySettings.Resolutions.Select(resolution => (resolution.width, resolution.height)).Distinct().Count());
         }
     }
 }

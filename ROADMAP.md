@@ -62,10 +62,6 @@ Items leave this list when they land; the CHANGELOG records each one with its re
 - **Confirm the 6.5 floor** by playing the template once in a fresh 6000.5 project; it is what the kit is compiled and authored in.
 - **CI runs** once Ripple is tagged and the repository has a `UNITY_LICENSE` secret; then delete its `if: ${{ false }}` line.
 
-### Phase 2: a simpler core
-
-- **Settings are data.** The settings menu binds in UXML to Ripple persistent variables, and a `DisplaySettings` component applies them. `MenuSettingsBinder` goes, along with the PlayerPrefs keys it wrote beside Ripple's persistence. A new setting is a variable and a UXML row.
-
 ### Phase 3: iteration and shipping
 
 - **The Doctor runs itself** after a reload, on scene save, before Play and before a build, and the toolbar button shows the issue count.
