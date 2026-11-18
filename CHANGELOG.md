@@ -8,6 +8,14 @@ All notable changes to JamKit are documented here. Format follows [Keep a Change
 
 **Minimum Unity is 6.5 (6000.5).** 1.0.0-pre.1 named 6.6 before anything had run in Unity, and nothing in the kit needs it: JamKit is compiled and its project template authored and played in 6000.5.7f1. The toolbar (6.3) and the Game Flow graph (6.4) stay in their version-gated assemblies.
 
+**Added: the Doctor checks what the hour-zero FAQ answered by hand.** Each of these failed silently at runtime:
+
+- A build scene without `JamKitCore`, found from the scene's dependencies without loading it. Game Flow transitions, the volume settings, the DebugPanel and toasts don't work there. Fix: add it, saving the scene only if it wasn't open.
+- A Game Flow transition that loads a scene missing from Build Settings, which fails, or that listens only in such a scene, which never runs. Fix: add the scene to the build when exactly one scene has that name.
+- A `ClipSound` or `ClipMusic` with no Output, which the volume sliders can't reach. Fix: use the mixer's SFX or Music group when exactly one mixer has it.
+- A `CameraShake` in the open scenes with no impulse listener. Fix: add `CinemachineImpulseListener` to the Cinemachine cameras, or `CinemachineExternalImpulseListener` to the camera when there are none.
+- A menu that opens on a screen taking UI input in a scene with movers, which get no input until it closes (information). Fix: start with no view.
+
 **Changed: UI mode silences every gameplay map.** `InputServiceSO` switched one map named by `GameplayMapName`, so the two-player `Gameplay1` and `Gameplay2` maps in `JamKitInput` kept reading input under the pause menu. Now the UI map is the only one on in UI mode, and every other map is on in gameplay mode. `GameplayMapName` is removed; an action asset that has a UI map and no other map is a Doctor error, and so is a missing UI map, since switching modes throws without it.
 
 **Changed: Health and GameTimer write their mirror variable through Ripple's `LocalVariables`.** `Health.CurrentVariable` told you to leave it empty on prefabs several objects share. With a `LocalVariables` on the object listing that variable, each copy now writes its own, so every enemy can drive its own health bar through a `VariableListener`. Without one, nothing changes.

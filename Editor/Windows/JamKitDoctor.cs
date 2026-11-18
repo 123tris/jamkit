@@ -9,7 +9,7 @@ using Object = UnityEngine.Object;
 
 namespace Metz.JamKit.Editor
 {
-    public static class JamKitDoctor
+    public static partial class JamKitDoctor
     {
         public sealed class Issue
         {
@@ -46,7 +46,15 @@ namespace Metz.JamKit.Editor
             ScanInput(issues);
             ScanPanelSettings(issues);
             ScanBuildScenes(issues);
-            if (openScenes) ScanOpenScenes(issues);
+            ScanScenesWithoutCore(issues);
+            ScanGameFlows(issues);
+            ScanAudioOutputs(issues);
+            if (openScenes)
+            {
+                ScanOpenScenes(issues);
+                ScanImpulseListeners(issues);
+                ScanInitialViews(issues);
+            }
             ScanRequired(issues, openScenes);
             ScanGameAsmdef(issues);
             ScanEmbeddedPackageEdits(issues);

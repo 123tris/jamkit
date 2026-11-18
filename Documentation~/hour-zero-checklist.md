@@ -15,9 +15,10 @@ The first ten minutes of a jam, in order. Everything after step 4 is your game.
 
 ## When something's weird
 
-- Sliders don't change a sound → its Output is empty, so it skips the mixer: set it to a JamKitMixer group (SFX or Music). FMOD path: check the banks are built and an `FmodBusVolume` drives each bus.
+- Sliders don't change a sound → its Output is empty, so it skips the mixer: set it to a JamKitMixer group (SFX or Music). The Doctor lists every such sound and sets the group for you. FMOD path: check the banks are built and an `FmodBusVolume` drives each bus.
 - UI unstyled → Doctor → Assign Theme.
 - Gamepad can't navigate menus → scene needs an EventSystem (Doctor creates it).
-- A mover ignores input → its `Move` or `Jump` action is red (`[Required]`): `JamKit > Auto-Assign References In Open Scenes` fills them by action name. Or the gameplay maps aren't active: the `MenuController` turns them on only while no screen that takes UI input is showing, so a Game scene's menu leaves `InitialView` empty.
-- Nothing shakes → `CameraShake` sends a Cinemachine impulse, and the camera needs a listener to feel it: the FollowCam starters have one; a camera without Cinemachine takes `CinemachineExternalImpulseListener`.
+- A mover ignores input → its `Move` or `Jump` action is red (`[Required]`): `JamKit > Auto-Assign References In Open Scenes` fills them by action name. Or the gameplay maps aren't active: the `MenuController` turns them on only while no screen that takes UI input is showing, so a Game scene's menu leaves `InitialView` empty. The Doctor points this out when a scene with movers opens on such a screen.
+- Nothing shakes → `CameraShake` sends a Cinemachine impulse, and the camera needs a listener to feel it: the FollowCam starters have one; a camera without Cinemachine takes `CinemachineExternalImpulseListener`. The Doctor adds whichever one the scene is missing.
+- A new level does nothing on Play, or its pause and volume settings don't work → it has no `JamKitCore`. The Doctor lists every build scene without one and adds it.
 - Time frozen after a weird stop → select the TimeService asset: its Debug foldout shows the effective scale, the active modifiers and whether it's paused, and Resume lifts a pause. Every modifier is cleared when Play starts.
