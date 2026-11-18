@@ -8,6 +8,10 @@ All notable changes to JamKit are documented here. Format follows [Keep a Change
 
 **Minimum Unity is 6.5 (6000.5).** 1.0.0-pre.1 named 6.6 before anything had run in Unity, and nothing in the kit needs it: JamKit is compiled and its project template authored and played in 6000.5.7f1. The toolbar (6.3) and the Game Flow graph (6.4) stay in their version-gated assemblies.
 
+**Added: Keep These Values After Play.** While playing, a component's ⋮ menu takes its values at that moment and writes them back when Play mode ends, in one undoable step. It keeps plain values, arrays and asset references, and skips references to scene objects (they are recreated when Play ends), Signal responses, and components spawned during Play. Taking the values when you click, rather than when Play ends, leaves out what the game itself changed afterwards, such as health lost. The GMTK 2026 project imported a 2,700-line third-party saver for this.
+
+**Added: `JamKit > Clear Saved Data`.** It lists every Ripple variable with Persist ticked, then clears their saved values in one go. The GMTK 2026 project imported a PlayerPrefs editor for this.
+
 **Added: `JamKit > New Level`.** It copies the project template's new `Scenes/Templates/Level.unity`, the Game scene without its `Run` object (a level continues a run), so a level starts with `JamKitCore`, the menu with no opening screen, a camera, a light and an EventSystem. It joins the build before GameOver, after the levels made before it, and the toolbar's Scenes menu offers it too. For `File > New Scene`, make a Scene Template from `Level.unity` in the editor.
 
 **Changed: one searchable starter picker.** `GameObject > JamKit > Starter…` and the toolbar's new Starters button open a list of every prefab in `Assets/_Project/Prefabs/Starters`, filtered as you type. Enter or a click places it at the Scene view's pivot, or under the object you right-clicked. A team's own starter variants appear with no code. The `Starter` enum, the 11 menu items that each hard-coded a starter, and `ProjectTemplate.StarterPath` are removed.

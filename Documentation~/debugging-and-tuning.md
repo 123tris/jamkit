@@ -39,12 +39,15 @@ for every scene in Build Settings, quit. Strip it for release by deleting the ch
 
 - **ScriptableObject edits persist play mode** (Unity native). Tune the *asset* — a service's
   config, a shared `FloatReference` variable — not the scene object, and your balance survives
-  stopping. Scene-component tweaks still revert; use Unity's Copy/Paste Component Values for
-  those.
+  stopping. Scene-component tweaks revert, unless you keep them: while playing, a component's
+  ⋮ menu has **Keep These Values After Play**, which takes its values at that moment and writes
+  them back when Play ends (Undo reverts them). It keeps plain values and asset references;
+  objects spawned during Play have nothing to write back to.
 - **Ripple variables reset `current → initial` each play session** (by design, so runs are
   repeatable). To keep a tuned value: set the *initial* value, or tick **Persist** on the
   variable — persisted variables (volumes, HighScore) save on change and load next session,
-  in the editor and in builds. `Clear Saved Value` on the asset resets it.
+  in the editor and in builds. `Clear Saved Value` on the asset resets one, and
+  `JamKit > Clear Saved Data` resets them all.
 
 ## The feature-done checklist
 

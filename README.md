@@ -98,6 +98,8 @@ A pickup is a `TriggerZone` with `DestroySelf` and `OnEntered → Score.Add`. A 
 - **Inspectors:** every JamKit component and asset groups its Signals under **Events**, and its `[Button]` actions and live `[ShowInInspector]` values under **Debug**. The attributes live in `Metz.JamKit.Inspector` and work on your own scripts too: `[Required]` turns an empty reference red.
 - **Auto-assign:** adding a JamKit component fills its service references, and its required `InputActionReference` fields by name, when there is exactly one candidate
 - **`JamKit > New Level`** (also at the bottom of the toolbar's Scenes menu): a copy of `Scenes/Templates/Level.unity` with `JamKitCore`, the menu (Esc pauses), a camera, a light and an EventSystem, added to the build before GameOver.
+- **Keep These Values After Play:** in Play mode, a component's ⋮ menu takes its current values and writes them back when Play ends.
+- **`JamKit > Clear Saved Data`:** clears the saved value of every persistent Ripple variable, after listing them.
 - **Starter picker:** `GameObject > JamKit > Starter…` or the toolbar's Starters button opens a searchable list of every prefab in `Assets/_Project/Prefabs/Starters`, your own variants included. Enter places the first match at the Scene view's pivot, or under the object you right-clicked.
 
 ## Known gaps
