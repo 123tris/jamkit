@@ -92,7 +92,7 @@ A pickup is a `TriggerZone` with `DestroySelf` and `OnEntered → Score.Add`. A 
 
 ## Editor tooling
 
-- **Main toolbar:** scene switcher, play-from-first-scene toggle, time scale slider, Doctor button showing the problem count, Build button
+- **Main toolbar:** scene switcher, play-from-first-scene toggle, time scale slider, Doctor button showing the problem count, Publish button
 - **`JamKit > New Jam Project`:** scaffolds the project from the template, as above
 - **`JamKit > Doctor`:** runs by itself after a reload, on scene save, before Play and before a build, and logs what it finds. Project checks with fix buttons: every `[Required]` reference left empty in open scenes, prefabs and assets; build scenes without `JamKitCore`; Game Flow scenes missing from the build; sounds that skip the mixer; camera shake nobody listens to; a first-person rig whose mover fights its yaw
 - **Inspectors:** every JamKit component and asset groups its Signals under **Events**, and its `[Button]` actions and live `[ShowInInspector]` values under **Debug**. The attributes live in `Metz.JamKit.Inspector` and work on your own scripts too: `[Required]` turns an empty reference red.
@@ -100,12 +100,13 @@ A pickup is a `TriggerZone` with `DestroySelf` and `OnEntered → Score.Add`. A 
 - **`JamKit > New Level`** (also at the bottom of the toolbar's Scenes menu): a copy of `Scenes/Templates/Level.unity` with `JamKitCore`, the menu (Esc pauses), a camera, a light and an EventSystem, added to the build before GameOver.
 - **Keep These Values After Play:** in Play mode, a component's ⋮ menu takes its current values and writes them back when Play ends.
 - **`JamKit > Clear Saved Data`:** clears the saved value of every persistent Ripple variable, after listing them.
+- **`JamKit > Publish to itch.io`** (the toolbar's Publish button): builds for the web, zips the build with `index.html` at the root, and pushes it with butler when butler is installed and your itch.io page is set in Project Settings > JamKit. It asks first while the Doctor reports errors. A WebGL Build Profile set there is built instead of Build Settings.
 - **Starter picker:** `GameObject > JamKit > Starter…` or the toolbar's Starters button opens a searchable list of every prefab in `Assets/_Project/Prefabs/Starters`, your own variants included. Enter places the first match at the Scene view's pivot, or under the object you right-clicked.
 
 ## Known gaps
 
 - The five samples still reference components and event data from before 1.0 and need re-authoring in the editor.
-- The WebGL build is still a menu command, not a Build Profile.
+- The project template ships no WebGL Build Profile yet, so Publish builds from Build Settings unless you assign one.
 
 ## License
 

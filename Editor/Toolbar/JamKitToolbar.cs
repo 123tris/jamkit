@@ -49,7 +49,7 @@ namespace Metz.JamKit.Editor
 
         [MainToolbarElement(BuildPath, defaultDockPosition = MainToolbarDockPosition.Right)]
         static MainToolbarElement Build()
-            => new MainToolbarButton(new MainToolbarContent("Build Web", "Build a WebGL player for itch.io"), WebGLItchBuild.Build);
+            => new MainToolbarButton(new MainToolbarContent("Publish", "Build for the web, zip it, and push it to itch.io when butler is set up"), ItchPublish.Publish);
 
         static void ShowScenes(Rect rect)
         {

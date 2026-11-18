@@ -62,10 +62,6 @@ Items leave this list when they land; the CHANGELOG records each one with its re
 - **Confirm the 6.5 floor** by playing the template once in a fresh 6000.5 project; it is what the kit is compiled and authored in.
 - **CI runs** once Ripple is tagged and the repository has a `UNITY_LICENSE` secret; then delete its `if: ${{ false }}` line.
 
-### Phase 3: iteration and shipping
-
-- **One-click itch.io:** the WebGL build as a Build Profile, zipped with `index.html` at the root and pushed with butler when it is installed.
-
 ### Phase 4: zero-asset juice
 
 - **`SynthSound`**: placeholder sound effects synthesized from a preset and a seed. The starters play them, so a new project makes noise from minute one.

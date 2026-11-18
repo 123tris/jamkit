@@ -8,6 +8,8 @@ All notable changes to JamKit are documented here. Format follows [Keep a Change
 
 **Minimum Unity is 6.5 (6000.5).** 1.0.0-pre.1 named 6.6 before anything had run in Unity, and nothing in the kit needs it: JamKit is compiled and its project template authored and played in 6000.5.7f1. The toolbar (6.3) and the Game Flow graph (6.4) stay in their version-gated assemblies.
 
+**Changed: `JamKit > Publish to itch.io` replaces `JamKit > Build > WebGL (itch.io)`.** It builds for the web, zips the build with `index.html` at the root of the zip (the step people got wrong by hand, zipping the folder itself), and when butler is installed and Project Settings > JamKit names your page, runs `butler push` in the background and logs the result. butler keeps its own login. While the Doctor reports errors it asks before building. A Build Profile set in the new Project Settings > JamKit page is built instead of the scenes in Build Settings. The toolbar's Build Web button is now Publish.
+
 **Added: Keep These Values After Play.** While playing, a component's ⋮ menu takes its values at that moment and writes them back when Play mode ends, in one undoable step. It keeps plain values, arrays and asset references, and skips references to scene objects (they are recreated when Play ends), Signal responses, and components spawned during Play. Taking the values when you click, rather than when Play ends, leaves out what the game itself changed afterwards, such as health lost. The GMTK 2026 project imported a 2,700-line third-party saver for this.
 
 **Added: `JamKit > Clear Saved Data`.** It lists every Ripple variable with Persist ticked, then clears their saved values in one go. The GMTK 2026 project imported a PlayerPrefs editor for this.
