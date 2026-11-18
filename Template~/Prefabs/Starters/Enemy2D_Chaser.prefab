@@ -305,7 +305,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 070e8ab8cfd601e4ba8959ce239c80b1, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Metz.JamKit.Runtime::Metz.JamKit.SpawnBurst
-  Prefab: {fileID: 0}
+  Prefab: {fileID: 1320732837150254380, guid: b40b03947ea321be50eb3506619cd31d, type: 3}
   Count:
     useConstant: 1
     _constantValue: 3
@@ -318,7 +318,7 @@ MonoBehaviour:
   RandomRotation: 1
   LaunchSpeed:
     useConstant: 1
-    _constantValue: 0
+    _constantValue: 4
     _variable: {fileID: 0}
 --- !u!114 &3372374003793836966
 MonoBehaviour:

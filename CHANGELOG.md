@@ -19,6 +19,8 @@ All notable changes to JamKit are documented here. Format follows [Keep a Change
 
 Serialized data is unchanged: attributes do not affect what Unity saves.
 
+**Fixed: killing a chaser starter threw an exception and left the chaser in the scene.** Both chasers' `Health.OnDied` called `SpawnBurst.Burst` with no prefab assigned. `Instantiate(null)` throws inside the death signal, before `Health` destroys the object, so a dead chaser kept chasing. The project template gains `Debris2D` and `Debris3D` in `Prefabs/`: the chaser's look on a small body that despawns after 1.2 seconds. Each chaser bursts three of them at 4 units a second, since a launch speed of 0 left 2D debris hanging in place. The new missing required references check found this on its first run.
+
 **Fixed: Retry kept the previous run's score.** Ripple variables reset only when Play mode starts, and nothing in the project template reset `Score`, so a second run's Game Over screen showed the points of both runs. The template's Game scene now has a `Run` object whose `LifecycleSignals.OnEnabled` calls `Score.ResetValue`. It runs while the Game scene loads, after the fade out has covered the screen. Resetting from the `Play` event instead would have zeroed the score while the Game Over screen still showed it.
 
 ### 1.0.0-pre.1: overhaul
