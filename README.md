@@ -34,6 +34,8 @@ Everything it copies is yours to edit. It never overwrites a file, so running it
 
 To end a run, raise the `GameOver` event from anything, for example by adding it to a `Health.OnDied` signal.
 
+The Game scene's `Run` object resets `Score` while the scene loads. Variables that belong to one run, such as coins, kills or the wave number, go on its `OnEnabled` signal too.
+
 ## Events: Signal
 
 Every event on a JamKit component is a Ripple `Signal`. In the inspector a Signal is a standard `UnityEvent` plus a list of Ripple event assets to raise. In code it takes listeners.

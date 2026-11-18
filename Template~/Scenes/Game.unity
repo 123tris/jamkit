@@ -561,6 +561,104 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &1752040001
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1752040003}
+  - component: {fileID: 1752040002}
+  m_Layer: 0
+  m_Name: Run
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &1752040002
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1752040001}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: dae895b68d134c65bc86dbd61a2f58d2, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Metz.JamKit.Runtime::Metz.JamKit.LifecycleSignals
+  OnEnabled:
+    calls:
+      rid: 6320427472478011601
+    raise: []
+    response:
+      m_PersistentCalls:
+        m_Calls: []
+  OnStarted:
+    calls:
+      rid: 6320427472478011602
+    raise: []
+    response:
+      m_PersistentCalls:
+        m_Calls: []
+  OnDisabled:
+    calls:
+      rid: 6320427472478011603
+    raise: []
+    response:
+      m_PersistentCalls:
+        m_Calls: []
+  references:
+    version: 2
+    RefIds:
+    - rid: 6320427472478011601
+      type: {class: UnityEventResponse, ns: Ripple, asm: Metz.Ripple.Runtime}
+      data:
+        calls:
+          m_PersistentCalls:
+            m_Calls:
+            - m_Target: {fileID: 11400000, guid: 403b0e2b069733c498fd85c2180e88bc, type: 2}
+              m_TargetAssemblyTypeName: Ripple.FloatVariableSO, Metz.Ripple.Runtime
+              m_MethodName: ResetValue
+              m_Mode: 1
+              m_Arguments:
+                m_ObjectArgument: {fileID: 0}
+                m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+                m_IntArgument: 0
+                m_FloatArgument: 0
+                m_StringArgument: 
+                m_BoolArgument: 0
+              m_CallState: 2
+    - rid: 6320427472478011602
+      type: {class: UnityEventResponse, ns: Ripple, asm: Metz.Ripple.Runtime}
+      data:
+        calls:
+          m_PersistentCalls:
+            m_Calls: []
+    - rid: 6320427472478011603
+      type: {class: UnityEventResponse, ns: Ripple, asm: Metz.Ripple.Runtime}
+      data:
+        calls:
+          m_PersistentCalls:
+            m_Calls: []
+--- !u!4 &1752040003
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1752040001}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1660057539 &9223372036854775807
 SceneRoots:
   m_ObjectHideFlags: 0
@@ -570,3 +668,4 @@ SceneRoots:
   - {fileID: 608764687}
   - {fileID: 228856674}
   - {fileID: 1199214986}
+  - {fileID: 1752040003}

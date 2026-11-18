@@ -4,6 +4,10 @@ All notable changes to JamKit are documented here. Format follows [Keep a Change
 
 ## [Unreleased]
 
+### Since 1.0.0-pre.1
+
+**Fixed: Retry kept the previous run's score.** Ripple variables reset only when Play mode starts, and nothing in the project template reset `Score`, so a second run's Game Over screen showed the points of both runs. The template's Game scene now has a `Run` object whose `LifecycleSignals.OnEnabled` calls `Score.ResetValue`. It runs while the Game scene loads, after the fade out has covered the screen. Resetting from the `Play` event instead would have zeroed the score while the Game Over screen still showed it.
+
 ### 1.0.0-pre.1: overhaul
 
 Minimum Unity is now 6.6. Requires Ripple 0.3.0 (tag `v0.3.0`): the project template's Signals are saved in the 0.3.0 shape, which 0.2.0 cannot read.
