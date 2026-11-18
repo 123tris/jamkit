@@ -1,48 +1,56 @@
 # Feel integration
 
-Feel is JamKit's feedback engine — the kit ships **no** tween/flash/shake components of its
-own (0.8's "Juice Lite" layer is gone). JamKit's job is the *trigger surface*; Feel's job is
-the feel.
+Feel is optional. JamKit ships a small juice set of its own — `PunchScale`, `ColorFlash`,
+`CameraShake`, `SpawnBurst` and `HitStop`, plus `Tween` and `Ease` for code — and the starters
+use it. Feel is for when you want more: stacks of feedbacks authored in its inspector. JamKit's
+job is the *trigger surface*; Feel's job is the feel.
 
 ## The trigger chain
 
 ```
-Health.OnDamaged (UltEvent<float>)     ← per-instance: only THIS object reacts
+Health.OnDamaged (Signal<float>)       ← per-instance: only THIS object reacts
    → MMF_Player.PlayFeedbacks()        ← wire in the inspector; author feedbacks in Feel
 ```
 
-Every gameplay moment exposes the same shape: `Pickup.OnCollected`, `TriggerZone.OnEntered`,
-`Respawner.OnRespawned`, `Interactable.OnInteracted`, `GameTimer.Completed` — all serialized
-UltEvents, all wireable straight to an `MMF_Player`. Global reactions (any-enemy-died shake)
-subscribe a Feel player to the `Broadcast*` Ripple event assets instead (Ripple's
-`EventListenerVoid` → `PlayFeedbacks`).
+Every gameplay moment exposes the same shape: `TriggerZone.OnEntered`, `Respawner.OnRespawned`,
+`Interactable.OnInteracted`, `GameTimer.OnCompleted`, `ProjectileShooter.OnFired` — all Ripple
+`Signal`s, all wireable straight to an `MMF_Player`. Global reactions (any-enemy-died shake) go
+through a Ripple event instead: drop the event asset on the signal's Raise row, and have the Feel
+player listen to it (Ripple's `EventListenerVoid` → `PlayFeedbacks`).
 
 Starters carry no `MMF_Player`: the project template is the same with or without Feel. Add one
-to a starter and connect its `OnDamaged` signal to `PlayFeedbacks()`.
+to a starter and connect its `OnDamaged` signal to `PlayFeedbacks()`. That signal already plays
+the starter's own juice (`PunchScale` on players and enemies, `HitStop` on players, `SpawnBurst`
+on enemies), so remove whatever your Feel stack replaces.
 
 For **damage-scaled intensity** (big hits feel bigger), route through the ten-line `FeelPlayer`
 shim from sample 03: `OnDamaged(float) → FeelPlayer.Play(float)` →
 `PlayFeedbacks(position, intensity)`.
 
-## Coverage map (what replaced Juice Lite)
+## Coverage map (JamKit's juice, and where Feel goes further)
 
-| JamKit 0.8 (removed) | Feel replacement |
+| JamKit | Feel |
 | --- | --- |
 | `PunchScale` | MMF_Scale / MMF_SquashAndStretch |
-| `SpriteFlash` / `MaterialFlash` | MMF_Flicker / MMF_MaterialSetProperty / sprite feedbacks |
-| `CameraShake` | Cinemachine Impulse feedbacks (`FollowCamera` already carries the listener) |
-| `ParticleBurst` | MMF_Particles* |
-| `FloatingText` + `FloatingTextLayer` | MMF_FloatingText + MMFloatingTextSpawner |
-| sibling-`Health` auto-trigger magic | the visible `OnDamaged/OnDied` UltEvent wiring above |
+| `ColorFlash` (one `SpriteRenderer`) | MMF_Flicker / MMF_MaterialSetProperty / sprite feedbacks |
+| `CameraShake` (a Cinemachine impulse) | Cinemachine Impulse feedbacks |
+| `SpawnBurst` | MMF_Particles* |
+| — | MMF_FloatingText + MMFloatingTextSpawner |
+
+Either shake needs an impulse listener on the camera. The FollowCam starters' `CinemachineCamera`
+has one; a camera without Cinemachine takes a `CinemachineExternalImpulseListener`.
 
 Still JamKit's (because Feel can't):
 
-- **`HitStop`** — freeze-frames MUST go through `TimeServiceSO`'s push/pop stack. Feel's time
-  feedbacks set `Time.timeScale` directly and will fight the pause menu. Use `HitStop`, or drop
-  sample 03's `MMF_JamKitHitStop` custom feedback into your stacks — it routes through the
-  stack and slots into Feel like any other feedback. **This is a hard rule** (PILLARS.md).
-- **`SfxOnEvent` / `FmodSfxOnEvent`** — audio glue. Feel has no FMOD support; sounds go through
-  JamKit's audio service. (Skip Feel's MMF_Sound under the FMOD backend.)
+- **`HitStop`** — freeze-frames MUST go through `TimeServiceSO`. `HitStop` pushes a time modifier
+  and releases it, and the lowest active modifier wins, so a freeze and the pause menu never undo
+  each other. Feel's time feedbacks set `Time.timeScale` directly and will fight the pause menu.
+  Use `HitStop`, or drop sample 03's `MMF_JamKitHitStop` feedback into your stacks — it plays a
+  scene `HitStop` and slots into Feel like any other feedback. **This is a hard rule**: PILLARS.md
+  makes `TimeServiceSO` the one owner of `Time.timeScale`.
+- **Sounds** — `Sound` and `Music` assets: `ClipSound` and `ClipMusic` for Unity audio, `FmodSound`
+  and `FmodMusic` once FMOD is installed. Play them from a signal (`Health.OnDamaged → Play`).
+  Feel has no FMOD support, so skip Feel's MMF_Sound under FMOD.
 
 ## The asmdef wall (why the package never references Feel)
 

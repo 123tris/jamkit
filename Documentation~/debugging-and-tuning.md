@@ -6,24 +6,25 @@ Everything below already exists — this page is the map.
 ## Inspectors are the debugger
 
 - **Every stateful thing has a `Debug` foldout.** Select a service *asset* during play
-  (Project window → `Assets/_Project/Services/…`): TimeService shows the live timescale +
-  stack depth with Pause/Resume buttons; the FMOD service shows music state with Stop/Duck buttons.
+  (Project window → `Assets/_Project/Services/…`): TimeService shows the live timescale,
+  the active modifiers and whether it's paused, with Pause/Resume buttons.
 - **Every action is a `[Button]` that fires the real wiring.** `Health` → Damage 1 / Heal 1 /
-  Kill / Reset runs the entire chain — feedback players, broadcasts, death, despawn. If the
+  Kill / Reset runs the entire chain — juice, feedback players, raised events, death, despawn. If the
   button looks right, the game is right. Same for `Spawner.SpawnOne`, `SpawnBurst.Burst`,
-  `Respawner.Respawn`, `GameTimer` Start/Pause, `MenuController` view toggles, `Toast` test.
+  `Respawner.Respawn`, `GameTimer` Start/Pause, `MenuController` view toggles, `Toast` test, and
+  Play on a `Sound` or `Music` asset.
 - **Misconfiguration is red.** Load-bearing references are `[Required]` — wrong setups glow in
-  the inspector and list project-wide in **Tools > Odin Validator**. The wizard's auto-assign
-  turns them green; `JamKit > Doctor` covers the project-shape checks (build list, themes,
-  mixer params, EventSystem).
+  the inspector and list project-wide in **Tools > Odin Validator**. Auto-assign turns them
+  green as you add objects, and `JamKit > Auto-Assign References In Open Scenes` reruns it;
+  `JamKit > Doctor` covers the project-shape checks (Ripple version, service assets, input
+  actions, themes, build list, EventSystem).
 
 ## Ripple's built-in tooling
 
-- Every event asset has an **Invoke button** — raise `BroadcastDied` from the inspector and
-  watch the HUD/counters react without playing a death.
+- Every event asset has a **Raise button** in play mode — raise `GameOver` from the inspector
+  and watch everything that listens react, without playing until it happens.
 - Every variable shows a live, editable **Value** in play mode.
-- **Tools > Open Ripple Event Logger** — who invoked what, when, with context.
-- **Tools > Open Ripple Wizard** — browse every event/variable asset in one window.
+- **Tools > Ripple > Debugger** — what was raised or changed, when, by whom, with the value.
 
 ## Builds: the DebugPanel
 
