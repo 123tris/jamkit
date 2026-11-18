@@ -1,5 +1,5 @@
 using System.Collections;
-using Sirenix.OdinInspector;
+using Metz.JamKit.Inspector;
 using UnityEngine;
 
 namespace Metz.JamKit
@@ -18,7 +18,7 @@ namespace Metz.JamKit
 
         void OnDisable() => transform.localScale = rest;
 
-        [Button, DisableInEditorMode]
+        [Button]
         public void Play() => Play(1f);
 
         public void Play(float strength)

@@ -1,5 +1,5 @@
+using Metz.JamKit.Inspector;
 using Ripple;
-using Sirenix.OdinInspector;
 using UnityEngine;
 
 namespace Metz.JamKit.Samples

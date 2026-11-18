@@ -1,5 +1,5 @@
+using Metz.JamKit.Inspector;
 using Ripple;
-using Sirenix.OdinInspector;
 using UnityEngine;
 
 namespace Metz.JamKit
@@ -15,7 +15,7 @@ namespace Metz.JamKit
         [Min(0f)] public float MaxDuration = 0.25f;
         [Range(0f, 1f)] public float TimeScale;
 
-        [Button, DisableInEditorMode, FoldoutGroup("Debug")]
+        [Button]
         public void Play() => Play(1f);
 
         public void Play(float strength)

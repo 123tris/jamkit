@@ -1,6 +1,6 @@
 using System.Collections.Generic;
+using Metz.JamKit.Inspector;
 using Ripple;
-using Sirenix.OdinInspector;
 using UnityEngine;
 using UnityEngine.InputSystem;
 using UnityEngine.Serialization;
@@ -13,28 +13,28 @@ namespace Metz.JamKit
     {
         const string WebGLClass = "jk-webgl";
 
-        [BoxGroup("Services"), Required] public TimeServiceSO TimeService;
-        [BoxGroup("Services"), Required] public InputServiceSO InputService;
+        [Header("Services"), Required] public TimeServiceSO TimeService;
+        [Required] public InputServiceSO InputService;
 
-        [BoxGroup("Input"), Tooltip("Gameplay action that opens the pause screen.")]
+        [Header("Input"), Tooltip("Gameplay action that opens the pause screen.")]
         public InputActionReference Pause;
 
-        [BoxGroup("Input"), Tooltip("UI action that closes the top screen.")]
+        [Tooltip("UI action that closes the top screen.")]
         public InputActionReference Cancel;
 
-        [BoxGroup("Volume"), FormerlySerializedAs("masterVolume")] public FloatVariableSO MasterVolume;
-        [BoxGroup("Volume"), FormerlySerializedAs("musicVolume")] public FloatVariableSO MusicVolume;
-        [BoxGroup("Volume"), FormerlySerializedAs("sfxVolume")] public FloatVariableSO SfxVolume;
+        [Header("Volume"), FormerlySerializedAs("masterVolume")] public FloatVariableSO MasterVolume;
+        [FormerlySerializedAs("musicVolume")] public FloatVariableSO MusicVolume;
+        [FormerlySerializedAs("sfxVolume")] public FloatVariableSO SfxVolume;
 
-        [BoxGroup("Screens")] public List<MenuView> Views = new();
+        [Header("Screens")] public List<MenuView> Views = new();
 
-        [BoxGroup("Screens"), Tooltip("Shown on enable. Empty starts hidden.")]
+        [Tooltip("Shown on enable. Empty starts hidden.")]
         public MenuView InitialView;
 
-        [BoxGroup("Screens"), Tooltip("Opened by Pause.")]
+        [Tooltip("Opened by Pause.")]
         public MenuView PauseView;
 
-        [BoxGroup("Screens")] public MenuView SettingsView;
+        public MenuView SettingsView;
 
         readonly Stack<MenuView> stack = new();
         PanelRenderer panel;
@@ -110,10 +110,10 @@ namespace Metz.JamKit
 
         public void ShowPause() => Show(PauseView);
 
-        [Button, DisableInEditorMode, FoldoutGroup("Debug"), HorizontalGroup("Debug/Row")]
+        [Button]
         public void HideAll() => ShowOnly(null);
 
-        [Button, DisableInEditorMode, HorizontalGroup("Debug/Row")]
+        [Button]
         public void TogglePause()
         {
             if (Current == PauseView) Back();
@@ -126,7 +126,7 @@ namespace Metz.JamKit
             else if (stack.Count == 0 || Current == PauseView) TogglePause();
         }
 
-        [Button("Quit"), DisableInEditorMode, HorizontalGroup("Debug/Row")]
+        [Button("Quit")]
         public void QuitGame()
         {
 #if UNITY_EDITOR

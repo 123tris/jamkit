@@ -1,5 +1,5 @@
+using Metz.JamKit.Inspector;
 using Ripple;
-using Sirenix.OdinInspector;
 using UnityEngine;
 
 namespace Metz.JamKit
@@ -12,7 +12,7 @@ namespace Metz.JamKit
 
         public FloatReference Delay = new(0.6f);
 
-        [FoldoutGroup("Events")] public Signal OnRespawned = new();
+        public Signal OnRespawned = new();
 
         Body body;
         Vector3 startPosition;
@@ -41,7 +41,7 @@ namespace Metz.JamKit
             if (pending && delay.Ready) Respawn();
         }
 
-        [Button, DisableInEditorMode, FoldoutGroup("Debug")]
+        [Button]
         public void Respawn()
         {
             pending = false;

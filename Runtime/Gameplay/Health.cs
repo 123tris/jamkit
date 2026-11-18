@@ -1,5 +1,5 @@
+using Metz.JamKit.Inspector;
 using Ripple;
-using Sirenix.OdinInspector;
 using UnityEngine;
 
 namespace Metz.JamKit
@@ -7,19 +7,19 @@ namespace Metz.JamKit
     [DisallowMultipleComponent]
     public sealed class Health : MonoBehaviour
     {
-        [BoxGroup("Stats")] public FloatReference Max = new(10f);
+        [Header("Stats")] public FloatReference Max = new(10f);
 
-        [BoxGroup("Stats"), Min(0), ProgressBar(0f, "$MaxValue")]
+        [Min(0)]
         public float Current = 10f;
 
-        [BoxGroup("Stats"), Tooltip("Mirrors current HP for HUD binding. Leave empty when several objects share this prefab.")]
+        [Tooltip("Mirrors current HP for HUD binding. Leave empty when several objects share this prefab.")]
         public FloatVariableSO CurrentVariable;
 
         public bool DestroyOnDeath;
 
-        [FoldoutGroup("Events")] public Signal<float> OnDamaged = new();
-        [FoldoutGroup("Events")] public Signal<float> OnHealed = new();
-        [FoldoutGroup("Events")] public Signal OnDied = new();
+        public Signal<float> OnDamaged = new();
+        public Signal<float> OnHealed = new();
+        public Signal OnDied = new();
 
         public float MaxValue => Max.Value;
 
@@ -46,7 +46,7 @@ namespace Metz.JamKit
             OnHealed.Invoke(amount);
         }
 
-        [Button, DisableInEditorMode, FoldoutGroup("Debug"), HorizontalGroup("Debug/Row")]
+        [Button]
         public void Kill() => Damage(Current);
 
         public void SetCurrent(float value)
@@ -57,13 +57,13 @@ namespace Metz.JamKit
             if (IsDead && !wasDead) Die();
         }
 
-        [Button("Reset"), DisableInEditorMode, HorizontalGroup("Debug/Row")]
+        [Button("Reset")]
         public void ResetFull() => SetCurrent(MaxValue);
 
-        [Button("Damage 1"), DisableInEditorMode, HorizontalGroup("Debug/Row")]
+        [Button("Damage 1")]
         void DebugDamage() => Damage(1f);
 
-        [Button("Heal 1"), DisableInEditorMode, HorizontalGroup("Debug/Row")]
+        [Button("Heal 1")]
         void DebugHeal() => Heal(1f);
 
         void Die()

@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using UnityEditor;
 using UnityEngine;
 using UnityEngine.UIElements;
@@ -46,6 +47,7 @@ namespace Metz.JamKit.Editor
             ScanPanelSettings(issues);
             ScanBuildScenes(issues);
             if (openScenes) ScanOpenScenes(issues);
+            ScanRequired(issues, openScenes);
             ScanGameAsmdef(issues);
             ScanEmbeddedPackageEdits(issues);
             return issues;
@@ -188,6 +190,67 @@ namespace Metz.JamKit.Editor
                 Add(issues, MessageType.Info,
                     $"{looseObjects.Count} JamKit object(s) in open scenes are not prefab instances. " +
                     "Consider making them prefabs (or starter variants) — scenes as prefab lists merge better (PILLARS.md).");
+
+            foreach (FirstPersonLook look in Object.FindObjectsByType<FirstPersonLook>(FindObjectsInactive.Include))
+            {
+                if (look.YawTransform != look.transform || !look.TryGetComponent(out Mover3D mover) || !mover.RotateToFaceMove) continue;
+                Add(issues, MessageType.Warning,
+                    $"'{look.name}' turns with FirstPersonLook, and its Mover3D also turns it to face the movement, so the two fight.",
+                    "Untick Rotate To Face Move", () =>
+                    {
+                        Undo.RecordObject(mover, "Untick Rotate To Face Move");
+                        mover.RotateToFaceMove = false;
+                    }, look.gameObject);
+            }
+        }
+
+        static void ScanRequired(List<Issue> issues, bool openScenes)
+        {
+            if (openScenes)
+                foreach (MonoBehaviour component in Object.FindObjectsByType<MonoBehaviour>(FindObjectsInactive.Include))
+                {
+                    if (component == null) continue;
+                    List<string> missing = RequiredReferences.Missing(component);
+                    MonoBehaviour source = PrefabUtility.GetCorrespondingObjectFromSource(component);
+                    if (source != null && IsCheckedPrefab(AssetDatabase.GetAssetPath(source)))
+                        missing = missing.Except(RequiredReferences.Missing(source)).ToList();
+                    ReportRequired(issues, MessageType.Error, missing, component.gameObject,
+                        fields => $"'{component.name}' ({component.GetType().Name}) is missing {fields}, which it needs to work.");
+                }
+
+            if (!AssetDatabase.IsValidFolder(ProjectTemplate.Root)) return;
+            foreach (string guid in AssetDatabase.FindAssets("t:Prefab", new[] { ProjectTemplate.Root }))
+            {
+                string path = AssetDatabase.GUIDToAssetPath(guid);
+                var prefab = AssetDatabase.LoadAssetAtPath<GameObject>(path);
+                if (prefab == null) continue;
+                bool starter = !IsCheckedPrefab(path);
+                foreach (MonoBehaviour component in prefab.GetComponentsInChildren<MonoBehaviour>(true))
+                {
+                    if (component == null) continue;
+                    string type = component.GetType().Name;
+                    ReportRequired(issues, starter ? MessageType.Info : MessageType.Error, RequiredReferences.Missing(component), prefab,
+                        fields => starter
+                            ? $"Starter {prefab.name} leaves {fields} on its {type} empty, for you to fill in on each copy you place."
+                            : $"'{component.name}' ({type}) in prefab {prefab.name} is missing {fields}, which it needs to work.");
+                }
+            }
+
+            foreach (string guid in AssetDatabase.FindAssets("t:ScriptableObject", new[] { ProjectTemplate.Root }))
+            {
+                var asset = AssetDatabase.LoadAssetAtPath<ScriptableObject>(AssetDatabase.GUIDToAssetPath(guid));
+                if (asset == null) continue;
+                ReportRequired(issues, MessageType.Error, RequiredReferences.Missing(asset), asset,
+                    fields => $"'{asset.name}' is missing {fields}, which it needs to work.");
+            }
+        }
+
+        static bool IsCheckedPrefab(string path)
+            => path.StartsWith(ProjectTemplate.Root + "/") && !path.StartsWith(ProjectTemplate.StartersFolder + "/");
+
+        static void ReportRequired(List<Issue> issues, MessageType severity, List<string> missing, Object context, Func<string, string> message)
+        {
+            if (missing.Count > 0) Add(issues, severity, message(string.Join(", ", missing)), context: context);
         }
 
         static void ScanGameAsmdef(List<Issue> issues)

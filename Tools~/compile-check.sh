@@ -8,6 +8,9 @@
 #
 # Editor/Toolbar and Editor/Flow use Unity 6.3+ / 6.4+ editor APIs. They are only compiled
 # when the host project's csprojs point at an editor that has them.
+#
+# Odin Inspector is stripped from the references and the defines even when the host project
+# has it, so ALL GREEN means the kit compiles in a project without Odin.
 set -u
 PROJ="${1:-$(cd "$(dirname "$0")/../../.." && pwd)}"
 PROJ="$(cygpath -m "$PROJ" 2>/dev/null || echo "$PROJ")"
@@ -26,12 +29,12 @@ build_asm () {
   local csproj="$1" srcdir="$2" out="$3" extra_ref="${4:-}" exclude="${5:-}"
   local rsp="$OUT/$(basename "$out" .dll).rsp"
   : > "$rsp"
-  grep -o '<HintPath>[^<]*' "$csproj" | sed 's/<HintPath>/-r:"/;s/$/"/' >> "$rsp"
+  grep -o '<HintPath>[^<]*' "$csproj" | grep -v 'Sirenix' | sed 's/<HintPath>/-r:"/;s/$/"/' >> "$rsp"
   grep -o 'ProjectReference Include="[^"]*"' "$csproj" \
     | sed 's/ProjectReference Include="//;s/"$//;s/\.csproj$//' \
     | while read -r name; do
         case "$name" in
-          Metz.JamKit.*|Metz.Ripple.*|Kybernetik.UltEvents*) ;;
+          Metz.JamKit.*|Metz.Ripple.*|Kybernetik.UltEvents*|Sirenix.*) ;;
           *) echo "-r:\"$PROJ/Library/ScriptAssemblies/$name.dll\"" >> "$rsp" ;;
         esac
       done
@@ -45,7 +48,7 @@ build_asm () {
   if [ -z "$srcs" ]; then echo "=== $(basename "$out") skipped (no sources)"; return 0; fi
   echo "$srcs" | sed 's/^/"/;s/$/"/' >> "$rsp"
   local defines
-  defines=$(grep -o 'DefineConstants>[^<]*' "$csproj" | sed 's/DefineConstants>//' | head -1)
+  defines=$(grep -o 'DefineConstants>[^<]*' "$csproj" | sed 's/DefineConstants>//' | head -1 | tr ';' '\n' | grep -v '^ODIN_' | paste -sd ';')
   {
     echo "-nologo"; echo "-nostdlib"; echo "-target:library"
     echo "-langversion:9.0"; echo "-warn:0"

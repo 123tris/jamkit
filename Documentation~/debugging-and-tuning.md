@@ -13,11 +13,13 @@ Everything below already exists — this page is the map.
   button looks right, the game is right. Same for `Spawner.SpawnOne`, `SpawnBurst.Burst`,
   `Respawner.Respawn`, `GameTimer` Start/Pause, `MenuController` view toggles, `Toast` test, and
   Play on a `Sound` or `Music` asset.
-- **Misconfiguration is red.** Load-bearing references are `[Required]` — wrong setups glow in
-  the inspector and list project-wide in **Tools > Odin Validator**. Auto-assign turns them
-  green as you add objects, and `JamKit > Auto-Assign References In Open Scenes` reruns it;
-  `JamKit > Doctor` covers the project-shape checks (Ripple version, service assets, input
-  actions, themes, build list, EventSystem).
+- **Misconfiguration is red.** Load-bearing references are `[Required]` — an empty one shows an
+  error in the inspector, and `JamKit > Doctor` lists every one in open scenes, prefabs and assets.
+  Auto-assign turns them green as you add objects, and `JamKit > Auto-Assign References In Open
+  Scenes` reruns it. The Doctor also covers the project-shape checks (Ripple version, service
+  assets, input actions, themes, build list, EventSystem).
+- **The live values and buttons work in Play mode.** In edit mode the Debug foldout shows a dash
+  and its buttons are greyed out, because they would act on objects that are not running.
 
 ## Ripple's built-in tooling
 

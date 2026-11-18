@@ -7,7 +7,13 @@ Ripple    variables, events, listeners, runtime sets, Signal
 JamKit    services, audio, juice, gameplay, menus, editor tooling
 ```
 
-JamKit depends on Ripple and Odin Inspector. Feel and FMOD are optional.
+JamKit depends on Ripple and on nothing from the Asset Store. Feel and FMOD are optional.
+
+## Inspectors
+
+`JamKitEditor` (UI Toolkit) draws every JamKit component and asset, registered by a one-line subclass per type. Fields keep their order; `Signal` fields collect under an Events foldout; methods marked `[Button]` and members marked `[ShowInInspector]` collect under a Debug foldout, live in Play mode. `[ShowIf]` and `[HideIf]` hide a field by a bool beside it. `[Required]` and `[UxmlName]` are property drawers, so they also work in other inspectors. The attributes are in `Metz.JamKit.Inspector`, out of the way of game code that also uses Odin or NaughtyAttributes.
+
+`RequiredReferences` finds empty `[Required]` fields, following lists and nested serializable types and skipping fields their condition hides. The Doctor runs it over open scenes, prefabs and assets.
 
 ## Events
 

@@ -1,14 +1,14 @@
-using Sirenix.OdinInspector;
+using Metz.JamKit.Inspector;
 using UnityEngine;
 
 namespace Metz.JamKit
 {
     public abstract class Music : ScriptableObject
     {
-        [Button, DisableInEditorMode]
+        [Button]
         public abstract void Play();
 
-        [Button, DisableInEditorMode]
+        [Button]
         public abstract void Stop();
     }
 }

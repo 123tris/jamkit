@@ -1,6 +1,6 @@
 using System.Collections;
 using System.Collections.Generic;
-using Sirenix.OdinInspector;
+using Metz.JamKit.Inspector;
 using UnityEngine;
 
 namespace Metz.JamKit
@@ -46,7 +46,7 @@ namespace Metz.JamKit
             }
         }
 
-        [ShowInInspector, ReadOnly, FoldoutGroup("Debug")]
+        [ShowInInspector]
         public float EffectiveScale
         {
             get
@@ -58,10 +58,10 @@ namespace Metz.JamKit
             }
         }
 
-        [ShowInInspector, ReadOnly, FoldoutGroup("Debug")]
+        [ShowInInspector]
         public int ActiveModifiers => modifiers.Count;
 
-        [ShowInInspector, ReadOnly, FoldoutGroup("Debug")]
+        [ShowInInspector]
         public bool IsPaused => pause != null;
 
         public TimeModifier Push(float scale)
@@ -79,10 +79,10 @@ namespace Metz.JamKit
             return modifier;
         }
 
-        [Button, DisableInEditorMode, FoldoutGroup("Debug")]
+        [Button]
         public void Pause() => pause ??= Push(0f);
 
-        [Button, DisableInEditorMode, FoldoutGroup("Debug")]
+        [Button]
         public void Resume()
         {
             pause?.Release();

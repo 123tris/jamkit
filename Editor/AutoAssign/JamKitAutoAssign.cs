@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Reflection;
 using System.Text;
-using Sirenix.OdinInspector;
+using Metz.JamKit.Inspector;
 using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine;

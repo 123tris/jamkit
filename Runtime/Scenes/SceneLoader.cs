@@ -1,4 +1,4 @@
-using Sirenix.OdinInspector;
+using Metz.JamKit.Inspector;
 using UnityEngine;
 
 namespace Metz.JamKit
@@ -8,7 +8,7 @@ namespace Metz.JamKit
         [Required] public SceneServiceSO SceneService;
         public SceneRef Scene;
 
-        [Button, DisableInEditorMode]
+        [Button]
         public void Load() => SceneService.Load(Scene);
 
         public void Reload() => SceneService.Reload();

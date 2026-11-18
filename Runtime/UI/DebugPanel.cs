@@ -1,5 +1,5 @@
 using System.IO;
-using Sirenix.OdinInspector;
+using Metz.JamKit.Inspector;
 using UnityEngine;
 using UnityEngine.InputSystem;
 using UnityEngine.SceneManagement;

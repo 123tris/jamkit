@@ -1,5 +1,5 @@
+using Metz.JamKit.Inspector;
 using Ripple;
-using Sirenix.OdinInspector;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
@@ -21,7 +21,7 @@ namespace Metz.JamKit
         [Tooltip("Fires while held. Leave empty to fire automatically.")]
         public InputActionReference Attack;
 
-        [FoldoutGroup("Events")] public Signal OnFired = new();
+        public Signal OnFired = new();
 
         Cooldown cooldown;
 
@@ -38,7 +38,7 @@ namespace Metz.JamKit
             if (cooldown.TryUse(FireInterval.Value)) Fire();
         }
 
-        [Button, DisableInEditorMode, FoldoutGroup("Debug")]
+        [Button]
         public GameObject Fire()
         {
             GameObject projectile = Instantiate(ProjectilePrefab, Muzzle.position, Muzzle.rotation);

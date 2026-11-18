@@ -13,8 +13,7 @@
     "precompiledReferences": [],
     "autoReferenced": true,
     "defineConstraints": [
-        "JAMKIT_FMOD",
-        "ODIN_INSPECTOR"
+        "JAMKIT_FMOD"
     ],
     "versionDefines": [],
     "noEngineReferences": false

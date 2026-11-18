@@ -1,4 +1,4 @@
-using Sirenix.OdinInspector;
+using Metz.JamKit.Inspector;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
@@ -14,13 +14,13 @@ namespace Metz.JamKit
         [Tooltip("Lock and hide the cursor in gameplay, release it in UI.")]
         public bool ManageCursor = true;
 
-        [ShowInInspector, ReadOnly, FoldoutGroup("Debug")]
+        [ShowInInspector]
         public bool InGameplay { get; private set; }
 
-        [Button, DisableInEditorMode, FoldoutGroup("Debug")]
+        [Button]
         public void SwitchToGameplay() => Switch(GameplayMapName, UIMapName, true);
 
-        [Button, DisableInEditorMode, FoldoutGroup("Debug")]
+        [Button]
         public void SwitchToUI() => Switch(UIMapName, GameplayMapName, false);
 
         public override void ResetState() => InGameplay = false;

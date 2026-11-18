@@ -13,14 +13,13 @@ Read [PILLARS.md](PILLARS.md) for the rules the kit is built to.
 ## Requirements
 
 - Unity 6.6 (6000.6) or newer, with URP, Cinemachine 3 and the Input System
-- **Odin Inspector**
 - **`com.metz.ripple`** 0.3.0: `https://github.com/123tris/Ripple.git#v0.3.0`
 
-UltEvents is no longer used anywhere in the stack.
+Nothing from the Asset Store: Odin Inspector and UltEvents are no longer used anywhere in the stack.
 
 ## Quickstart
 
-1. Install Odin, Ripple, then JamKit.
+1. Install Ripple, then JamKit.
 2. Run `JamKit > New Jam Project`. It copies the project template into `Assets/_Project`:
    - `Services/`: Time, Scene, Input and Screen Fade service assets
    - `Variables/`: volumes and high score (persistent), score, timer, and a `Players` runtime set
@@ -94,7 +93,8 @@ A pickup is a `TriggerZone` with `DestroySelf` and `OnEntered → Score.Add`. A 
 
 - **Main toolbar:** scene switcher, play-from-first-scene toggle, time scale slider, Doctor and Build buttons
 - **`JamKit > New Jam Project`:** scaffolds the project from the template, as above
-- **`JamKit > Doctor`:** project checks with fix buttons
+- **`JamKit > Doctor`:** project checks with fix buttons, including every `[Required]` reference left empty in open scenes, prefabs and assets
+- **Inspectors:** every JamKit component and asset groups its Signals under **Events**, and its `[Button]` actions and live `[ShowInInspector]` values under **Debug**. The attributes live in `Metz.JamKit.Inspector` and work on your own scripts too: `[Required]` turns an empty reference red.
 - **Auto-assign:** adding a JamKit component fills its service references, and its required `InputActionReference` fields by name, when there is exactly one candidate
 - **`GameObject > JamKit`:** places starters
 

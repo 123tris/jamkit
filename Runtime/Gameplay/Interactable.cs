@@ -1,5 +1,4 @@
 using Ripple;
-using Sirenix.OdinInspector;
 using UnityEngine;
 
 namespace Metz.JamKit
@@ -11,7 +10,7 @@ namespace Metz.JamKit
 
         public bool SingleUse;
 
-        [FoldoutGroup("Events")] public Signal<Interactor> OnInteracted = new();
+        public Signal<Interactor> OnInteracted = new();
 
         public bool Used { get; private set; }
 

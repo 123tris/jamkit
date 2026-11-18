@@ -1,6 +1,6 @@
 using System.Collections;
+using Metz.JamKit.Inspector;
 using Ripple;
-using Sirenix.OdinInspector;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
@@ -15,14 +15,14 @@ namespace Metz.JamKit
         public Signal OnLoadStarted = new();
         public Signal OnLoadCompleted = new();
 
-        [ShowInInspector, ReadOnly, FoldoutGroup("Debug")]
+        [ShowInInspector]
         public bool IsLoading { get; private set; }
 
         public override void ResetState() => IsLoading = false;
 
         public void Load(string sceneName) => LoadAsync(sceneName);
 
-        [Button, DisableInEditorMode, FoldoutGroup("Debug")]
+        [Button]
         public void Reload() => ReloadAsync();
 
         public Awaitable ReloadAsync() => LoadAsync(SceneManager.GetActiveScene().name);

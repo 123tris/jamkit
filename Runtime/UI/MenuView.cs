@@ -1,8 +1,7 @@
 using System;
 using System.Collections.Generic;
-using System.Linq;
+using Metz.JamKit.Inspector;
 using Ripple;
-using Sirenix.OdinInspector;
 using UnityEngine;
 using UnityEngine.UIElements;
 
@@ -17,29 +16,29 @@ namespace Metz.JamKit
         [Serializable]
         public sealed class ButtonBinding
         {
-            [ValueDropdown("@$root.ButtonNames()")]
+            [UxmlName(typeof(Button), nameof(MenuView.RootElementName))]
             public string ElementName;
 
             public Signal OnClicked = new();
         }
 
-        [ValueDropdown(nameof(ElementNames)), Tooltip("Name of this screen's root element in the menu UXML.")]
+        [UxmlName, Tooltip("Name of this screen's root element in the menu UXML.")]
         public string RootElementName;
 
         [Tooltip("Refuses to open while false. Point at a Ripple bool to gate on game state.")]
         public BoolReference CanOpen = new(true);
 
-        [BoxGroup("While on top")] public bool PausesTime;
-        [BoxGroup("While on top")] public bool SwitchesToUIInput = true;
+        [Header("While on top")] public bool PausesTime;
+        public bool SwitchesToUIInput = true;
 
-        [FoldoutGroup("Events")] public Signal OnShown = new();
-        [FoldoutGroup("Events")] public Signal OnHidden = new();
+        public Signal OnShown = new();
+        public Signal OnHidden = new();
 
         public List<ButtonBinding> Buttons = new();
 
         VisualElement root;
 
-        [ShowInInspector, ReadOnly, HideInEditorMode, FoldoutGroup("Debug")]
+        [ShowInInspector]
         public bool IsVisible => root != null && root.ClassListContains(ShownClass);
 
         internal void Bind(VisualElement documentRoot)
@@ -65,22 +64,5 @@ namespace Metz.JamKit
             VisualElement first = root?.Query().Where(element => element.focusable).First();
             first?.schedule.Execute(first.Focus);
         }
-
-#if UNITY_EDITOR
-        IEnumerable<string> ElementNames() => Named<VisualElement>(MenuTree());
-
-        IEnumerable<string> ButtonNames() => Named<Button>(MenuTree()?.Q(RootElementName));
-
-        VisualElement MenuTree()
-        {
-            var panel = GetComponentInParent<PanelRenderer>();
-            return panel == null || panel.visualTreeAsset == null ? null : panel.visualTreeAsset.CloneTree();
-        }
-
-        static IEnumerable<string> Named<T>(VisualElement scope) where T : VisualElement
-            => scope == null
-                ? Enumerable.Empty<string>()
-                : scope.Query<T>().ToList().Select(element => element.name).Where(elementName => !string.IsNullOrEmpty(elementName));
-#endif
     }
 }

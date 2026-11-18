@@ -1,5 +1,5 @@
+using Metz.JamKit.Inspector;
 using Ripple;
-using Sirenix.OdinInspector;
 using UnityEngine;
 
 namespace Metz.JamKit
@@ -11,10 +11,10 @@ namespace Metz.JamKit
         public FloatReference DrainPerSecond = new(1f);
         public bool AutoStart = true;
 
-        [ShowInInspector, ReadOnly, HideInEditorMode, FoldoutGroup("Debug")]
+        [ShowInInspector]
         public bool IsDraining { get; private set; }
 
-        [ShowInInspector, ReadOnly, HideInEditorMode, FoldoutGroup("Debug")]
+        [ShowInInspector]
         public float SecondsRemaining
             => DrainPerSecond.Value <= 0f ? float.PositiveInfinity : Health.Current / DrainPerSecond.Value;
 
@@ -22,10 +22,10 @@ namespace Metz.JamKit
 
         void Update() => Tick(Time.deltaTime);
 
-        [Button, DisableInEditorMode, FoldoutGroup("Debug"), HorizontalGroup("Debug/Row")]
+        [Button]
         public void Pause() => IsDraining = false;
 
-        [Button, DisableInEditorMode, HorizontalGroup("Debug/Row")]
+        [Button]
         public void Resume() => IsDraining = true;
 
         internal void Tick(float deltaTime)

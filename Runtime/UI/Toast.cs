@@ -1,5 +1,5 @@
 using System.Collections;
-using Sirenix.OdinInspector;
+using Metz.JamKit.Inspector;
 using UnityEngine;
 using UnityEngine.UIElements;
 
@@ -34,7 +34,7 @@ namespace Metz.JamKit
             label.style.opacity = 0f;
         }
 
-        [Button, DisableInEditorMode]
+        [Button]
         public void Show(string message)
         {
             if (label == null) return;

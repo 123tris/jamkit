@@ -1,11 +1,11 @@
-using Sirenix.OdinInspector;
+using Metz.JamKit.Inspector;
 using UnityEngine;
 
 namespace Metz.JamKit
 {
     public abstract class Sound : ScriptableObject
     {
-        [Button, DisableInEditorMode]
+        [Button]
         public abstract void Play();
 
         public abstract void PlayAt(Vector3 position);

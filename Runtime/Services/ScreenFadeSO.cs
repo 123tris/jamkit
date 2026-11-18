@@ -1,5 +1,5 @@
 using System.Collections;
-using Sirenix.OdinInspector;
+using Metz.JamKit.Inspector;
 using UnityEngine;
 using UnityEngine.UIElements;
 
@@ -19,13 +19,13 @@ namespace Metz.JamKit
 
         int latest;
 
-        [Button, DisableInEditorMode, FoldoutGroup("Debug")]
+        [Button]
         public void FadeOut() => FadeOutAsync();
 
-        [Button, DisableInEditorMode, FoldoutGroup("Debug")]
+        [Button]
         public void FadeIn() => FadeInAsync();
 
-        [Button, DisableInEditorMode, FoldoutGroup("Debug")]
+        [Button]
         public void Flash() => FlashAsync();
 
         public Awaitable FadeOutAsync() => JamKitHost.Run(Fade(1f));

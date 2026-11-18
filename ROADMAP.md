@@ -61,11 +61,10 @@ Items leave this list when they land; the CHANGELOG records each one with its re
 - **Release Ripple 0.3.0.** README, `ProjectTemplate.RippleProblem` and ci.yml point at `#v0.3.0`, a tag that does not exist yet, so the documented install fails. Merge `feature/0.3.0` into Ripple's `main` and tag it.
 - **One Unity floor.** package.json, README and ci.yml name the oldest editor the template has been played in. Newer editor APIs stay in version-gated assemblies, as the toolbar (6.3) and the Game Flow graph (6.4) already do.
 - **The score resets each run.** Nothing in the template reset `Score`, so Retry showed the previous run's total.
-- **CI runs.** It was blocked first by UltEvents, then by Odin. Once Odin is gone it needs only the `UNITY_LICENSE` secret.
+- **CI runs.** It was blocked first by UltEvents, then by Odin. With both gone it needs only the `UNITY_LICENSE` secret.
 
 ### Phase 2: a simpler core
 
-- **Drop Odin.** JamKit is the only reason a project needs it since Ripple 0.3.0, and it is paid per seat: a teammate without a license, or CI, cannot compile the kit. JamKit gets its own `[Required]`, `[Button]` and `[ShowInInspector]` attributes and one UI Toolkit inspector, and the Doctor replaces Odin Validator. Serialized data is unchanged.
 - **Settings are data.** The settings menu binds in UXML to Ripple persistent variables, and a `DisplaySettings` component applies them. `MenuSettingsBinder` goes, along with the PlayerPrefs keys it wrote beside Ripple's persistence. A new setting is a variable and a UXML row.
 - **The UI silences every gameplay map,** not only the map named `Gameplay`, so two-player maps pause too.
 - **Per-instance variables.** Components resolve the variables they write through Ripple's `variable.For(this)`, so `LocalVariables` gives each enemy its own HP variable for a bar above its head.

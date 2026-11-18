@@ -1,5 +1,5 @@
+using Metz.JamKit.Inspector;
 using Ripple;
-using Sirenix.OdinInspector;
 using UnityEngine;
 
 namespace Metz.JamKit
@@ -23,13 +23,15 @@ namespace Metz.JamKit
         [Tooltip("Mirrors the current time for HUD binding.")]
         public FloatVariableSO TimeVariable;
 
-        [FoldoutGroup("Events")] public Signal OnCompleted = new();
+        public Signal OnCompleted = new();
 
+        [ShowInInspector]
         public float CurrentTime { get; private set; }
 
+        [ShowInInspector]
         public bool IsRunning { get; private set; }
 
-        [ShowInInspector, ReadOnly, ProgressBar(0f, 1f), FoldoutGroup("Debug")]
+        [ShowInInspector]
         public float Progress01
         {
             get
@@ -47,7 +49,7 @@ namespace Metz.JamKit
 
         void Update() => Tick(Unscaled ? Time.unscaledDeltaTime : Time.deltaTime);
 
-        [Button, DisableInEditorMode, FoldoutGroup("Debug")]
+        [Button]
         public void StartTimer()
         {
             ResetTimer();
@@ -60,10 +62,10 @@ namespace Metz.JamKit
             StartTimer();
         }
 
-        [Button, DisableInEditorMode, FoldoutGroup("Debug")]
+        [Button]
         public void Pause() => IsRunning = false;
 
-        [Button, DisableInEditorMode, FoldoutGroup("Debug")]
+        [Button]
         public void Resume() => IsRunning = true;
 
         public void ResetTimer()

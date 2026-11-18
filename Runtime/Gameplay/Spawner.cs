@@ -1,6 +1,6 @@
 using System.Collections.Generic;
+using Metz.JamKit.Inspector;
 using Ripple;
-using Sirenix.OdinInspector;
 using UnityEngine;
 
 namespace Metz.JamKit
@@ -41,7 +41,7 @@ namespace Metz.JamKit
             if (MaxAlive.Value < 0 || CountAlive() < MaxAlive.Value) SpawnOne();
         }
 
-        [Button, DisableInEditorMode, FoldoutGroup("Debug")]
+        [Button]
         public GameObject SpawnOne()
         {
             var offset = new Vector3(Random.Range(-Jitter.x, Jitter.x), 0f, Random.Range(-Jitter.y, Jitter.y));

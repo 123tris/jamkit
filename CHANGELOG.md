@@ -6,6 +6,19 @@ All notable changes to JamKit are documented here. Format follows [Keep a Change
 
 ### Since 1.0.0-pre.1
 
+**Breaking: Odin Inspector is no longer used.** Since Ripple 0.3.0 dropped it, JamKit was the only reason a project needed Odin, and every JamKit assembly refused to compile without it. Odin is licensed per seat, so a teammate without a license could not open a JamKit project, and CI could not build it. JamKit now needs nothing from the Asset Store.
+
+- New attributes in `Metz.JamKit.Inspector`: `[Required]`, `[Button]`, `[ShowInInspector]`, `[ShowIf]`, `[HideIf]` and `[UxmlName]`. They live in their own namespace so that game code using Odin or NaughtyAttributes beside `using Metz.JamKit;` sees no ambiguous names.
+- `JamKitEditor` (UI Toolkit) draws every JamKit component and asset by convention instead of group attributes: fields in order, Signals under an Events foldout, `[Button]` methods and `[ShowInInspector]` members under a Debug foldout that updates in Play mode. A `[Button]` may take one string, float, int or bool, which the foldout gives a field. `BoxGroup` became `[Header]`; `FoldoutGroup`, `HorizontalGroup`, `ReadOnly`, `DisableInEditorMode`, `HideInEditorMode`, `ProgressBar` and `TableList` are gone.
+- `[Required]` draws an error under an empty reference in any inspector. The Doctor's new **missing required references** check replaces Odin Validator: it walks open scenes, prefabs and assets under `Assets/_Project`, follows lists and nested serializable types, and skips a field its `[ShowIf]`/`[HideIf]` hides. An empty field on a starter prefab is reported as information, since starters leave some slots for you, and as an error on a starter you placed.
+- `MenuView` picks its element and button names through `[UxmlName]`, and its editor-only name lookup moved into the drawer.
+- `FirstPersonLook`'s warning about `Mover3D.RotateToFaceMove` turning the same body is a Doctor check with a Fix, instead of an inspector box nobody sees until they select the object.
+- `GameTimer` shows its current time and whether it is running in the Debug foldout.
+- `ODIN_INSPECTOR` is gone from every assembly's define constraints. `Tools~/compile-check.sh` strips Odin from the references and defines, so ALL GREEN means the kit compiles without it.
+- New `InspectorTests`: every JamKit type has a `JamKitEditor`, builds its inspector, and has a Debug foldout exactly when it has buttons or live values.
+
+Serialized data is unchanged: attributes do not affect what Unity saves.
+
 **Fixed: Retry kept the previous run's score.** Ripple variables reset only when Play mode starts, and nothing in the project template reset `Score`, so a second run's Game Over screen showed the points of both runs. The template's Game scene now has a `Run` object whose `LifecycleSignals.OnEnabled` calls `Score.ResetValue`. It runs while the Game scene loads, after the fade out has covered the screen. Resetting from the `Play` event instead would have zeroed the score while the Game Over screen still showed it.
 
 ### 1.0.0-pre.1: overhaul

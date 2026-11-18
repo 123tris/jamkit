@@ -1,5 +1,5 @@
+using Metz.JamKit.Inspector;
 using Ripple;
-using Sirenix.OdinInspector;
 using UnityEngine;
 
 namespace Metz.JamKit
@@ -19,7 +19,7 @@ namespace Metz.JamKit
         [Tooltip("Outward speed given to spawned rigidbodies. 0 leaves them still.")]
         public FloatReference LaunchSpeed = new(0f);
 
-        [Button, DisableInEditorMode, FoldoutGroup("Debug")]
+        [Button]
         public void Burst() => Burst(1f);
 
         public void Burst(float countMultiplier)

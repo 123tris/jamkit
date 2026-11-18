@@ -1,13 +1,11 @@
+using Metz.JamKit.Inspector;
 using Ripple;
-using Sirenix.OdinInspector;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
 namespace Metz.JamKit
 {
     [DisallowMultipleComponent]
-    [InfoBox("Mover3D.RotateToFaceMove also rotates this body and will fight the look input. Untick it.",
-        InfoMessageType.Warning, nameof(MoverFightsYaw))]
     public sealed class FirstPersonLook : MonoBehaviour
     {
         [Required] public InputActionReference Look;
@@ -28,8 +26,6 @@ namespace Metz.JamKit
         [Range(0f, 89f)] public float PitchLimit = 85f;
 
         float pitch;
-
-        bool MoverFightsYaw => YawTransform == transform && TryGetComponent(out Mover3D mover) && mover.RotateToFaceMove;
 
         void Reset() => YawTransform = transform;
 

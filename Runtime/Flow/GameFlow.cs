@@ -1,7 +1,7 @@
 using System;
 using System.Collections.Generic;
+using Metz.JamKit.Inspector;
 using Ripple;
-using Sirenix.OdinInspector;
 using UnityEngine;
 
 namespace Metz.JamKit
@@ -21,6 +21,6 @@ namespace Metz.JamKit
             public SceneRef To;
         }
 
-        [TableList] public List<Transition> Transitions = new();
+        public List<Transition> Transitions = new();
     }
 }

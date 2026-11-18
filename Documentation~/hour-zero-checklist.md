@@ -2,10 +2,10 @@
 
 The first ten minutes of a jam, in order. Everything after step 4 is your game.
 
-1. **New Unity 6 project** (URP template) → install Odin, Ripple, then JamKit (see README → Install). Feel and FMOD are optional, and the scaffold is the same with or without them: Unity audio, no Feel wiring.
+1. **New Unity 6 project** (URP template) → install Ripple, then JamKit (see README → Install). Feel and FMOD are optional, and the scaffold is the same with or without them: Unity audio, no Feel wiring.
 2. **`JamKit > New Jam Project`.** Say yes to Fast Play Mode when offered. You now have Bootstrap / Game / GameOver scenes, all services, menus, pause, the starter prefabs, and `JamKitCore` / `JamKitMenu` in `Assets/_Project/Prefabs/` (edit a prefab once — every scene updates).
 3. **Press Play.** Start → Settings (sliders work) → Game (Esc pauses) → verify the loop end-to-end *before* you write any code. Thirty seconds now saves an hour at submission. Backquote (`) toggles the DebugPanel.
-4. **`JamKit > Doctor`.** Green? Go. Not green? Most issues have a Fix button. (Red `[Required]` fields anywhere? Odin Validator lists them all.)
+4. **`JamKit > Doctor`.** Green? Go. Not green? Most issues have a Fix button. (Red `[Required]` fields anywhere? The Doctor lists them all.)
 5. **Blocking out:** `GameObject > JamKit > …` places starter instances (player archetypes, chaser enemies, pickup, spawner, kill zones, cameras). **Customize as prefab VARIANTS of the starters** — scenes stay lists of prefabs.
 6. **Goals/score:** the Pickup starter's `TriggerZone.OnEntered` adds to the `Score` variable; wire `Score.Add` from any other signal the same way. `HighScoreTracker` on JamKitCore keeps the record (persistent). HUDs bind a `ValueLabel` or `ValueBar` to a variable's `CurrentValue` in UXML — no code; the Game Over score is one.
 7. **Feel check (hour 2, not hour 20):** add an `MMF_Player` to a starter, connect its `Health.OnDamaged` signal to `PlayFeedbacks()`, then author feedbacks (scale punch, flicker, impulse shake). Freeze-frames: `HitStop` (already wired on players), never Feel's time feedbacks. See `feel-integration.md`.

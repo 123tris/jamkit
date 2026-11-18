@@ -1,5 +1,4 @@
 using Ripple;
-using Sirenix.OdinInspector;
 using UnityEngine;
 
 namespace Metz.JamKit
@@ -17,8 +16,8 @@ namespace Metz.JamKit
         public bool DestroyEnterer;
         public bool DestroySelf;
 
-        [FoldoutGroup("Events")] public Signal<GameObject> OnEntered = new();
-        [FoldoutGroup("Events")] public Signal<GameObject> OnExited = new();
+        public Signal<GameObject> OnEntered = new();
+        public Signal<GameObject> OnExited = new();
 
         bool fired;
 

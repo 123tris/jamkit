@@ -1,5 +1,5 @@
+using Metz.JamKit.Inspector;
 using Ripple;
-using Sirenix.OdinInspector;
 using UnityEngine;
 
 namespace Metz.JamKit
@@ -11,7 +11,7 @@ namespace Metz.JamKit
         [Required, Tooltip("Tick Persist on this variable so the record survives restarts.")]
         public FloatVariableSO HighScore;
 
-        [FoldoutGroup("Events"), Tooltip("Raised the first time the record breaks each run.")]
+        [Tooltip("Raised the first time the record breaks each run.")]
         public Signal OnNewHighScore = new();
 
         bool announced;
@@ -24,7 +24,7 @@ namespace Metz.JamKit
 
         void OnDisable() => Score.RemoveListener(OnScoreChanged);
 
-        [Button, DisableInEditorMode, FoldoutGroup("Debug")]
+        [Button]
         public void ResetScore()
         {
             Score.CurrentValue = 0f;
