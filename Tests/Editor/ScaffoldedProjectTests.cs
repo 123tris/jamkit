@@ -74,6 +74,16 @@ namespace Metz.JamKit.Tests.Editor
             Assert.AreEqual(AssetDatabase.LoadMainAssetAtPath($"{ProjectTemplate.Root}/Variables/Score.asset"), score.dataSource);
         }
 
+        [Test]
+        public void ThePickerListsEveryStarterInTheTemplate()
+        {
+            string[] template = Directory.GetFiles(Path.Combine(ProjectTemplate.Source, "Prefabs", "Starters"), "*.prefab")
+                .Select(Path.GetFileNameWithoutExtension)
+                .ToArray();
+
+            CollectionAssert.AreEquivalent(template, StarterPicker.Starters().Select(starter => starter.name));
+        }
+
         static VisualElement Clone(string document)
             => AssetDatabase.LoadAssetAtPath<VisualTreeAsset>($"{ProjectTemplate.Root}/UI/{document}.uxml").CloneTree();
     }

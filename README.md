@@ -97,7 +97,7 @@ A pickup is a `TriggerZone` with `DestroySelf` and `OnEntered → Score.Add`. A 
 - **`JamKit > Doctor`:** runs by itself after a reload, on scene save, before Play and before a build, and logs what it finds. Project checks with fix buttons: every `[Required]` reference left empty in open scenes, prefabs and assets; build scenes without `JamKitCore`; Game Flow scenes missing from the build; sounds that skip the mixer; camera shake nobody listens to; a first-person rig whose mover fights its yaw
 - **Inspectors:** every JamKit component and asset groups its Signals under **Events**, and its `[Button]` actions and live `[ShowInInspector]` values under **Debug**. The attributes live in `Metz.JamKit.Inspector` and work on your own scripts too: `[Required]` turns an empty reference red.
 - **Auto-assign:** adding a JamKit component fills its service references, and its required `InputActionReference` fields by name, when there is exactly one candidate
-- **`GameObject > JamKit`:** places starters
+- **Starter picker:** `GameObject > JamKit > Starter…` or the toolbar's Starters button opens a searchable list of every prefab in `Assets/_Project/Prefabs/Starters`, your own variants included. Enter places the first match at the Scene view's pivot, or under the object you right-clicked.
 
 ## Known gaps
 

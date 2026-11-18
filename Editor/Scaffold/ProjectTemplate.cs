@@ -47,8 +47,6 @@ namespace Metz.JamKit.Editor
         // Why scaffolding this project would go wrong, or null.
         internal static string ScaffoldProblem => RippleProblem ?? ConflictProblem(Conflicts(Source, Root));
 
-        public static string StarterPath(string starter) => $"{StartersFolder}/{starter}.prefab";
-
         public static int Scaffold()
         {
             if (ScaffoldProblem is string problem) throw new InvalidOperationException(problem);

@@ -9,6 +9,7 @@ namespace Metz.JamKit.Editor
     static class JamKitToolbar
     {
         const string ScenesPath = "JamKit/Scenes";
+        const string StartersPath = "JamKit/Starters";
         const string PlayFromStartPath = "JamKit/Play From Start";
         const string TimeScalePath = "JamKit/Time Scale";
         const string DoctorPath = "JamKit/Doctor";
@@ -27,6 +28,11 @@ namespace Metz.JamKit.Editor
         [MainToolbarElement(TimeScalePath, defaultDockPosition = MainToolbarDockPosition.Middle)]
         static MainToolbarElement TimeScale()
             => new MainToolbarSlider(new MainToolbarContent("Time", "Time scale while playing"), 1f, 0f, 2f, SetTimeScale);
+
+        [MainToolbarElement(StartersPath, defaultDockPosition = MainToolbarDockPosition.Middle)]
+        static MainToolbarElement Starters()
+            => new MainToolbarButton(new MainToolbarContent("Starters", "Place a starter from Assets/_Project/Prefabs/Starters"),
+                () => StarterPicker.Open());
 
         [InitializeOnLoadMethod]
         static void RefreshDoctorAfterEachScan() => JamKitDoctor.Scanned += () => MainToolbar.Refresh(DoctorPath);

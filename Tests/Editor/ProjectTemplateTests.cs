@@ -179,16 +179,6 @@ namespace Metz.JamKit.Tests.Editor
         }
 
         [Test]
-        public void EveryStarterInTheCreateMenuIsInTheTemplate()
-        {
-            foreach (Starter starter in Enum.GetValues(typeof(Starter)))
-            {
-                string relative = ProjectTemplate.StarterPath(starter.ToString()).Substring(ProjectTemplate.Root.Length + 1);
-                Assert.IsTrue(File.Exists(Path.Combine(ProjectTemplate.Source, relative)), starter.ToString());
-            }
-        }
-
-        [Test]
         public void PutsTheScenesItAddsAtTheFrontOfTheBuild()
         {
             CollectionAssert.AreEqual(new[] { "Bootstrap", "Game", "GameOver", "Sample" },
