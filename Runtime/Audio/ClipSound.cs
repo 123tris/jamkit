@@ -13,8 +13,8 @@ namespace Metz.JamKit
         public AudioMixerGroup Output;
         [Range(0f, 1f)] public float Volume = 1f;
 
-        public override void Play() => JamKitHost.Get<AudioPlayer>().Play(this, null);
+        public override void Play() => JamKitHost.Get<AudioPlayer>().Play(Resource, Output, Volume, null);
 
-        public override void PlayAt(Vector3 position) => JamKitHost.Get<AudioPlayer>().Play(this, position);
+        public override void PlayAt(Vector3 position) => JamKitHost.Get<AudioPlayer>().Play(Resource, Output, Volume, position);
     }
 }

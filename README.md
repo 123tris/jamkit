@@ -22,6 +22,7 @@ Nothing from the Asset Store: Odin Inspector and UltEvents are no longer used an
 1. Install Ripple, then JamKit.
 2. Run `JamKit > New Jam Project`. It copies the project template into `Assets/_Project`:
    - `Services/`: Time, Scene, Input and Screen Fade service assets
+   - `Audio/`: the mixer, and seven placeholder synth sounds the starters already play
    - `Variables/`: volumes and high score (persistent), score, timer, and a `Players` runtime set
    - `Events/` and `GameFlow.asset`: the Play, MainMenu, Restart and GameOver events and which scene each one leads to
    - `Prefabs/`: `JamKitCore`, `JamKitMenu` and the starters
@@ -68,6 +69,7 @@ Components read input through `InputActionReference` fields, so a custom action 
 
 A sound is an asset with `Play()` and `PlayAt(position)`. Components and Signals reference the abstract `Sound` and `Music` types, so the backend is chosen by which asset you create.
 
+- **Placeholders:** `SynthSound` synthesizes a sound from a preset (Pickup, Hit, Jump, Explosion, Powerup, Blip, Laser) and a seed, with no audio file. Randomize and Mutate pick another one while playing. The starters' hits, deaths and pickups play the template's synth sounds; swap an asset for a `ClipSound` when the real sound exists.
 - **Unity:** `ClipSound` plays an `AudioResource` (a clip, or an Audio Random Container for variation). `ClipMusic` crossfades and keeps playing across scene loads. `MixerVolume` binds a Ripple volume variable to a mixer parameter.
 - **FMOD:** `FmodSound`, `FmodMusic` and `FmodBusVolume`, compiled when FMOD for Unity is installed. This backend has not been compiled or run yet.
 

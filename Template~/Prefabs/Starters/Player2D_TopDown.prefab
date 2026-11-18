@@ -276,6 +276,18 @@ MonoBehaviour:
                 m_StringArgument: 
                 m_BoolArgument: 0
               m_CallState: 2
+            - m_Target: {fileID: 11400000, guid: daf059dfce98305cb8cc96ea668f3b92, type: 2}
+              m_TargetAssemblyTypeName: Metz.JamKit.SynthSound, Metz.JamKit.Runtime
+              m_MethodName: Play
+              m_Mode: 1
+              m_Arguments:
+                m_ObjectArgument: {fileID: 0}
+                m_ObjectArgumentAssemblyTypeName:
+                m_IntArgument: 0
+                m_FloatArgument: 0
+                m_StringArgument:
+                m_BoolArgument: 0
+              m_CallState: 2
     - rid: 6320427472478011539
       type: {class: 'UnityEventResponse`1[[System.Single, mscorlib]]', ns: Ripple, asm: Metz.Ripple.Runtime}
       data:

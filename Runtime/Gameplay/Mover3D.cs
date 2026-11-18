@@ -22,6 +22,8 @@ namespace Metz.JamKit
         public LayerMask GroundLayers = ~0;
         public float GroundCheckDistance = 0.2f;
 
+        public Signal OnJumped = new();
+
         Rigidbody body;
         Collider bodyCollider;
         bool wantsJump;
@@ -54,8 +56,9 @@ namespace Metz.JamKit
 
             Vector3 velocity = direction * MoveSpeed.Value;
             velocity.y = wantsJump ? JumpSpeed.Value : body.linearVelocity.y;
-            wantsJump = false;
             body.linearVelocity = velocity;
+            if (wantsJump) OnJumped.Invoke();
+            wantsJump = false;
 
             if (RotateToFaceMove && direction.sqrMagnitude > 0.001f)
                 body.MoveRotation(Quaternion.Slerp(body.rotation, Quaternion.LookRotation(direction, Vector3.up), 0.2f));

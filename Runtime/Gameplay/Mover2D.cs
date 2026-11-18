@@ -24,6 +24,8 @@ namespace Metz.JamKit
         [HideIf(nameof(TopDown))] public LayerMask GroundLayers = ~0;
         [HideIf(nameof(TopDown))] public float GroundCheckDistance = 0.1f;
 
+        public Signal OnJumped = new();
+
         Rigidbody2D body;
         Collider2D bodyCollider;
         bool wantsJump;
@@ -58,8 +60,9 @@ namespace Metz.JamKit
             Vector2 velocity = body.linearVelocity;
             velocity.x = input.x * MoveSpeed.Value;
             if (wantsJump) velocity.y = JumpSpeed.Value;
-            wantsJump = false;
             body.linearVelocity = velocity;
+            if (wantsJump) OnJumped.Invoke();
+            wantsJump = false;
         }
 
         bool IsGrounded()

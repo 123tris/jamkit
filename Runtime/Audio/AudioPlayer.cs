@@ -1,6 +1,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.Audio;
 
 namespace Metz.JamKit
 {
@@ -12,12 +13,12 @@ namespace Metz.JamKit
         AudioSource music;
         Coroutine musicFade;
 
-        public void Play(ClipSound sound, Vector3? position)
+        public void Play(AudioResource resource, AudioMixerGroup output, float volume, Vector3? position)
         {
             AudioSource voice = FreeVoice();
-            voice.resource = sound.Resource;
-            voice.outputAudioMixerGroup = sound.Output;
-            voice.volume = sound.Volume;
+            voice.resource = resource;
+            voice.outputAudioMixerGroup = output;
+            voice.volume = volume;
             voice.spatialBlend = position.HasValue ? 1f : 0f;
             voice.transform.position = position ?? Vector3.zero;
             voice.Play();
