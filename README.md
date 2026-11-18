@@ -21,7 +21,7 @@ Nothing from the Asset Store: Odin Inspector and UltEvents are no longer used an
 
 1. Install Ripple, then JamKit.
 2. Run `JamKit > New Jam Project`. It copies the project template into `Assets/_Project`:
-   - `Services/`: Time, Scene, Input and Screen Fade service assets
+   - `Services/`: Time, Scene, Input, Screen Fade, Damage Flash and Popups service assets
    - `Audio/`: the mixer, and seven placeholder synth sounds the starters already play
    - `Variables/`: volumes and high score (persistent), score, timer, and a `Players` runtime set
    - `Events/` and `GameFlow.asset`: the Play, MainMenu, Restart and GameOver events and which scene each one leads to
@@ -59,6 +59,7 @@ Services are ScriptableObject assets. They host themselves: nothing has to be in
 | `TimeServiceSO` | The one owner of `Time.timeScale`. `Push(scale)` returns a modifier you `Release()`; the lowest active modifier wins, so pause always beats slow-mo and hit-stop. `Pause`, `Resume`, `FreezeForSeconds`, `PushSmooth`. |
 | `SceneServiceSO` | `Load(name)` and `Reload()`, fading out and back in through an optional `ScreenFadeSO`. `OnLoadStarted` and `OnLoadCompleted` signals. `LoadAsync` returns an `Awaitable`. |
 | `ScreenFadeSO` | `FadeOut`, `FadeIn`, `Flash`, callable from any Signal. Each asset draws on its own overlay, and `FlashAlpha` sets how opaque a flash gets, so a second asset is a hit flash: the template's `DamageFlash` plays on the players' `OnDamaged`. |
+| `PopupServiceSO` | Draws popup text, such as damage numbers, on its own overlay: each popup rises from a point in the world and fades. `PopupText` components call it. |
 | `InputServiceSO` | Owns the input mode. `SwitchToUI` turns on the UI map and silences every other map, so two-player maps pause too; `SwitchToGameplay` turns them back on. It also locks or releases the cursor. |
 
 Components read input through `InputActionReference` fields, so a custom action needs no kit change.
@@ -79,6 +80,7 @@ Wire `Health.OnDamaged → HitSound.Play()` directly; there is no audio service 
 
 - `Tween.Run(seconds, step, ease)` and the `MoveTo`, `ScaleTo` and `FadeTo` extensions
 - `PunchScale`, `ColorFlash` and `CameraShake` components, each with a `Play` method to wire from a Signal
+- `PopupText` shows a number or a word above its object, through the Popups service: `Health.OnDamaged → PopupText.Show` is a damage number. The chaser starters have one.
 - `HitStop` for freeze-frames through the time service
 
 ## Components

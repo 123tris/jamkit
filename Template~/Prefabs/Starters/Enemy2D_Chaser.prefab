@@ -17,6 +17,7 @@ GameObject:
   - component: {fileID: 5604900497578593386}
   - component: {fileID: 6512680731613264134}
   - component: {fileID: 3372374003793836966}
+  - component: {fileID: 2821531821047023999}
   m_Layer: 0
   m_Name: Enemy2D_Chaser
   m_TagString: Untagged
@@ -269,6 +270,18 @@ MonoBehaviour:
                 m_StringArgument: 
                 m_BoolArgument: 0
               m_CallState: 2
+            - m_Target: {fileID: 2821531821047023999}
+              m_TargetAssemblyTypeName: Metz.JamKit.PopupText, Metz.JamKit.Runtime
+              m_MethodName: Show
+              m_Mode: 0
+              m_Arguments:
+                m_ObjectArgument: {fileID: 0}
+                m_ObjectArgumentAssemblyTypeName:
+                m_IntArgument: 0
+                m_FloatArgument: 0
+                m_StringArgument:
+                m_BoolArgument: 0
+              m_CallState: 2
     - rid: 6320427472478011545
       type: {class: 'UnityEventResponse`1[[System.Single, mscorlib]]', ns: Ripple, asm: Metz.Ripple.Runtime}
       data:
@@ -347,3 +360,19 @@ MonoBehaviour:
   Punch: {x: 0.3, y: 0.3, z: 0.3}
   Seconds: 0.3
   Unscaled: 0
+--- !u!114 &2821531821047023999
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1320732837150254380}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5867cfd0adb346a48f717b045c4feca0, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Metz.JamKit.Runtime::Metz.JamKit.PopupText
+  Popups: {fileID: 11400000, guid: 7bfb76403a8690dd9ae475bd83ef2cda, type: 2}
+  Format: '{0:0}'
+  Color: {r: 1, g: 0.9, b: 0.3, a: 1}
+  Offset: {x: 0, y: 0.3, z: 0}

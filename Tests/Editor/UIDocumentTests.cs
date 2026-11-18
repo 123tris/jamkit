@@ -95,6 +95,7 @@ namespace Metz.JamKit.Tests.Editor
         {
             Assert.IsNotNull(Clone($"{Overlays}/JamKitToast.uxml").Q<Label>("toast-message"));
             Assert.IsNotNull(Clone($"{Overlays}/JamKitFade.uxml").Q("fade"));
+            Assert.IsNotNull(Clone($"{Overlays}/JamKitPopups.uxml").Q("popups"));
 
             VisualElement debug = Clone($"{Overlays}/JamKitDebug.uxml");
             foreach (string element in new[] { "debug-panel", "debug-fps", "debug-time-scale", "debug-reload", "debug-scenes", "debug-quit" })
@@ -104,6 +105,7 @@ namespace Metz.JamKit.Tests.Editor
         [TestCase("JamKitToast", 60)]
         [TestCase("JamKitDebug", 30000)]
         [TestCase("JamKitFade", 32767)]
+        [TestCase("JamKitPopups", 50)]
         public void OverlayPanelsUseTheJamKitTheme(string overlay, int order)
         {
             var panel = AssetDatabase.LoadAssetAtPath<PanelSettings>($"{Overlays}/{overlay}PanelSettings.asset");
@@ -128,6 +130,16 @@ namespace Metz.JamKit.Tests.Editor
             Assert.AreEqual(AssetDatabase.LoadAssetAtPath<VisualTreeAsset>($"{Overlays}/JamKitFade.uxml"), fade.Document);
             Assert.AreEqual(AssetDatabase.LoadAssetAtPath<PanelSettings>($"{Overlays}/JamKitFadePanelSettings.asset"), fade.Panel);
             Object.DestroyImmediate(fade);
+        }
+
+        [Test]
+        public void NewPopupServiceUsesThePopupOverlay()
+        {
+            var popups = ScriptableObject.CreateInstance<PopupServiceSO>();
+
+            Assert.AreEqual(AssetDatabase.LoadAssetAtPath<VisualTreeAsset>($"{Overlays}/JamKitPopups.uxml"), popups.Document);
+            Assert.AreEqual(AssetDatabase.LoadAssetAtPath<PanelSettings>($"{Overlays}/JamKitPopupsPanelSettings.asset"), popups.Panel);
+            Object.DestroyImmediate(popups);
         }
 
         [Test]

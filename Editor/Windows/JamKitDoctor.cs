@@ -24,7 +24,7 @@ namespace Metz.JamKit.Editor
 
         static readonly Type[] ServiceTypes =
         {
-            typeof(TimeServiceSO), typeof(SceneServiceSO), typeof(InputServiceSO), typeof(ScreenFadeSO),
+            typeof(TimeServiceSO), typeof(SceneServiceSO), typeof(InputServiceSO), typeof(ScreenFadeSO), typeof(PopupServiceSO),
         };
 
         static ThemeStyleSheet Theme => AssetDatabase.LoadAssetAtPath<ThemeStyleSheet>($"{RuntimeUI}/JamKitDefaultTheme.tss");
@@ -55,6 +55,7 @@ namespace Metz.JamKit.Editor
             var issues = new List<Issue>();
             ScanRipple(issues);
             ScanServices(issues);
+            ScanPopups(issues);
             ScanInput(issues);
             ScanPanelSettings(issues);
             ScanBuildScenes(issues);
@@ -102,6 +103,20 @@ namespace Metz.JamKit.Editor
                             EditorUtility.SetDirty(fade);
                             AssetDatabase.SaveAssets();
                         }, fade);
+        }
+
+        static void ScanPopups(List<Issue> issues)
+        {
+            foreach (PopupServiceSO popups in FindAssets<PopupServiceSO>())
+                if (popups.Document == null || popups.Panel == null)
+                    Add(issues, MessageType.Error, $"Popups '{popups.name}' has no overlay document or panel, so popups never show.",
+                        "Use JamKit's", () =>
+                        {
+                            if (popups.Document == null) popups.Document = Overlay("JamKitPopups");
+                            if (popups.Panel == null) popups.Panel = OverlayPanel("JamKitPopups");
+                            EditorUtility.SetDirty(popups);
+                            AssetDatabase.SaveAssets();
+                        }, popups);
         }
 
         static void ScanInput(List<Issue> issues)

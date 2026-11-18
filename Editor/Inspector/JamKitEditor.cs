@@ -243,4 +243,6 @@ namespace Metz.JamKit.Editor
     [CustomEditor(typeof(MenuController)), CanEditMultipleObjects] sealed class MenuControllerEditor : JamKitEditor { }
     [CustomEditor(typeof(MenuView)), CanEditMultipleObjects] sealed class MenuViewEditor : JamKitEditor { }
     [CustomEditor(typeof(Toast)), CanEditMultipleObjects] sealed class ToastEditor : JamKitEditor { }
+    [CustomEditor(typeof(DisplaySettings)), CanEditMultipleObjects] sealed class DisplaySettingsEditor : JamKitEditor { }
+    [CustomEditor(typeof(PopupText)), CanEditMultipleObjects] sealed class PopupTextEditor : JamKitEditor { }
 }

@@ -3,6 +3,7 @@
     --jk-overlay-panel: rgba(0, 0, 0, 0.8);
     --jk-toast-size: 44px;
     --jk-toast-top: 28%;
+    --jk-popup-size: 32px;
 }
 
 .jk-overlay {
@@ -58,4 +59,14 @@
 
 .jk-fade {
     background-color: rgb(0, 0, 0);
+}
+
+.jk-popup {
+    position: absolute;
+    translate: -50% -100%;
+    font-size: var(--jk-popup-size);
+    -unity-font-style: bold;
+    -unity-text-outline-width: 1px;
+    -unity-text-outline-color: rgba(0, 0, 0, 0.8);
+    color: var(--jk-overlay-text);
 }

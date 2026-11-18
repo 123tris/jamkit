@@ -62,10 +62,6 @@ Items leave this list when they land; the CHANGELOG records each one with its re
 - **Confirm the 6.5 floor** by playing the template once in a fresh 6000.5 project; it is what the kit is compiled and authored in.
 - **CI runs** once Ripple is tagged and the repository has a `UNITY_LICENSE` secret; then delete its `if: ${{ false }}` line.
 
-### Phase 4: zero-asset juice
-
-- **`PopupText`**: damage numbers and pickup text that rise and fade on a UI Toolkit overlay.
-
 ### Samples
 
 Hour Zero, Platformer, Survivor and Arcade are re-authored on the project template's fixed GUIDs, which makes sample setup "scaffold and open the scene". The Feel showcase becomes the two bridge scripts and a README, since Feel is a paid asset.
