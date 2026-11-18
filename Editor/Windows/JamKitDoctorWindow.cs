@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Linq;
 using UnityEditor;
 using UnityEditor.UIElements;
 using UnityEngine;
@@ -24,7 +25,7 @@ namespace Metz.JamKit.Editor
         {
             var window = GetWindow<JamKitDoctorWindow>("JamKit Doctor");
             window.minSize = new Vector2(420f, 240f);
-            window.Scan();
+            Scan();
         }
 
         void CreateGUI()
@@ -41,9 +42,15 @@ namespace Metz.JamKit.Editor
             Scan();
         }
 
-        void Scan()
+        void OnEnable() => JamKitDoctor.Scanned += OnScanned;
+
+        void OnDisable() => JamKitDoctor.Scanned -= OnScanned;
+
+        static void Scan() => JamKitDoctor.Scan();
+
+        void OnScanned()
         {
-            _issues = JamKitDoctor.Scan();
+            _issues = JamKitDoctor.LastIssues.ToList();
             ShowIssues();
         }
 

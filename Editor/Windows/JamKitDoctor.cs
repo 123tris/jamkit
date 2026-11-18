@@ -34,7 +34,19 @@ namespace Metz.JamKit.Editor
         static PanelSettings OverlayPanel(string name)
             => AssetDatabase.LoadAssetAtPath<PanelSettings>($"{RuntimeUI}/Overlays/{name}PanelSettings.asset");
 
-        public static List<Issue> Scan() => Scan(openScenes: true);
+        public static event Action Scanned;
+
+        public static IReadOnlyList<Issue> LastIssues { get; private set; } = new List<Issue>();
+
+        public static int ProblemCount => LastIssues.Count(issue => issue.Severity != MessageType.Info);
+
+        public static List<Issue> Scan()
+        {
+            List<Issue> issues = Scan(openScenes: true);
+            LastIssues = issues;
+            Scanned?.Invoke();
+            return issues;
+        }
 
         internal static List<Issue> ScanProject() => Scan(openScenes: false);
 

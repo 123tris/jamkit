@@ -28,9 +28,18 @@ namespace Metz.JamKit.Editor
         static MainToolbarElement TimeScale()
             => new MainToolbarSlider(new MainToolbarContent("Time", "Time scale while playing"), 1f, 0f, 2f, SetTimeScale);
 
+        [InitializeOnLoadMethod]
+        static void RefreshDoctorAfterEachScan() => JamKitDoctor.Scanned += () => MainToolbar.Refresh(DoctorPath);
+
         [MainToolbarElement(DoctorPath, defaultDockPosition = MainToolbarDockPosition.Right)]
         static MainToolbarElement Doctor()
-            => new MainToolbarButton(new MainToolbarContent("Doctor", "Check the JamKit project setup"), JamKitDoctorWindow.Open);
+        {
+            int problems = JamKitDoctor.ProblemCount;
+            return new MainToolbarButton(
+                new MainToolbarContent(problems > 0 ? $"Doctor · {problems}" : "Doctor",
+                    problems > 0 ? $"The Doctor found {problems} problem(s) in the JamKit setup. Click for fixes." : "Check the JamKit project setup"),
+                JamKitDoctorWindow.Open);
+        }
 
         [MainToolbarElement(BuildPath, defaultDockPosition = MainToolbarDockPosition.Right)]
         static MainToolbarElement Build()

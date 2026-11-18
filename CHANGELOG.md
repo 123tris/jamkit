@@ -8,6 +8,8 @@ All notable changes to JamKit are documented here. Format follows [Keep a Change
 
 **Minimum Unity is 6.5 (6000.5).** 1.0.0-pre.1 named 6.6 before anything had run in Unity, and nothing in the kit needs it: JamKit is compiled and its project template authored and played in 6000.5.7f1. The toolbar (6.3) and the Game Flow graph (6.4) stay in their version-gated assemblies.
 
+**Added: the Doctor runs itself.** It scans after a domain reload, when a scene is saved, before Play and before a build, and logs one warning listing the problems it found: after a reload or save only when the list changed, and once Play has started so Clear on Play doesn't wipe it. The toolbar's Doctor button shows the count, and an open Doctor window refreshes with each scan. It never opens a dialog, and does nothing in batch mode.
+
 **Breaking: the settings screen is data.** `MenuSettingsBinder` found the settings controls by name in C# and wrote graphics settings straight to PlayerPrefs (`JamKit.Gfx.*`), beside the Ripple persistent variables PILLARS names as the only owner of saved data. Now every control in `JamKitSettingsMenu.uxml` binds two-way to a persistent Ripple variable: the three volumes as before, plus the new `QualityLevel`, `ResolutionIndex`, `Fullscreen` and `VSync` in `Variables/`.
 
 - New `DisplaySettings` on `JamKitCore` applies quality, resolution, full screen and VSync once per session and again on every change. A level or resolution below 0 takes the current one on first launch. WebGL skips resolution and VSync.
