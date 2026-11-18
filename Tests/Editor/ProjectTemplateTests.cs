@@ -179,6 +179,20 @@ namespace Metz.JamKit.Tests.Editor
         }
 
         [Test]
+        public void ANewLevelJoinsTheBuildBeforeGameOver()
+        {
+            string first = ProjectTemplate.Root + "/Scenes/Level1.unity";
+            string second = ProjectTemplate.Root + "/Scenes/Level2.unity";
+            string[] build = { ProjectTemplate.BootstrapScene, ProjectTemplate.GameScene, ProjectTemplate.GameOverScene };
+
+            CollectionAssert.AreEqual(
+                new[] { ProjectTemplate.BootstrapScene, ProjectTemplate.GameScene, first, second, ProjectTemplate.GameOverScene },
+                ProjectTemplate.WithLevel(ProjectTemplate.WithLevel(build, first), second));
+            CollectionAssert.AreEqual(new[] { "Assets/Other.unity", first }, ProjectTemplate.WithLevel(new[] { "Assets/Other.unity" }, first));
+            CollectionAssert.AreEqual(build, ProjectTemplate.WithLevel(build, ProjectTemplate.GameScene));
+        }
+
+        [Test]
         public void PutsTheScenesItAddsAtTheFrontOfTheBuild()
         {
             CollectionAssert.AreEqual(new[] { "Bootstrap", "Game", "GameOver", "Sample" },

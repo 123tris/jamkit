@@ -64,7 +64,6 @@ Items leave this list when they land; the CHANGELOG records each one with its re
 
 ### Phase 3: iteration and shipping
 
-- **New levels come wired:** a JamKit Level scene template, and `JamKit > New Level`, which also adds the scene to the build.
 - **Keep changes made in Play mode** on the components you mark.
 - **One-click itch.io:** the WebGL build as a Build Profile, zipped with `index.html` at the root and pushed with butler when it is installed.
 - **Clear saved data** for every persistent variable at once.

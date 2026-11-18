@@ -59,6 +59,8 @@ namespace Metz.JamKit.Editor
                 string path = scene.path;
                 menu.AddItem(new GUIContent(Path.GetFileNameWithoutExtension(path)), false, () => Open(path));
             }
+            menu.AddSeparator("");
+            menu.AddItem(new GUIContent("New Level…"), false, NewLevel.Create);
             menu.DropDown(rect);
         }
 

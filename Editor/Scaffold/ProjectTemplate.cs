@@ -14,6 +14,7 @@ namespace Metz.JamKit.Editor
         public const string BootstrapScene = Root + "/Scenes/Bootstrap.unity";
         public const string GameScene = Root + "/Scenes/Game.unity";
         public const string GameOverScene = Root + "/Scenes/GameOver.unity";
+        public const string LevelTemplate = Root + "/Scenes/Templates/Level.unity";
         public const string CorePrefab = Root + "/Prefabs/JamKitCore.prefab";
         public const string StartersFolder = Root + "/Prefabs/Starters";
         public const string ScriptsFolder = Root + "/Scripts";
@@ -131,6 +132,24 @@ namespace Metz.JamKit.Editor
         {
             File.Copy(from, to, true);
             File.SetAttributes(to, FileAttributes.Normal);
+        }
+
+        public static void AddLevelToBuild(string path)
+        {
+            EditorBuildSettingsScene[] build = EditorBuildSettings.scenes;
+            EditorBuildSettings.scenes = WithLevel(build.Select(scene => scene.path), path)
+                .Select(scenePath => build.FirstOrDefault(scene => scene.path == scenePath) ?? new EditorBuildSettingsScene(scenePath, true))
+                .ToArray();
+        }
+
+        // A new level goes in before GameOver, so the levels made before it come first.
+        internal static List<string> WithLevel(IEnumerable<string> build, string level)
+        {
+            var order = build.ToList();
+            if (order.Contains(level)) return order;
+            int gameOver = order.IndexOf(GameOverScene);
+            order.Insert(gameOver < 0 ? order.Count : gameOver, level);
+            return order;
         }
 
         internal static void RegisterScenes()
