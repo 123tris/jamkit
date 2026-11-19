@@ -16,7 +16,7 @@ namespace Metz.JamKit.Tests
             _score = ScriptableObject.CreateInstance<FloatVariableSO>();
             _high = ScriptableObject.CreateInstance<FloatVariableSO>();
             _go = new GameObject("tracker");
-            _go.SetActive(false); // avoid OnEnable subscription; tests drive OnScoreChanged directly
+            _go.SetActive(false);
             _tracker = _go.AddComponent<HighScoreTracker>();
             _tracker.Score = _score;
             _tracker.HighScore = _high;

@@ -1,0 +1,18 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 946feb093ebc489aa40d721834498977, type: 3}
+  m_Name: Laser
+  m_EditorClassIdentifier: Metz.JamKit.Runtime::Metz.JamKit.SynthSound
+  Preset: 6
+  Seed: 1
+  Output: {fileID: 4600114255162546758, guid: 4cb4d3d60d0ee4a469b275d23c8d780b, type: 2}
+  Volume: 0.6

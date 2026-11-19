@@ -1,48 +1,43 @@
-using System;
 using System.Collections.Generic;
-using Metz.JamKit.Utils;
 using Ripple;
-using Sirenix.OdinInspector;
 using UnityEngine;
 
 namespace Metz.JamKit
 {
-    /// <summary>
-    /// Deals damage to any <see cref="Health"/> on objects that collide or trigger with this one.
-    /// One component for 2D and 3D — whichever physics engine fires. Covers projectiles
-    /// (DestroyOnHit), contact hazards, and melee swings (<see cref="OncePerTarget"/> +
-    /// enable/disable the collider with the attack animation).
-    /// </summary>
     public sealed class Damager : MonoBehaviour
     {
-        [Tooltip("Damage per hit. A constant, or a shared Ripple variable so a buff/difficulty knob scales every hitter at once.")]
         public FloatReference Damage = new(1f);
+
+        [Tooltip("Kill outright, ignoring Damage.")]
+        public bool Kill;
+
         public LayerMask TargetLayers = ~0;
-        [Tooltip("Hit each Health at most once until this damager is re-enabled — melee swings, one-touch traps.")]
-        public bool OncePerTarget = false;
-        public bool DestroyOnHit = false;
 
-        readonly HashSet<Health> _hit = new();
+        [Tooltip("Hit each Health once until this component is re-enabled.")]
+        public bool OncePerTarget;
 
-        void OnEnable() => _hit.Clear();
+        public bool DestroyOnHit;
 
-        /// <summary>Clear the once-per-target memory, e.g. at the start of each melee swing.</summary>
-        public void ResetHits() => _hit.Clear();
+        readonly HashSet<Health> hit = new();
 
-        void OnCollisionEnter(Collision c) => TryHit(c.collider.gameObject);
-        void OnTriggerEnter(Collider c) => TryHit(c.gameObject);
-        void OnCollisionEnter2D(Collision2D c) => TryHit(c.collider.gameObject);
-        void OnTriggerEnter2D(Collider2D c) => TryHit(c.gameObject);
+        void OnEnable() => hit.Clear();
+
+        public void ResetHits() => hit.Clear();
+
+        void OnCollisionEnter(Collision collision) => TryHit(collision.gameObject);
+        void OnTriggerEnter(Collider other) => TryHit(other.gameObject);
+        void OnCollisionEnter2D(Collision2D collision) => TryHit(collision.gameObject);
+        void OnTriggerEnter2D(Collider2D other) => TryHit(other.gameObject);
 
         void TryHit(GameObject other)
         {
-            if (!TargetLayers.IsInLayerMask(other)) return;
-            
-            var h = other.GetComponent<Health>();
-            if (h == null) h = other.GetComponentInParent<Health>();
-            if (h == null) return;
-            if (OncePerTarget && !_hit.Add(h)) return;
-            h.Damage(Damage.Value);
+            if (!TargetLayers.Contains(other.layer)) return;
+            var health = other.GetComponentInParent<Health>();
+            if (health == null || (OncePerTarget && !hit.Add(health))) return;
+
+            if (Kill) health.Kill();
+            else health.Damage(Damage.Value);
+
             if (DestroyOnHit) Destroy(gameObject);
         }
     }

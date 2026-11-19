@@ -1,0 +1,44 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a64a1cf5a4d853743805e968d532dc1b, type: 3}
+  m_Name: SceneService
+  m_EditorClassIdentifier: Metz.JamKit.Runtime::Metz.JamKit.SceneServiceSO
+  Fade: {fileID: 11400000, guid: f4a2f5622c0313a418eba9753f74e0eb, type: 2}
+  OnLoadStarted:
+    calls:
+      rid: 6320427472478011510
+    raise: []
+    response:
+      m_PersistentCalls:
+        m_Calls: []
+  OnLoadCompleted:
+    calls:
+      rid: 6320427472478011511
+    raise: []
+    response:
+      m_PersistentCalls:
+        m_Calls: []
+  references:
+    version: 2
+    RefIds:
+    - rid: 6320427472478011510
+      type: {class: UnityEventResponse, ns: Ripple, asm: Metz.Ripple.Runtime}
+      data:
+        calls:
+          m_PersistentCalls:
+            m_Calls: []
+    - rid: 6320427472478011511
+      type: {class: UnityEventResponse, ns: Ripple, asm: Metz.Ripple.Runtime}
+      data:
+        calls:
+          m_PersistentCalls:
+            m_Calls: []

@@ -17,5 +17,8 @@ Bootstrap → Game → GameOver → Retry loop cycles.
 
 ## Things to try
 - Select the arena's `GameTimer` in play mode — progress bar + Pause/Resume buttons.
-- Relocated components (`WaveSpawner`, `Aimer`, `Knockback`) live in `Scripts/` — they're
-  sample-local now, copy or edit them freely.
+- Relocated components (`WaveSpawner`, `Aimer`) live in `Scripts/` — they're sample-local, copy
+  or edit them freely. `WaveSpawner` raises `OnWaveStarted`, `OnWaveEnded` and `OnAllWavesDone`
+  Signals, wired like any kit component's.
+- Knockback is gone until movers stop setting velocity outright: `ChaseMover` erased the impulse on
+  the next physics step anyway. It returns as a kit component with the game-feel track (ROADMAP).

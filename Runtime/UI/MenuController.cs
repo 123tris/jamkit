@@ -1,167 +1,146 @@
-using System;
 using System.Collections.Generic;
-using Ripple;
-using Sirenix.OdinInspector;
+using Metz.JamKit.Inspector;
 using UnityEngine;
-using UnityEngine.Serialization;
+using UnityEngine.InputSystem;
 using UnityEngine.UIElements;
 
 namespace Metz.JamKit
 {
-    /// <summary>UI Toolkit menu: Start / Settings / Pause views in one UIDocument, with direct SO service refs (no service locator).</summary>
-    [RequireComponent(typeof(UIDocument))]
+    [RequireComponent(typeof(PanelRenderer))]
     public sealed class MenuController : MonoBehaviour
     {
-        public enum View { None, Start, Settings, Pause }
+        const string WebGLClass = "jk-webgl";
 
-        // Element names — must match JamKitMenu.uxml.
-        static class N
-        {
-            public const string StartView = "start-menu", SettingsView = "settings-menu", PauseView = "pause-menu";
-            public const string StartPlay = "start-play", StartSettings = "start-settings", StartQuit = "start-quit";
-            public const string SettingsBack = "settings-back";
-            public const string PauseResume = "pause-resume", PauseSettings = "pause-settings",
-                PauseRestart = "pause-restart", PauseMainMenu = "pause-mainmenu";
-        }
+        [Header("Services"), Required] public TimeServiceSO TimeService;
+        [Required] public InputServiceSO InputService;
 
-        [Header("Resources")]
-        [Tooltip("UXML asset. If empty, loads JamKitMenu.uxml from Resources (the wizard scaffolds an editable copy).")]
-        public VisualTreeAsset MenuUxml;
-        [Tooltip("Optional USS layered on top of the menu stylesheet.")]
-        public StyleSheet ExtraStyles;
+        [Header("Input"), Tooltip("Gameplay action that opens the pause screen.")]
+        public InputActionReference Pause;
 
-        [Header("Services")]
-        public TimeServiceSO TimeService;
-        [Required] public SceneServiceSO SceneService;
-        public InputServiceSO InputService;
+        [Tooltip("UI action that closes the top screen.")]
+        public InputActionReference Cancel;
 
-        [Header("Volume (Ripple Variables)")]
-        [FormerlySerializedAs("MasterVolumeOverride")] public FloatVariableSO masterVolume;
-        [FormerlySerializedAs("MusicVolumeOverride")] public FloatVariableSO musicVolume;
-        [FormerlySerializedAs("SfxVolumeOverride")] public FloatVariableSO sfxVolume;
+        [Header("Screens")] public List<MenuView> Views = new();
 
-        [Header("Behaviour")]
-        public SceneRef GameScene = new("Game");
-        public SceneRef MainMenuScene = new("Bootstrap");
-        [Tooltip("Which view is shown on Enable. None hides the canvas until you call ShowStart().")]
-        public View InitialView = View.Start;
+        [Tooltip("Shown on enable. Empty starts hidden.")]
+        public MenuView InitialView;
 
-        [SerializeField, Required] private VoidEventSO onPauseOpened;
-        [SerializeField, Required] private VoidEventSO onPauseClosed;
+        [Tooltip("Opened by Pause.")]
+        public MenuView PauseView;
 
-        UIDocument _doc;
-        VisualElement _root;
-        MenuSettingsBinder _settings;
-        PauseCoordinator _pause;
-        MenuNavigator _nav;
-        readonly HashSet<string> _warnedButtons = new();
+        public MenuView SettingsView;
 
-        public View Current => _nav?.Current ?? View.None;
-        public VisualElement Root => _root;
-        public bool IsPauseOpen => Current == View.Pause;
+        readonly Stack<MenuView> stack = new();
+        PanelRenderer panel;
+        int boundVersion = -1;
+        bool showInitial;
 
-        void Awake()
-        {
-            _doc = GetComponent<UIDocument>();
-            if (MenuUxml == null) MenuUxml = Resources.Load<VisualTreeAsset>("JamKitMenu");
-            if (MenuUxml == null)
-                Debug.LogWarning("[JamKit] No JamKitMenu.uxml in Resources. Run JamKit > New Jam Project, or assign MenuUxml.", this);
-            if (_doc.visualTreeAsset == null && MenuUxml != null) _doc.visualTreeAsset = MenuUxml;
-            if (_doc.panelSettings == null) _doc.panelSettings = JamKitUI.LoadOrCreateMenuPanelSettings();
-            else JamKitUI.ApplyDefaultTheme(_doc.panelSettings);
-        }
+        public MenuView Current => stack.Count > 0 ? stack.Peek() : null;
 
         void OnEnable()
         {
-            _root = _doc.rootVisualElement;
-            if (_root == null) return;
+            showInitial = true;
+            panel = GetComponent<PanelRenderer>();
+            panel.RegisterUIReloadCallback(OnUIReload);
 
-            if (ExtraStyles != null && !_root.styleSheets.Contains(ExtraStyles)) _root.styleSheets.Add(ExtraStyles);
-
-            _settings = new MenuSettingsBinder(_root, masterVolume, musicVolume, sfxVolume);
-            _pause = new PauseCoordinator(TimeService, onPauseOpened, onPauseClosed);
-            _nav = new MenuNavigator(new Dictionary<View, VisualElement>
-            {
-                { View.Start, _root.Q<VisualElement>(N.StartView) },
-                { View.Settings, _root.Q<VisualElement>(N.SettingsView) },
-                { View.Pause, _root.Q<VisualElement>(N.PauseView) },
-            }, _pause, _settings);
-
-            Bind(N.StartPlay, () => SceneService?.LoadAsync(GameScene));
-            Bind(N.StartSettings, ShowSettings);
-            Bind(N.StartQuit, QuitGame);
-            Bind(N.SettingsBack, () => _nav.Pop());
-            Bind(N.PauseResume, TogglePause);
-            Bind(N.PauseSettings, ShowSettings);
-            Bind(N.PauseRestart, () => { _pause.Resume(); SceneService?.ReloadCurrent(); });
-            Bind(N.PauseMainMenu, () => { _pause.Resume(); SceneService?.LoadAsync(MainMenuScene); });
-
-            // Quit is meaningless in a browser; hide it so WebGL builds don't ship a dead button.
-            if (Application.platform == RuntimePlatform.WebGLPlayer)
-            {
-                var quit = _root.Q<Button>(N.StartQuit);
-                if (quit != null) quit.style.display = DisplayStyle.None;
-            }
-
-            switch (InitialView)
-            {
-                case View.Start: ShowStart(); break;
-                case View.Settings: ShowSettings(); break;
-                case View.Pause: ShowPause(); break;
-                default: HideAll(); break;
-            }
-            if (InitialView == View.None) InputService?.SwitchToGameplay();
+            if (Pause != null) Pause.action.performed += OnBack;
+            if (Cancel != null) Cancel.action.performed += OnBack;
         }
 
         void OnDisable()
         {
-            _settings?.Dispose();
-            _settings = null;
-            _pause?.Resume(); // never leave the game frozen
+            panel.UnregisterUIReloadCallback(OnUIReload);
+            if (Pause != null) Pause.action.performed -= OnBack;
+            if (Cancel != null) Cancel.action.performed -= OnBack;
+            TimeService.Resume();
         }
 
-        [Button, DisableInEditorMode, FoldoutGroup("Debug"), HorizontalGroup("Debug/Row")]
-        public void ShowStart() => _nav?.Reset(View.Start);
-        public void ShowSettings() => _nav?.Push(View.Settings);
-        public void ShowPause() => _nav?.Push(View.Pause);
-        public void HideAll() => _nav?.Reset(View.None);
-
-        [Button, DisableInEditorMode, HorizontalGroup("Debug/Row")]
-        public void TogglePause()
+        void OnUIReload(PanelRenderer renderer, VisualElement root, int version)
         {
-            if (_nav == null) return;
-            if (IsPauseOpen) { _nav.Pop(); InputService?.SwitchToGameplay(); }
-            else { _nav.Push(View.Pause); _pause?.Pause(); InputService?.SwitchToUI(); }
-        }
-
-        // Esc/Back (via PauseController): pop a stacked submenu, else toggle pause.
-        public void HandleBack()
-        {
-            if (_nav == null) return;
-            if (_nav.Depth > 1) { _nav.Pop(); return; }
-            if (Current == View.Start) return;
-            TogglePause();
-        }
-
-        void Bind(string name, Action action)
-        {
-            var btn = _root.Q<Button>(name);
-            if (btn == null)
+            if (version != boundVersion)
             {
-                if (_warnedButtons.Add(name))
-                    Debug.LogWarning($"[JamKit] MenuController: no button '{name}' in the menu UXML — that control does nothing.", this);
+                boundVersion = version;
+                root.EnableInClassList(WebGLClass, Application.platform == RuntimePlatform.WebGLPlayer);
+                foreach (MenuView view in Views) view.Bind(root);
+            }
+
+            if (!showInitial)
+            {
+                Apply();
                 return;
             }
-            btn.clicked += action;
+
+            showInitial = false;
+            ShowOnly(InitialView);
         }
 
-        static void QuitGame()
+        public void Show(MenuView view)
+        {
+            if (view == Current || !view.CanOpen.Value) return;
+            stack.Push(view);
+            Apply();
+        }
+
+        public void Back()
+        {
+            if (stack.Count == 0) return;
+            stack.Pop();
+            Apply();
+        }
+
+        public void ShowOnly(MenuView view)
+        {
+            stack.Clear();
+            if (view != null && view.CanOpen.Value) stack.Push(view);
+            Apply();
+        }
+
+        public void ShowSettings() => Show(SettingsView);
+
+        public void ShowPause() => Show(PauseView);
+
+        [Button]
+        public void HideAll() => ShowOnly(null);
+
+        [Button]
+        public void TogglePause()
+        {
+            if (Current == PauseView) Back();
+            else Show(PauseView);
+        }
+
+        public void HandleBack()
+        {
+            if (stack.Count > 1) Back();
+            else if (stack.Count == 0 || Current == PauseView) TogglePause();
+        }
+
+        [Button("Quit")]
+        public void QuitGame()
         {
 #if UNITY_EDITOR
             UnityEditor.EditorApplication.isPlaying = false;
 #else
             Application.Quit();
 #endif
+        }
+
+        void OnBack(InputAction.CallbackContext context) => HandleBack();
+
+        void Apply()
+        {
+            MenuView top = Current;
+            foreach (MenuView view in Views) view.SetVisible(view == top);
+
+            bool pausesTime = false;
+            foreach (MenuView view in stack) pausesTime |= view.PausesTime;
+            if (pausesTime) TimeService.Pause();
+            else TimeService.Resume();
+
+            if (top != null && top.SwitchesToUIInput) InputService.SwitchToUI();
+            else InputService.SwitchToGameplay();
+
+            if (top != null) top.Focus();
         }
     }
 }

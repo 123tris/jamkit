@@ -1,0 +1,13 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" editor-extension-mode="False">
+    <Style src="JamKitMenu.uss" />
+    <ui:Template name="JamKitStartMenu" src="JamKitStartMenu.uxml" />
+    <ui:Template name="JamKitPauseMenu" src="JamKitPauseMenu.uxml" />
+    <ui:Template name="JamKitSettingsMenu" src="JamKitSettingsMenu.uxml" />
+    <ui:Template name="JamKitGameOverMenu" src="JamKitGameOverMenu.uxml" />
+    <ui:VisualElement name="root" picking-mode="Ignore" class="jk-root">
+        <ui:Instance template="JamKitStartMenu" name="start-instance" picking-mode="Ignore" class="jk-instance" />
+        <ui:Instance template="JamKitPauseMenu" name="pause-instance" picking-mode="Ignore" class="jk-instance jk-instance--hidden" />
+        <ui:Instance template="JamKitSettingsMenu" name="settings-instance" picking-mode="Ignore" class="jk-instance jk-instance--hidden" />
+        <ui:Instance template="JamKitGameOverMenu" name="gameover-instance" picking-mode="Ignore" class="jk-instance jk-instance--hidden" />
+    </ui:VisualElement>
+</ui:UXML>

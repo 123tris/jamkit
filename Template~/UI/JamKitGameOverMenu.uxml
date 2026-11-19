@@ -1,0 +1,15 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" xmlns:jk="Metz.JamKit" editor-extension-mode="False">
+    <Style src="JamKitMenu.uss" />
+    <ui:VisualElement name="gameover-menu" class="jk-view jk-view--start">
+        <ui:Label text="Game Over" name="gameover-title" class="jk-title" />
+        <jk:ValueLabel name="gameover-score" data-source="project://database/Assets/_Project/Variables/Score.asset?fileID=11400000&amp;guid=403b0e2b069733c498fd85c2180e88bc&amp;type=2#Score" format="Score: {0:0}" class="jk-score">
+            <Bindings>
+                <ui:DataBinding property="value" data-source-path="CurrentValue" binding-mode="ToTarget" />
+            </Bindings>
+        </jk:ValueLabel>
+        <ui:VisualElement class="jk-buttons">
+            <ui:Button text="Retry" name="gameover-retry" class="jk-button" />
+            <ui:Button text="Main Menu" name="gameover-mainmenu" class="jk-button" />
+        </ui:VisualElement>
+    </ui:VisualElement>
+</ui:UXML>

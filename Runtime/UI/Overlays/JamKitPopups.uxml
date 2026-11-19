@@ -1,0 +1,4 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements" editor-extension-mode="False">
+    <Style src="JamKitOverlays.uss" />
+    <ui:VisualElement name="popups" picking-mode="Ignore" class="jk-overlay" />
+</ui:UXML>

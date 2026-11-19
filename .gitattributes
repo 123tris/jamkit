@@ -7,3 +7,6 @@
 *.uxml text eol=lf
 *.uss text eol=lf
 *.tss text eol=lf
+*.prefab text eol=lf
+*.mat text eol=lf
+*.mixer text eol=lf

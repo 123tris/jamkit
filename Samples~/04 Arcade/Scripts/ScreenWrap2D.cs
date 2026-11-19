@@ -2,11 +2,6 @@ using UnityEngine;
 
 namespace Metz.JamKit
 {
-    /// <summary>
-    /// Asteroids-style screen wrapping: leave one edge of the orthographic camera view, reappear
-    /// at the opposite edge. Teleports the Rigidbody2D when present so physics doesn't see a
-    /// huge sweep. Padding keeps the wrap hidden until the object is fully off-screen.
-    /// </summary>
     [DisallowMultipleComponent]
     public sealed class ScreenWrap2D : MonoBehaviour
     {

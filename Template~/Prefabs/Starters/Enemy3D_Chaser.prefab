@@ -1,0 +1,363 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!1 &2798424511426876241
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 8102369971744332460}
+  - component: {fileID: 3665431312579700106}
+  - component: {fileID: 4419833087037117050}
+  - component: {fileID: 4364677605514925381}
+  - component: {fileID: 3837036848457350704}
+  - component: {fileID: 668295157779055991}
+  - component: {fileID: 8563687968529590208}
+  - component: {fileID: 8652562989105141050}
+  - component: {fileID: 3893176447018546813}
+  - component: {fileID: 6672090841689943529}
+  - component: {fileID: 4660376759703039963}
+  m_Layer: 0
+  m_Name: Enemy3D_Chaser
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &8102369971744332460
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2798424511426876241}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!33 &3665431312579700106
+MeshFilter:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2798424511426876241}
+  m_Mesh: {fileID: 10208, guid: 0000000000000000e000000000000000, type: 0}
+--- !u!136 &4419833087037117050
+CapsuleCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2798424511426876241}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 0
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 2
+  m_Radius: 0.5
+  m_Height: 2
+  m_Direction: 1
+  m_Center: {x: 0, y: 0, z: 0}
+--- !u!23 &4364677605514925381
+MeshRenderer:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2798424511426876241}
+  m_Enabled: 1
+  m_CastShadows: 1
+  m_ReceiveShadows: 1
+  m_DynamicOccludee: 1
+  m_StaticShadowCaster: 0
+  m_MotionVectors: 1
+  m_LightProbeUsage: 1
+  m_ReflectionProbeUsage: 1
+  m_RayTracingMode: 2
+  m_RayTraceProcedural: 0
+  m_RayTracingAccelStructBuildFlagsOverride: 0
+  m_RayTracingAccelStructBuildFlags: 1
+  m_SmallMeshCulling: 1
+  m_ForceMeshLod: -1
+  m_MeshLodSelectionBias: 0
+  m_RenderingLayerMask: 1
+  m_RendererPriority: 0
+  m_Materials:
+  - {fileID: 2100000, guid: bcc2f3af8db0c854fb6a8299ce126784, type: 2}
+  m_StaticBatchInfo:
+    firstSubMesh: 0
+    subMeshCount: 0
+  m_StaticBatchRoot: {fileID: 0}
+  m_ProbeAnchor: {fileID: 0}
+  m_LightProbeVolumeOverride: {fileID: 0}
+  m_ScaleInLightmap: 1
+  m_ReceiveGI: 1
+  m_PreserveUVs: 1
+  m_IgnoreNormalsForChartDetection: 0
+  m_ImportantGI: 0
+  m_StitchLightmapSeams: 1
+  m_SelectedEditorRenderState: 3
+  m_MinimumChartSize: 4
+  m_AutoUVMaxDistance: 0.5
+  m_AutoUVMaxAngle: 89
+  m_LightmapParameters: {fileID: 0}
+  m_GlobalIlluminationMeshLod: 0
+  m_SortingLayerID: 0
+  m_SortingLayer: 0
+  m_SortingOrder: 0
+  m_MaskInteraction: 0
+  m_AdditionalVertexStreams: {fileID: 0}
+--- !u!54 &3837036848457350704
+Rigidbody:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2798424511426876241}
+  serializedVersion: 5
+  m_Mass: 1
+  m_LinearDamping: 0
+  m_AngularDamping: 0.05
+  m_CenterOfMass: {x: 0, y: 0, z: 0}
+  m_InertiaTensor: {x: 1, y: 1, z: 1}
+  m_InertiaRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ImplicitCom: 1
+  m_ImplicitTensor: 1
+  m_UseGravity: 1
+  m_IsKinematic: 0
+  m_Interpolate: 0
+  m_Constraints: 80
+  m_CollisionDetection: 0
+--- !u!114 &668295157779055991
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2798424511426876241}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9ff545f5c170d6f42b347df3b399deb4, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Metz.JamKit.Runtime::Metz.JamKit.ChaseMover
+  Target: {fileID: 0}
+  Targets: {fileID: 11400000, guid: e37f81e1299dfce4cad2714f75d3a46f, type: 2}
+  Speed:
+    useConstant: 1
+    _constantValue: 3
+    _variable: {fileID: 0}
+  StopDistance:
+    useConstant: 1
+    _constantValue: 0.6
+    _variable: {fileID: 0}
+  FaceTarget: 1
+  LockY: 1
+--- !u!114 &8563687968529590208
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2798424511426876241}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: cfc606960cbf75f46b85906e8175627c, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Metz.JamKit.Runtime::Metz.JamKit.Damager
+  Damage:
+    useConstant: 1
+    _constantValue: 1
+    _variable: {fileID: 0}
+  Kill: 0
+  TargetLayers:
+    serializedVersion: 2
+    m_Bits: 4294967295
+  OncePerTarget: 0
+  DestroyOnHit: 0
+--- !u!114 &8652562989105141050
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2798424511426876241}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 227acace9ca711e4281c2fed430d70c4, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Metz.JamKit.Runtime::Metz.JamKit.Health
+  Max:
+    useConstant: 1
+    _constantValue: 3
+    _variable: {fileID: 0}
+  Current: 3
+  CurrentVariable: {fileID: 0}
+  DestroyOnDeath: 1
+  OnDamaged:
+    calls:
+      rid: 6320427472478011547
+    raise: []
+    response:
+      m_PersistentCalls:
+        m_Calls: []
+  OnHealed:
+    calls:
+      rid: 6320427472478011548
+    raise: []
+    response:
+      m_PersistentCalls:
+        m_Calls: []
+  OnDied:
+    calls:
+      rid: 6320427472478011549
+    raise: []
+    response:
+      m_PersistentCalls:
+        m_Calls: []
+  references:
+    version: 2
+    RefIds:
+    - rid: 6320427472478011547
+      type: {class: 'UnityEventResponse`1[[System.Single, mscorlib]]', ns: Ripple, asm: Metz.Ripple.Runtime}
+      data:
+        calls:
+          m_PersistentCalls:
+            m_Calls:
+            - m_Target: {fileID: 6672090841689943529}
+              m_TargetAssemblyTypeName: Metz.JamKit.PunchScale, Metz.JamKit.Runtime
+              m_MethodName: Play
+              m_Mode: 1
+              m_Arguments:
+                m_ObjectArgument: {fileID: 0}
+                m_ObjectArgumentAssemblyTypeName: 
+                m_IntArgument: 0
+                m_FloatArgument: 0
+                m_StringArgument: 
+                m_BoolArgument: 0
+              m_CallState: 2
+            - m_Target: {fileID: 4660376759703039963}
+              m_TargetAssemblyTypeName: Metz.JamKit.PopupText, Metz.JamKit.Runtime
+              m_MethodName: Show
+              m_Mode: 0
+              m_Arguments:
+                m_ObjectArgument: {fileID: 0}
+                m_ObjectArgumentAssemblyTypeName:
+                m_IntArgument: 0
+                m_FloatArgument: 0
+                m_StringArgument:
+                m_BoolArgument: 0
+              m_CallState: 2
+    - rid: 6320427472478011548
+      type: {class: 'UnityEventResponse`1[[System.Single, mscorlib]]', ns: Ripple, asm: Metz.Ripple.Runtime}
+      data:
+        calls:
+          m_PersistentCalls:
+            m_Calls: []
+    - rid: 6320427472478011549
+      type: {class: UnityEventResponse, ns: Ripple, asm: Metz.Ripple.Runtime}
+      data:
+        calls:
+          m_PersistentCalls:
+            m_Calls:
+            - m_Target: {fileID: 3893176447018546813}
+              m_TargetAssemblyTypeName: Metz.JamKit.SpawnBurst, Metz.JamKit.Runtime
+              m_MethodName: Burst
+              m_Mode: 1
+              m_Arguments:
+                m_ObjectArgument: {fileID: 0}
+                m_ObjectArgumentAssemblyTypeName: 
+                m_IntArgument: 0
+                m_FloatArgument: 0
+                m_StringArgument: 
+                m_BoolArgument: 0
+              m_CallState: 2
+            - m_Target: {fileID: 11400000, guid: 692455ee9f39d182f0e24d8d25884390, type: 2}
+              m_TargetAssemblyTypeName: Metz.JamKit.SynthSound, Metz.JamKit.Runtime
+              m_MethodName: Play
+              m_Mode: 1
+              m_Arguments:
+                m_ObjectArgument: {fileID: 0}
+                m_ObjectArgumentAssemblyTypeName:
+                m_IntArgument: 0
+                m_FloatArgument: 0
+                m_StringArgument:
+                m_BoolArgument: 0
+              m_CallState: 2
+--- !u!114 &3893176447018546813
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2798424511426876241}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 070e8ab8cfd601e4ba8959ce239c80b1, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Metz.JamKit.Runtime::Metz.JamKit.SpawnBurst
+  Prefab: {fileID: 2798424511426876241, guid: c0a89b830ba3f10b130e888e57c723ac, type: 3}
+  Count:
+    useConstant: 1
+    _constantValue: 3
+    _variable: {fileID: 0}
+  Scatter:
+    useConstant: 1
+    _constantValue: 0.4
+    _variable: {fileID: 0}
+  Is2D: 0
+  RandomRotation: 1
+  LaunchSpeed:
+    useConstant: 1
+    _constantValue: 4
+    _variable: {fileID: 0}
+--- !u!114 &6672090841689943529
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2798424511426876241}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: aa1b44c66e734393ab9a4092694f9dd4, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Metz.JamKit.Runtime::Metz.JamKit.PunchScale
+  Punch: {x: 0.3, y: 0.3, z: 0.3}
+  Seconds: 0.3
+  Unscaled: 0
+--- !u!114 &4660376759703039963
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2798424511426876241}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5867cfd0adb346a48f717b045c4feca0, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Metz.JamKit.Runtime::Metz.JamKit.PopupText
+  Popups: {fileID: 11400000, guid: 7bfb76403a8690dd9ae475bd83ef2cda, type: 2}
+  Format: '{0:0}'
+  Color: {r: 1, g: 0.9, b: 0.3, a: 1}
+  Offset: {x: 0, y: 1.3, z: 0}

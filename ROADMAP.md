@@ -2,30 +2,31 @@
 
 Three goals, in tension with each other:
 
-1. **Efficiency** — minutes from "create project" to "playable thing on screen", and minutes from "I need X" to "X is wired".
-2. **Juice** — JamKit games should *feel* good by default, because juice is what jam ratings reward.
-3. **Flexibility** — nothing in the kit may assume a genre. Platformer, survivor, puzzle, card game: all first-class.
+1. **Efficiency**: minutes from "create project" to "playable thing on screen", and minutes from "I need X" to "X is wired".
+2. **Juice**: JamKit games should *feel* good by default, because juice is what jam ratings reward.
+3. **Flexibility**: nothing in the kit may assume a genre. Platformer, survivor, puzzle, card game: all first-class.
 
 ## Design principles
 
-**The contract lives in [PILLARS.md](PILLARS.md)** — modular / editable / debuggable / lean —
-since 0.9. The roadmap-specific corollaries:
+**The contract lives in [PILLARS.md](PILLARS.md)**: modular, editable, debuggable, lean. The roadmap's corollaries:
 
-- **Explicit wiring, zero-friction defaults.** Components keep serialized SO references (no runtime lookup, no singletons) — the *editor* auto-fills them when the answer is unambiguous (exactly one candidate; never a guess). Convenience at edit time, transparency at runtime.
-- **Two event granularities — pick deliberately.** Per-instance reactions are serialized UltEvents named `On*` on the component (`Health.OnDamaged` — only *this* instance reacts); global reactions are Ripple event assets named `Broadcast*`. A feature that wires per-instance feedback through a shared SO event is a bug (every enemy flashes when one is hit).
-- **Feedback belongs to Feel; audio to FMOD; state to Ripple.** JamKit ships the trigger surface and the bridges the stack can't provide (HitStop through the timescale stack, SFX-on-event), never a parallel implementation of a layer another tool owns.
-- **Small orthogonal components, not frameworks.** Flexibility comes from composition. The measure of a new primitive is how many archetype rows it unlocks (see matrix below), not how complete it is. 1–2 rows = it lives in a sample as a hackable copy.
-- **Nothing ships unverified.** Every milestone ends with a clean compile (Roslyn script or Unity), the Doctor green, and the samples compiling.
+- **Free to open.** A teammate who installs nothing from the Asset Store can open the project: JamKit's assemblies need only Unity packages and Ripple. Feel and FMOD stay optional, behind their own assemblies or in samples.
+- **Explicit wiring, zero-friction defaults.** Components keep serialized references (no runtime lookup, no singletons), and the editor fills them when the answer is unambiguous: exactly one candidate, never a guess.
+- **Two event granularities, picked deliberately.** A component's own reaction is wired on its `Signal` (`Health.OnDamaged`: only *this* instance reacts). A global reaction is a Ripple event asset on the Signal's raise list, heard with an `EventListener`. Wiring per-instance feedback through a shared event is a bug: every enemy flashes when one is hit.
+- **The kit ships the basic juice; Feel goes further.** `PunchScale`, `ColorFlash`, `CameraShake`, `HitStop` and `Tween` cover hour one. Feel is for stacks of authored feedbacks. Audio is `Sound` and `Music` assets on a Unity or FMOD backend; state is Ripple.
+- **Small orthogonal components, not frameworks.** Flexibility comes from composition. A new primitive is measured by how many archetype columns it serves (below), not by how complete it is. One or two columns: it lives in a sample as a copy to hack.
+- **Nothing ships unverified.** Every change ends with `Tools~/compile-check.sh` green, the Doctor green on a fresh scaffold, and the samples compiling.
 
-## The archetype matrix (the evaluation tool)
+## The archetype matrix
 
-When considering a new primitive, check it against the classics. A primitive that appears in 3+ columns is kit material; 1 column = game code, leave it out.
+When considering a new primitive, check it against the classics. A primitive in three or more columns is kit material; one column is game code.
 
 | Primitive | Pong | Breakout | Frogger | Invaders | Asteroids | Flappy | Platformer | Survivor | FPS¹ | Status |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
 | Input mover | ✓ | ✓ | | ✓ | | ✓ | ✓ | ✓ | ✓ | ✅ Mover2D/3D |
 | First-person look | | | | | | | | | ✓ | ✅ FirstPersonLook |
-| Dash/dodge | | | | | | | ✓ | ✓ | ✓ | ✅ Dasher |
+| Dash/dodge | | | | | | | ✓ | ✓ | ✓ | ⛔ blocked: movers overwrite velocity (backlog, game feel) |
+| Knockback | | | | | | | ✓ | ✓ | ✓ | 📦 sample 02, blocked the same way |
 | Ball bounce | ✓ | ✓ | | | | | | | | 📦 sample 04 (Bouncer2D) |
 | Grid step | | | ✓ | | | | | | | 📦 sample 04 (GridMover) |
 | Rotate+thrust | | | | | ✓ | | | | | 📦 sample 04 (ThrustMover2D) |
@@ -38,60 +39,42 @@ When considering a new primitive, check it against the classics. A primitive tha
 | Respawn/checkpoint | ✓ | ✓ | ✓ | | ✓ | | ✓ | | ✓ | ✅ Respawner |
 | Press-E interact | | | | | | | ✓ | ✓ | ✓ | ✅ Interactor/-able |
 | Shoot (visible projectile) | | | | ✓ | ✓ | | ✓ | ✓ | ✓ | ✅ ProjectileShooter |
-| Shoot (hitscan) | | | | ~ | | | | ✓ | ✓ | ✅ HitscanShooter |
+| Shoot (hitscan) | | | | ~ | | | | ✓ | ✓ | ⛔ cut 1.0, see CHANGELOG |
 | Health-as-timer drain | | | | | | | ~ | ✓ | ✓ | ✅ HealthDrain |
-| Sequenced waves | | | | ✓ | | | | ✓ | ✓ | 📦 sample 02 (WaveSpawner) |
+| Sequenced waves | | | | ✓ | | | | ✓ | ✓ | 📦 sample 02 (WaveSpawner); meets the rule, promote with enemies & combat |
 | HP/damage/pickups/score/menus | — | — | — | — | — | — | — | — | — | ✅ core |
-| Feedback (shake/flash/pop/text) | all | all | all | all | all | all | all | all | all | 🎨 Feel (see feel-integration.md) |
+| Feedback (pop/flash/shake/freeze) | all | all | all | all | all | all | all | all | all | ✅ juice; Feel for more |
+| Placeholder sounds, popup text | all | all | all | all | all | all | all | all | all | Next: phase 4 |
 
-📦 = ships as a sample-local script (1–2 rows — the aggressive-trim rule); ✅ = kit component.
+📦 = ships as a sample-local script (one or two columns); ✅ = kit component.
 
-¹ The FPS column stands in for every first-person genre (boomer shooter, horror, walking sim,
-immersive sim) — they share the same rig, so `FirstPersonLook` earns its slot despite the
-single column. Added for GMTK 2026.
+¹ The FPS column stands in for every first-person genre (boomer shooter, horror, walking sim, immersive sim). They share the same rig, so `FirstPersonLook` earns its slot despite the single column.
 
-Genres still thin: **card/board** (drag-drop, hand layout), **puzzle-match** (grid queries beyond movement), **rhythm** (beat clock). Add rows when a jam demands them.
+Genres still thin: **card/board** (drag and drop, hand layout), **puzzle-match** (grid queries beyond movement), **rhythm** (beat clock). Add rows when a jam demands them.
 
-## Done (0.5.0) — was M1/M2/M3
+## Next
 
-- M1: editor auto-assign, `GameObject > JamKit` presets (16), `JamKit > Validate Setup` with Fix buttons.
-- M2: Juice Lite — CameraShake, HitStop, SpriteFlash, MaterialFlash, PunchScale, ParticleBurst, SfxOnEvent, FloatingText(+Layer), Toast; `JuiceBehaviour` triple-trigger base; per-instance Health events.
-- M3: Bouncer2D, GridMover, ThrustMover2D, ChaseMover, PatrolMover, ScreenWrap2D, TriggerZone, Aimer, SpawnBurst, Respawner, Interactor/Interactable.
+Items leave this list when they land; the CHANGELOG records each one with its reasons.
 
-## Done (0.6.0) — was M1.5 + M4 + most of M5
+### Phase 1: 1.0 installs and works for anyone
 
-- M1.5: prefab-first wizard (JamKitCore carries FloatingTextLayer + Toast; JamKitMenu instanced with per-scene overrides), fast enter-play-mode offer, menu hover/click sounds, music ducking (`DuckMusic`/`PlayStinger`/`SfxOnEvent.DuckMusic`), two-player keyboard input (`Gameplay1`/`Gameplay2` maps + `AutoEnableGameplay`).
-- M4: Sample 05 Juice Toggle, Sample 06 Arcade Playground, `Documentation~` (hour-zero, pong-60s, frogger-5min, graduating-to-feel), tests for ScoreService/TimerService/Bouncer math/GridMover snap.
-- M5 (the parts a tool can do): sample compile harness in `Tools~/compile-check.sh` (caught the wizard's dead impulse listener on day one), `JamKit > Build > WebGL (itch.io)`, CI workflow scaffold.
+- **Release Ripple 0.3.0.** README, `ProjectTemplate.RippleProblem` and ci.yml point at `#v0.3.0`, a tag that does not exist yet, so the documented install fails. Merge `feature/0.3.0` into Ripple's `main` and tag it.
+- **Confirm the 6.5 floor** by playing the template once in a fresh 6000.5 project; it is what the kit is compiled and authored in.
+- **CI runs** once Ripple is tagged and the repository has a `UNITY_LICENSE` secret; then delete its `if: ${{ false }}` line.
 
-### Open questions — resolved
+### Samples
 
-- Players get CameraShake + HitStop in presets: **yes** (enemy→player damage is the hit that matters).
-- Toast/FloatingTextLayer: **in the JamKitCore prefab** (every scene gets them for free).
-- Paddle english: **marker component**, not a layer mask (layers are project-global state; the marker auto-wires and carries per-paddle `EnglishMultiplier`).
+The sample scripts are on 1.0 and the Feel showcase is the scripts-only Feel Bridge. Re-author the scenes and prefabs of Hour Zero, Platformer, Survivor and Arcade in the editor, on the project template's fixed GUIDs and starters. Sample setup can then shrink to "scaffold and open the scene".
 
-## Done (0.7.0)
+## Backlog
 
-- **One-click sample setup** — import offer + `JamKit > Samples` menu automate every sample README's setup section: non-interactive `JamProjectWizard.Scaffold`, per-sample ready-to-play scenes (Survivor rides `Game.unity` so the GameOver → Retry loop cycles), auto-assigned services, registry tests, editor-test compile coverage in the harness.
+Recorded, not scheduled. Pull an item when a jam needs it.
 
-## Done (0.8.0)
-
-- **FMOD backend** — define-gated `Metz.JamKit.Fmod` assemblies (auto-detected, `JAMKIT_FMOD`): `FmodAudioServiceSO`/Runner on the same Ripple volume variables + PlayerPrefs keys as the Unity path, `FmodSfxOnEvent`, `FmodMenuSounds`, wizard/sample scaffolding + Validate checks, FMOD legs in the compile harness. First consumer of the new integration rails: `JamProjectWizard.PostScaffold` + `JamKitValidateWindow.ExtraScans` (Wwise/Steam could ride the same hooks).
-
-## M5 remainder — needs a human (cannot be done from inside the repo)
-
-1. ~~Publish Ripple to a git URL~~ **Done** — `https://github.com/123tris/Ripple.git#feature/abstraction+runtime-registry` (the branch pin matters: Ripple's `main` is an older API; when Ripple work merges to main, update the pin in the dev manifest, README, and ci.yml).
-2. ~~Push JamKit to GitHub~~ **Done** (github.com/123tris/jamkit). Still open: add the `UNITY_LICENSE` secret ([game.ci activation](https://game.ci/docs/github/activation)), decide how CI gets UltEvents (git mirror or vendored), then delete the `if: false` gate in ci.yml.
-3. **Editor playtest pass** — 0.5.0/0.6.0 are compile-verified and logic-tested, but the wizard flow, presets, and both new samples deserve one live run in the editor (the Documentation~ walkthroughs are the scripts for exactly this).
-
-## M6 — candidates (pull when a jam demands, per the matrix)
-
-- **Card/board genre row**: UI Toolkit drag-and-drop helper, hand/fan layout.
-- **Match/puzzle row**: grid *queries* (neighbors, flood fill) on top of GridMover's grid.
-- **Log-riding / moving-platform carry** — parent-on-contact helper; came up in both frogger and platformer recipes.
-- **`SynthSfx` placeholder audio** — Sample 05 synthesizes its blips in ~15 lines; promoting that to a tiny runtime util would give every jam hour-zero hit/pickup/death sounds with zero assets. (Samples stay self-contained on purpose — each is a copy-paste reference — so shared helpers only graduate by moving into Runtime, never into a shared samples folder.)
-- Input-rebinding screen, save-slot UI, world-space UI Toolkit HUD (6.2), JamKit Hub window.
+- **Game feel.** `Mover2D`, `Mover3D` and `ChaseMover` set velocity outright every physics step, so no impulse survives: the Survivor sample's knockback is gone a step later, and a dash cannot compose with a mover. First, movers accelerate toward their input velocity (infinite acceleration keeps today's behaviour). Then coyote time, jump buffering, variable jump height, invulnerability frames, and `Knockback` and `Dash` as kit components.
+- **Enemies and combat.** `ChaseMover` paths around walls when its object has a `NavMeshAgent`; area damage; `WaveSpawner` promoted into the kit; shooting at a target.
+- **Thin genres**: card/board drag and drop, grid queries for match puzzles, a beat clock. An input rebinding screen.
+- **Small fixes**: `GameTimer.StartTimer(float)` replaces the `Duration` reference and loses its variable binding; `Mover3D` throws when the scene has no main camera.
 
 ## Non-goals (the identity fence)
 
-No tween library, no node graphs, no netcode, no ECS, no Feel clone. JamKit is the wiring and the 80% defaults — depth lives in dedicated assets.
+No netcode, no ECS, no Feel clone. JamKit ships a one-file tween and a single graph (Game Flow); depth lives in dedicated assets.

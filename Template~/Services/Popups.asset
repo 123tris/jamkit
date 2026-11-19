@@ -1,0 +1,19 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 78af2aaa417f4af590bade618064078b, type: 3}
+  m_Name: Popups
+  m_EditorClassIdentifier: Metz.JamKit.Runtime::Metz.JamKit.PopupServiceSO
+  Document: {fileID: 9197481963319205126, guid: 1ab27363fc1b4217a471eb396fc57e3b, type: 3}
+  Panel: {fileID: 11400000, guid: f8fb934f33ed46c18c9d1d3e4cb11a26, type: 2}
+  Seconds: 0.8
+  Rise: 1
+  Unscaled: 1

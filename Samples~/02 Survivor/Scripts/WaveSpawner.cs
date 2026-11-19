@@ -6,10 +6,6 @@ using UnityEngine;
 
 namespace Metz.JamKit
 {
-    /// <summary>
-    /// Plays through a sequence of waves; each wave spawns N copies of a prefab over a duration,
-    /// then waits before the next wave. Fires Ripple events on wave boundaries.
-    /// </summary>
     public sealed class WaveSpawner : MonoBehaviour
     {
         [Serializable]
@@ -27,10 +23,10 @@ namespace Metz.JamKit
         public Vector2 Jitter = Vector2.zero;
         public bool AutoStart = true;
 
-        [Header("Events (Ripple)")]
-        public IntEvent OnWaveStarted;
-        public IntEvent OnWaveEnded;
-        public VoidEventSO OnAllWavesDone;
+        [Header("Events")]
+        public Signal<int> OnWaveStarted = new();
+        public Signal<int> OnWaveEnded = new();
+        public Signal OnAllWavesDone = new();
 
         Coroutine _routine;
 
@@ -55,7 +51,7 @@ namespace Metz.JamKit
             {
                 var w = Waves[i];
                 if (w.DelayBefore > 0f) yield return new WaitForSeconds(w.DelayBefore);
-                if (OnWaveStarted != null) OnWaveStarted.Invoke(i);
+                OnWaveStarted.Invoke(i);
 
                 if (w.Prefab != null && w.Count > 0)
                 {
@@ -68,9 +64,9 @@ namespace Metz.JamKit
                     }
                 }
 
-                if (OnWaveEnded != null) OnWaveEnded.Invoke(i);
+                OnWaveEnded.Invoke(i);
             }
-            if (OnAllWavesDone != null) OnAllWavesDone.Invoke();
+            OnAllWavesDone.Invoke();
             _routine = null;
         }
     }

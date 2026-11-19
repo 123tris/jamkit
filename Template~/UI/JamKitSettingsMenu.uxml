@@ -1,0 +1,72 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" xmlns:jk="Metz.JamKit" editor-extension-mode="False">
+    <Style src="JamKitMenu.uss" />
+    <ui:VisualElement name="settings-menu" class="jk-view jk-view--settings">
+        <ui:VisualElement picking-mode="Ignore" class="jk-dim" />
+        <ui:VisualElement class="jk-panel jk-panel--wide">
+            <ui:Label text="Settings" class="jk-title jk-title--small" />
+            <ui:VisualElement class="jk-section">
+                <ui:Label text="Audio" class="jk-section__title" />
+                <ui:VisualElement class="jk-row">
+                    <ui:Label text="Master" class="jk-row__label" />
+                    <ui:Slider name="settings-master" low-value="0" high-value="1" value="1" data-source="project://database/Assets/_Project/Variables/MasterVolume.asset?fileID=11400000&amp;guid=265441624955caa4ea4d064e179c23c2&amp;type=2#MasterVolume" class="jk-row__control">
+                        <Bindings>
+                            <ui:DataBinding property="value" data-source-path="CurrentValue" binding-mode="TwoWay" />
+                        </Bindings>
+                    </ui:Slider>
+                </ui:VisualElement>
+                <ui:VisualElement class="jk-row">
+                    <ui:Label text="Music" class="jk-row__label" />
+                    <ui:Slider name="settings-music" low-value="0" high-value="1" value="1" data-source="project://database/Assets/_Project/Variables/MusicVolume.asset?fileID=11400000&amp;guid=ef48be90e8d9e4f4f812cb2d0f7778fa&amp;type=2#MusicVolume" class="jk-row__control">
+                        <Bindings>
+                            <ui:DataBinding property="value" data-source-path="CurrentValue" binding-mode="TwoWay" />
+                        </Bindings>
+                    </ui:Slider>
+                </ui:VisualElement>
+                <ui:VisualElement class="jk-row">
+                    <ui:Label text="SFX" class="jk-row__label" />
+                    <ui:Slider name="settings-sfx" low-value="0" high-value="1" value="1" data-source="project://database/Assets/_Project/Variables/SfxVolume.asset?fileID=11400000&amp;guid=e6142b8b970dcbc4c9412a91e64fe92a&amp;type=2#SfxVolume" class="jk-row__control">
+                        <Bindings>
+                            <ui:DataBinding property="value" data-source-path="CurrentValue" binding-mode="TwoWay" />
+                        </Bindings>
+                    </ui:Slider>
+                </ui:VisualElement>
+            </ui:VisualElement>
+            <ui:VisualElement class="jk-section">
+                <ui:Label text="Graphics" class="jk-section__title" />
+                <ui:VisualElement class="jk-row">
+                    <ui:Label text="Quality" class="jk-row__label" />
+                    <jk:QualityDropdown name="settings-quality" data-source="project://database/Assets/_Project/Variables/QualityLevel.asset?fileID=11400000&amp;guid=c4a276f9aae095649c16e3ba88923c02&amp;type=2#QualityLevel" class="jk-row__control">
+                        <Bindings>
+                            <ui:DataBinding property="value" data-source-path="CurrentValue" binding-mode="TwoWay" />
+                        </Bindings>
+                    </jk:QualityDropdown>
+                </ui:VisualElement>
+                <ui:VisualElement class="jk-row jk-row--desktop">
+                    <ui:Label text="Resolution" class="jk-row__label" />
+                    <jk:ResolutionDropdown name="settings-resolution" data-source="project://database/Assets/_Project/Variables/ResolutionIndex.asset?fileID=11400000&amp;guid=c763064745427df08f24c8b176ed3bc1&amp;type=2#ResolutionIndex" class="jk-row__control">
+                        <Bindings>
+                            <ui:DataBinding property="value" data-source-path="CurrentValue" binding-mode="TwoWay" />
+                        </Bindings>
+                    </jk:ResolutionDropdown>
+                </ui:VisualElement>
+                <ui:VisualElement class="jk-row">
+                    <ui:Label text="Fullscreen" class="jk-row__label" />
+                    <ui:Toggle name="settings-fullscreen" value="true" data-source="project://database/Assets/_Project/Variables/Fullscreen.asset?fileID=11400000&amp;guid=75d314b2e0f2d1bc18036707a66934f7&amp;type=2#Fullscreen" class="jk-row__control">
+                        <Bindings>
+                            <ui:DataBinding property="value" data-source-path="CurrentValue" binding-mode="TwoWay" />
+                        </Bindings>
+                    </ui:Toggle>
+                </ui:VisualElement>
+                <ui:VisualElement class="jk-row jk-row--desktop">
+                    <ui:Label text="VSync" class="jk-row__label" />
+                    <ui:Toggle name="settings-vsync" value="true" data-source="project://database/Assets/_Project/Variables/VSync.asset?fileID=11400000&amp;guid=f02fb9c60dd5dae4228bfcef9ab5f5a2&amp;type=2#VSync" class="jk-row__control">
+                        <Bindings>
+                            <ui:DataBinding property="value" data-source-path="CurrentValue" binding-mode="TwoWay" />
+                        </Bindings>
+                    </ui:Toggle>
+                </ui:VisualElement>
+            </ui:VisualElement>
+            <ui:Button text="Back" name="settings-back" class="jk-button jk-button--back" />
+        </ui:VisualElement>
+    </ui:VisualElement>
+</ui:UXML>

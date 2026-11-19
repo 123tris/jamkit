@@ -4,6 +4,284 @@ All notable changes to JamKit are documented here. Format follows [Keep a Change
 
 ## [Unreleased]
 
+### Since 1.0.0-pre.1
+
+**Minimum Unity is 6.5 (6000.5).** 1.0.0-pre.1 named 6.6 before anything had run in Unity, and nothing in the kit needs it: JamKit is compiled and its project template authored and played in 6000.5.7f1. The toolbar (6.3) and the Game Flow graph (6.4) stay in their version-gated assemblies.
+
+**Changed: the samples' scripts are on 1.0.** Re-authoring the sample scenes and prefabs is editor work still to do.
+
+- `WaveSpawner` raises `OnWaveStarted` and `OnWaveEnded` (`Signal<int>`) and `OnAllWavesDone` Signals instead of Ripple event fields.
+- `Bouncer2D.OnBounce` and `GridMover.OnStep` are `Signal`s carrying the surface normal and the target cell. Each replaces a `VoidEventSO` field and a C# event that did the same job.
+- `Knockback` leaves the Survivor sample: `ChaseMover` sets velocity every physics step, so its impulse never showed. It returns as a kit component with the game-feel track.
+- `03 Feel Showcase` becomes `03 Feel Bridge`: `FeelPlayer`, `MMF_JamKitHitStop` and a README on wiring them to a starter, with no scene or prefab, since every JamKit signal already wires straight to an `MMF_Player`. Sample setup no longer lists it, and its registry test now covers only samples with a scene.
+
+**Added: popup text.** `PopupText` shows a number or a word above its object (`Show(float)`, `Show(int)`, `Show(string)`), so `Health.OnDamaged → Show` is a damage number with no code. It goes through the new `PopupServiceSO`, which owns a UI Toolkit overlay under the `[JamKit]` host, the same way the screen fade does: each popup rises from its point in the world and fades, unaffected by pause and hit stop unless you untick Unscaled. The overlay is `Runtime/UI/Overlays/JamKitPopups.uxml` on its own panel at sort order 50, under the toast and the menus, styled by `.jk-popup` and `--jk-popup-size` in `JamKitOverlays.uss`. A new Popups asset comes wired to it, and the Doctor offers JamKit's when one isn't. The project template adds `Services/Popups`, and the chaser starters show their damage in yellow.
+
+- `DisplaySettings` had no `JamKitEditor` registration, which `InspectorTests` would have failed on.
+
+**Added: a damage flash.** `ScreenFadeSO` gains `FlashAlpha`, how opaque `Flash` gets at its peak, and each fade asset now draws on its own overlay under the `[JamKit]` host instead of sharing one, so a red hit flash and a black scene fade never cancel each other. The project template adds `Services/DamageFlash` (red, 0.07 s, peaking at 0.35) and the players' `OnDamaged` plays it.
+
+**Added: placeholder sounds with no audio files.** `SynthSound` is a `Sound` that synthesizes its clip from a preset (Pickup, Hit, Jump, Explosion, Powerup, Blip, Laser) and a seed, once, and plays it like a `ClipSound`. Its Randomize and Mutate buttons pick another sound while playing and keep it. The project template ships one asset per preset in `Audio/`, routed to the mixer's SFX group, and the starters play them: players' `Health.OnDamaged` plays Hit, chasers' `Health.OnDied` plays Explosion, and the Pickup plays Pickup. Replacing one is swapping the asset for a `ClipSound`. The synthesis is a pure function with tests: the same seed gives the same sound, every sample stays within ±1, and every sound ends in silence.
+
+- `Mover2D` and `Mover3D` gain an `OnJumped` Signal, so a jump can play a sound or a squash; nothing could hear a jump before.
+- `AudioPlayer` plays any `AudioResource` with an output and a volume, which both `ClipSound` and `SynthSound` use.
+
+**Changed: `JamKit > Publish to itch.io` replaces `JamKit > Build > WebGL (itch.io)`.** It builds for the web, zips the build with `index.html` at the root of the zip (the step people got wrong by hand, zipping the folder itself), and when butler is installed and Project Settings > JamKit names your page, runs `butler push` in the background and logs the result. butler keeps its own login. While the Doctor reports errors it asks before building. A Build Profile set in the new Project Settings > JamKit page is built instead of the scenes in Build Settings. The toolbar's Build Web button is now Publish.
+
+**Added: Keep These Values After Play.** While playing, a component's ⋮ menu takes its values at that moment and writes them back when Play mode ends, in one undoable step. It keeps plain values, arrays and asset references, and skips references to scene objects (they are recreated when Play ends), Signal responses, and components spawned during Play. Taking the values when you click, rather than when Play ends, leaves out what the game itself changed afterwards, such as health lost. The GMTK 2026 project imported a 2,700-line third-party saver for this.
+
+**Added: `JamKit > Clear Saved Data`.** It lists every Ripple variable with Persist ticked, then clears their saved values in one go. The GMTK 2026 project imported a PlayerPrefs editor for this.
+
+**Added: `JamKit > New Level`.** It copies the project template's new `Scenes/Templates/Level.unity`, the Game scene without its `Run` object (a level continues a run), so a level starts with `JamKitCore`, the menu with no opening screen, a camera, a light and an EventSystem. It joins the build before GameOver, after the levels made before it, and the toolbar's Scenes menu offers it too. For `File > New Scene`, make a Scene Template from `Level.unity` in the editor.
+
+**Changed: one searchable starter picker.** `GameObject > JamKit > Starter…` and the toolbar's new Starters button open a list of every prefab in `Assets/_Project/Prefabs/Starters`, filtered as you type. Enter or a click places it at the Scene view's pivot, or under the object you right-clicked. A team's own starter variants appear with no code. The `Starter` enum, the 11 menu items that each hard-coded a starter, and `ProjectTemplate.StarterPath` are removed.
+
+**Added: the Doctor runs itself.** It scans after a domain reload, when a scene is saved, before Play and before a build, and logs one warning listing the problems it found: after a reload or save only when the list changed, and once Play has started so Clear on Play doesn't wipe it. The toolbar's Doctor button shows the count, and an open Doctor window refreshes with each scan. It never opens a dialog, and does nothing in batch mode.
+
+**Breaking: the settings screen is data.** `MenuSettingsBinder` found the settings controls by name in C# and wrote graphics settings straight to PlayerPrefs (`JamKit.Gfx.*`), beside the Ripple persistent variables PILLARS names as the only owner of saved data. Now every control in `JamKitSettingsMenu.uxml` binds two-way to a persistent Ripple variable: the three volumes as before, plus the new `QualityLevel`, `ResolutionIndex`, `Fullscreen` and `VSync` in `Variables/`.
+
+- New `DisplaySettings` on `JamKitCore` applies quality, resolution, full screen and VSync once per session and again on every change. A level or resolution below 0 takes the current one on first launch. WebGL skips resolution and VSync.
+- New UXML controls `QualityDropdown` and `ResolutionDropdown` fill their own choices. Their `value` is the index, so they bind like any field.
+- `MenuSettingsBinder` and `MenuController`'s `MasterVolume`, `MusicVolume` and `SfxVolume` fields are removed; the settings screen needs nothing from the controller.
+- Adding a setting is a persistent variable and a bound row, with no code.
+- Graphics settings saved under the old `JamKit.Gfx.*` keys are not carried over.
+
+**Added: the Doctor checks what the hour-zero FAQ answered by hand.** Each of these failed silently at runtime:
+
+- A build scene without `JamKitCore`, found from the scene's dependencies without loading it. Game Flow transitions, the volume settings, the DebugPanel and toasts don't work there. Fix: add it, saving the scene only if it wasn't open.
+- A Game Flow transition that loads a scene missing from Build Settings, which fails, or that listens only in such a scene, which never runs. Fix: add the scene to the build when exactly one scene has that name.
+- A `ClipSound` or `ClipMusic` with no Output, which the volume sliders can't reach. Fix: use the mixer's SFX or Music group when exactly one mixer has it.
+- A `CameraShake` in the open scenes with no impulse listener. Fix: add `CinemachineImpulseListener` to the Cinemachine cameras, or `CinemachineExternalImpulseListener` to the camera when there are none.
+- A menu that opens on a screen taking UI input in a scene with movers, which get no input until it closes (information). Fix: start with no view.
+
+**Changed: UI mode silences every gameplay map.** `InputServiceSO` switched one map named by `GameplayMapName`, so the two-player `Gameplay1` and `Gameplay2` maps in `JamKitInput` kept reading input under the pause menu. Now the UI map is the only one on in UI mode, and every other map is on in gameplay mode. `GameplayMapName` is removed; an action asset that has a UI map and no other map is a Doctor error, and so is a missing UI map, since switching modes throws without it.
+
+**Changed: Health and GameTimer write their mirror variable through Ripple's `LocalVariables`.** `Health.CurrentVariable` told you to leave it empty on prefabs several objects share. With a `LocalVariables` on the object listing that variable, each copy now writes its own, so every enemy can drive its own health bar through a `VariableListener`. Without one, nothing changes.
+
+**CI** builds a project on 6000.5.7f1 with JamKit listed as testable. Before, the test project left JamKit out of `testables`, so Unity would not have built a single JamKit test. It still waits for Ripple's `v0.3.0` tag and a `UNITY_LICENSE` secret.
+
+**Breaking: Odin Inspector is no longer used.** Since Ripple 0.3.0 dropped it, JamKit was the only reason a project needed Odin, and every JamKit assembly refused to compile without it. Odin is licensed per seat, so a teammate without a license could not open a JamKit project, and CI could not build it. JamKit now needs nothing from the Asset Store.
+
+- New attributes in `Metz.JamKit.Inspector`: `[Required]`, `[Button]`, `[ShowInInspector]`, `[ShowIf]`, `[HideIf]` and `[UxmlName]`. They live in their own namespace so that game code using Odin or NaughtyAttributes beside `using Metz.JamKit;` sees no ambiguous names.
+- `JamKitEditor` (UI Toolkit) draws every JamKit component and asset by convention instead of group attributes: fields in order, Signals under an Events foldout, `[Button]` methods and `[ShowInInspector]` members under a Debug foldout that updates in Play mode. A `[Button]` may take one string, float, int or bool, which the foldout gives a field. `BoxGroup` became `[Header]`; `FoldoutGroup`, `HorizontalGroup`, `ReadOnly`, `DisableInEditorMode`, `HideInEditorMode`, `ProgressBar` and `TableList` are gone.
+- `[Required]` draws an error under an empty reference in any inspector. The Doctor's new **missing required references** check replaces Odin Validator: it walks open scenes, prefabs and assets under `Assets/_Project`, follows lists and nested serializable types, and skips a field its `[ShowIf]`/`[HideIf]` hides. An empty field on a starter prefab is reported as information, since starters leave some slots for you, and as an error on a starter you placed.
+- `MenuView` picks its element and button names through `[UxmlName]`, and its editor-only name lookup moved into the drawer.
+- `FirstPersonLook`'s warning about `Mover3D.RotateToFaceMove` turning the same body is a Doctor check with a Fix, instead of an inspector box nobody sees until they select the object.
+- `GameTimer` shows its current time and whether it is running in the Debug foldout.
+- `ODIN_INSPECTOR` is gone from every assembly's define constraints. `Tools~/compile-check.sh` strips Odin from the references and defines, so ALL GREEN means the kit compiles without it.
+- New `InspectorTests`: every JamKit type has a `JamKitEditor`, builds its inspector, and has a Debug foldout exactly when it has buttons or live values.
+
+Serialized data is unchanged: attributes do not affect what Unity saves.
+
+**Fixed: killing a chaser starter threw an exception and left the chaser in the scene.** Both chasers' `Health.OnDied` called `SpawnBurst.Burst` with no prefab assigned. `Instantiate(null)` throws inside the death signal, before `Health` destroys the object, so a dead chaser kept chasing. The project template gains `Debris2D` and `Debris3D` in `Prefabs/`: the chaser's look on a small body that despawns after 1.2 seconds. Each chaser bursts three of them at 4 units a second, since a launch speed of 0 left 2D debris hanging in place. The new missing required references check found this on its first run.
+
+**Fixed: Retry kept the previous run's score.** Ripple variables reset only when Play mode starts, and nothing in the project template reset `Score`, so a second run's Game Over screen showed the points of both runs. The template's Game scene now has a `Run` object whose `LifecycleSignals.OnEnabled` calls `Score.ResetValue`. It runs while the Game scene loads, after the fade out has covered the screen. Resetting from the `Play` event instead would have zeroed the score while the Game Over screen still showed it.
+
+### 1.0.0-pre.1: overhaul
+
+Minimum Unity is now 6.6. Requires Ripple 0.3.0 (tag `v0.3.0`): the project template's Signals are saved in the 0.3.0 shape, which 0.2.0 cannot read.
+
+**Breaking: UltEvents is gone.** Every component event is a Ripple `Signal`: a `UnityEvent`, a list of Ripple events to raise, and code listeners. All `Broadcast*` and `PlayOn` fields are removed; raise a Ripple event from the Signal instead. Existing UltEvent wiring in prefabs and scenes is not migrated.
+
+**Breaking: services host themselves.** `ServiceSO<TRunner>`, `ServiceRunner<,>` and the Time, Scene and Audio runners are removed. Timed work runs on one persistent `[JamKit]` object, so no scene needs a runner.
+
+- `TimeServiceSO.Push` returns a `TimeModifier`; the lowest active modifier wins. This fixes slow-mo ending during pause and un-pausing the game. `Pop`, `ReplaceTop` and `Clear` are removed.
+- `SceneServiceSO`: `Load` / `Reload` (`LoadAsync` / `ReloadAsync` return `Awaitable`). The fade-in after a load now plays and `OnLoadCompleted` now fires; both were lost before because the coroutine died with the old scene.
+- New `ScreenFadeSO` replaces the scene-bound `FadeOverlay`.
+- `InputServiceSO` keeps only mode switching and the cursor. Components take `InputActionReference` fields.
+
+**Breaking: audio.** `AudioServiceSO`, `AudioServiceRunner` and `SfxOnEvent` are removed. Sounds are `Sound` / `Music` assets (`ClipSound`, `ClipMusic`, and `FmodSound`, `FmodMusic` under `JAMKIT_FMOD`). Music survives scene loads. Music ducking and stingers are not carried over.
+
+**Breaking: UI on the Unity 6.6 model.** Every document opens in UI Builder looking like the game.
+
+- Menus, `Toast`, `DebugPanel` and the screen fade use `PanelRenderer` instead of `UIDocument`, and find their elements in its reload callback. Editing a document while playing reloads it in place. Prefabs scaffolded before this are not converted.
+- `LabelBinding`, `BarBinding` and `UIBindingBase` are removed. Use the `ValueLabel` and `ValueBar` controls with a UXML data binding to a variable's `CurrentValue`. The Game Over score is bound in `JamKitGameOverMenu.uxml`.
+- `ValueLabel` is a `VisualElement` holding a `Label` (`jk-value-label__text`), like `ValueBar` holds its fill, instead of being a `Label`. A `Label` already has a string `value` through `INotifyValueChanged<string>`, so the float `value` on top of it made Unity log "Detected multiple return types for PropertyBag=[ValueLabel]" whenever one was bound. Its UXML attributes, bindings and text styling are unchanged.
+- `Toast`, `DebugPanel` and the fade are UXML and USS in `Runtime/UI/Overlays/`, each with its own panel settings. `Toast.FontSize`, `Color` and `ScreenY` moved to `JamKitOverlays.uss`. `ScreenFadeSO` gains `Document` and `Panel`.
+- `JamKitUI` is removed. The theme, `Runtime/UI/JamKitDefaultTheme.tss`, is referenced by the panel settings instead of loaded from `Resources`, and imports `JamKitControls.uss`.
+- The menu documents go to `Assets/_Project/UI/` instead of `Assets/_Project/UI/Resources/`.
+- Screens hide with the class `jk-view--hidden` instead of an inline style. In `JamKitMenu.uxml` the other screens' instances carry `jk-instance--hidden`, so that document previews the Start screen while each screen's own document previews itself.
+- Menu classes follow block, element and modifier: `jk-row__label`, `jk-row__control`, `jk-section__title`, `jk-buttons`, `jk-button--quit` (was `jk-quit`). Colors and sizes are variables on `:root`.
+- On WebGL the menu adds `jk-webgl` to its panel root and the stylesheet hides Quit and the `jk-row--desktop` settings, instead of the code setting styles.
+- The Doctor window and the `SceneRef` drawer are UI Toolkit. The Doctor also flags a `PanelRenderer` with no document and a `ScreenFade` with no overlay, with fixes for JamKit's own.
+
+**Breaking: the scaffold is a copied project template.** `JamKit > New Jam Project` no longer builds prefabs, scenes and assets in code. The project template ships in `Template~/` with its `.meta` files, and scaffolding copies every file the project does not have into `Assets/_Project`. An asset therefore has the same GUID in every project, so references inside the template survive the copy and nothing is patched afterwards. The code that built the scaffold restated every path, prefab and element name the Doctor and the sample setup also needed, and wired references by hand. `docs/adr/0001` records why the template is a hidden folder rather than a visible one.
+
+- Scaffolding never overwrites or migrates a file. The "Keep Existing / Overwrite All" choice is gone, and so are the `UIDocument` to `PanelRenderer` conversion and the move out of `UI/Resources/`. Delete a file and run the wizard again to get the template's copy back.
+- The template is the baseline only: Unity audio and `PunchScale`. The starters no longer gain an `MMF_Player` when Feel is installed, and there is no FMOD variant.
+- A template scene that Build Settings lacks goes in right after the template scene before it, so Bootstrap is the first scene of a build it joins. Scenes already in the build keep their place, and the Doctor's Add To Build fix works the same way.
+- Scaffolding stops with a message on a Ripple older than 0.3.0, and the Doctor reports one.
+- Scaffolding also stops, copying nothing, when a template file the project lacks refers to a file the project has under another GUID, as the files an older JamKit made do. The copy would point at nothing. The project's own files at template paths don't stop it otherwise.
+- Setting up a sample copies whatever template files the project lacks, as New Jam Project does, instead of scaffolding only when a template scene or `JamKitCore` is missing. It stops with the same messages.
+- `ProjectTemplate` scaffolds and names the three scenes, `JamKitCore`, the starters folder and the scripts folder. `JamProjectWizard` keeps `Run`; its paths and `Scaffold` moved there.
+- `JamKitDoctor` holds the Doctor's checks, so they run without the window.
+- Removed: `StarterPrefabLibrary`, `TemplateAssets`, `Editor/Templates/`, and two hooks nothing ever used, `JamProjectWizard.PostScaffold` and `JamKitDoctorWindow.ExtraScans`.
+- The template is edited in a scaffolded project and written back with `Tools~/export-template.sh`.
+- New tests: the copy rules, the GUID conflict check and the build order; every template file has its `.meta`, every `.meta` its file or folder, and every asset the template refers to is in the template, JamKit, Ripple or a package JamKit depends on; every starter in the Create menu is in the template. `ScaffoldedProjectTests` scaffolds into a project without `Assets/_Project` (and is skipped in one that has it): the Doctor finds nothing wrong, the menu holds every screen, and the Game Over score loads as a `ValueLabel` bound to `Score`. The menu-document tests read the template's UXML as XML, so they run in any project.
+
+**Added**
+
+- Juice: `Ease`, `Tween`, `PunchScale`, `ColorFlash`, `CameraShake`.
+- `GameFlow` + `GameFlowDriver`: Ripple events mapped to scene loads, with a Graph Toolkit editor on Unity 6.4+.
+- `SceneLoader`, `LifecycleSignals`, `MixerVolume`.
+- Main toolbar controls: scenes, play from first scene, time scale, Doctor, Build.
+- Auto-assign fills required `InputActionReference` fields by action name.
+
+**Changed**
+
+- `Health.CurrentVariable` is a one-way mirror. Write HP through `SetCurrent`.
+- `TriggerZone` only filters and signals (`OnEntered`, `OnExited`, `DestroyEnterer`, `DestroySelf`). Damage moved to `Damager` (new `Kill` flag); score and scene loading are wired from the signal.
+- `PatrolMover.AtEnd` is an enum (was a `[SerializeReference]` strategy).
+- `ChaseMover` targets an explicit transform or a runtime set; the tag scan is removed.
+- `MenuController` absorbs `MenuNavigator` and `PauseCoordinator`, reads its own Pause and Cancel actions, and keeps time paused while any screen in the stack pauses it. Its scene verbs are removed in favour of `GameFlow`.
+- `MenuView` element names are picked from a dropdown built from the UXML.
+- `Toast` drops its message tables; call `Show` from an `EventListener`.
+- `Mover2D` ground check starts below the collider, so it no longer hits itself.
+
+**Removed**
+
+`Pickup`, `FollowCamera`, `PauseController`, `Motor`/`IMotor` (replaced by an internal `Body` struct), `Timer`, `UnscaledCooldown`, `RandomBag`, unused `MathX` / `ColorX` / `VectorX` members. `RuntimeSetMember` moved to Ripple.
+
+### Changed — global engine state has exactly one owner
+
+PILLARS named one owner for `Time.timeScale`. Two other process-wide things had none, and both
+produced real bugs in GMTK 2026.
+
+- **The cursor now belongs to `InputServiceSO`**, not `FirstPersonLook`. Lock follows the active map
+  (Gameplay locks, anything else releases), so menus behave in scenes with no first-person rig —
+  previously a scene without an FPS rig had no cursor owner at all. `FirstPersonLook.ManageCursor`
+  and `CursorLocked` are removed.
+- **`InputServiceSO.PushMap` / `PopMap`** nest UI over gameplay the way the timescale stack already
+  nests, so closing a menu restores whatever was underneath instead of assuming Gameplay. The raw
+  `UI`/`Gameplay` properties are documented as read-only handles: calling `Enable()`/`Disable()` on
+  them bypasses `SwitchTo`, so `MapSwitched` never fires. GMTK hit exactly that — the cursor never
+  released, so two scripts set it by hand.
+- **`TimeServiceSO.PushSmooth(scale, seconds)`** eases the timescale and leaves it pushed, via a new
+  `ReplaceTop` that rewrites the top modifier in place so the stack never grows and one `Pop`
+  unwinds it. This closes the gap that broke the rule in the first place: `Pause()` was
+  instantaneous, the jam wanted a half-second ease, so it tweened `Time.timeScale` directly in two
+  scripts. **A bypass means the owner is missing a method** — that corollary is now written into
+  PILLARS.
+
+`Documentation~/object-oriented-review.md` records what this post-mortem overturned: pooling was
+removed rather than abstracted (with the Liskov test that keeps the audio decision intact), the
+service Template Method survives on narrower grounds, and the `View` enum → `MenuView` change is
+§11.5 applied to a screen set — variation-as-data, not a subclass hierarchy.
+
+### Breaking — menu screens are data, not an enum
+
+`MenuController.View` is gone. Screens are now **`MenuView` components**, one per screen, listed on
+the controller.
+
+The enum was the kit's sharpest open/closed failure. A jam needing a fourth screen could only edit
+the package or route around it, and GMTK 2026 did both: it edited `MenuController` *and* wrote
+`GameOver.cs` and `GameFinishedUI.cs` — two near-identical 55-line scripts, each re-implementing
+show/hide, button wiring, pause, and cursor release — plus a third bespoke show/hide for dialogue.
+None of that should have been code.
+
+```csharp
+public string RootElementName;              // which UXML element is this screen
+public BoolReference CanOpen = new(true);   // constant, or a Ripple bool that gates opening
+public bool PausesTime, SwitchesToUIInput;  // what being on top does to the game
+public UltEvent OnShown, OnHidden;
+public List<Button> Buttons;                // { ElementName, UltEvent OnClicked }
+```
+
+Every workaround the jam wrote now has a no-code answer. Game Over and Game Clear are `MenuView`
+children. "Can't pause while dead" — which GMTK expressed by adding a `[Required] FloatVariableSO
+playerHealth` to the kit's `PauseController`, making it unusable in any project without that
+variable — is `CanOpen` pointed at a Ripple bool. The `onPauseOpened`/`onPauseClosed` events it added
+to `MenuController` are `OnShown`/`OnHidden` on the pause view, and are no longer `[Required]`.
+
+Also in this change:
+
+- **`MenuNavigator` re-derives** time and input from the top view on every change instead of toggling
+  them on transitions, so a stack unwinding several levels at once still lands consistent — the
+  leaked-pause bug class can't occur. It raises `Changed` so the controller re-syncs settings sliders
+  without the navigator knowing what "settings" is.
+- **Buttons bind to verbs** (`PlayGame`, `ShowSettings`, `Back`, `Restart`, `MainMenu`,
+  `TogglePause`, `QuitGame`) through UltEvents — keeping `SceneRef`'s edit-time scene checking while
+  the wiring stays data. Element-name queries are scoped per view, so two screens can each own a
+  `restart-button` without colliding (GMTK's `HUD.uxml` had exactly that collision, safe only by
+  accident).
+- **WebGL quit-hiding is class-driven** (`.jk-quit`) rather than matched on one hardcoded name.
+- **New `JamKitGameOverMenu.uxml` template**, instanced by `JamKitMenu.uxml` like the other screens.
+
+**Removed: `GameOverController`.** It built its entire UI in C#, so a designer could not change the
+layout without a programmer — a direct PILLAR 2 violation ("if a behavior can only be reached from
+C#, it isn't done"). The jam never used it and wrote its own twice instead. The wizard's GameOver
+scene is now the same menu prefab opened on its Game Over screen, with the score shown by an ordinary
+`LabelBinding`.
+
+**Migration:** re-run `JamKit > New Jam Project` to regenerate the menu prefab, or add `MenuView`
+children by hand and populate `Views` / `InitialView` / `PauseView` / `SettingsView`. `InitialView`
+changes from an enum to a `MenuView` reference; empty now means "start hidden" (the old `View.None`).
+`PauseController`, `HandleBack()`, and `TogglePause()` are unchanged.
+
+### Added — the package boundary is now defended
+
+The kit had no answer for its own most likely failure: a jam forking it. GMTK 2026 vendored the
+package on day 3 and edited it seven times; both trees ended up claiming version `0.9.1`, and the
+commit they forked from was later rewritten out of existence, leaving no merge base in either
+direction. Three additions, none of which prevent forking — they make it *visible and reversible*.
+
+- **[UPSTREAMING.md](UPSTREAMING.md)** — how to fork the kit without stranding the work: mark it with
+  a `-fork.N` version, vendor with `git subtree` (never a folder copy — it destroys the history the
+  merge later needs), record the base commit, keep game code out of the package, and sort the diff
+  into upstream / game-side / delete-upstream when the jam ships. Includes the manual salvage
+  procedure for when the merge base is already gone.
+- **`JamProjectWizard` scaffolds `Assets/_Project/Scripts/Game.asmdef`.** Without an assembly of its
+  own, game code compiles into `Assembly-CSharp`, which auto-references the kit — so a
+  global-namespace game class silently shadows a JamKit type of the same name. GMTK shipped exactly
+  that: a hand-rolled `ProjectileShooter` in the global namespace, sitting under `using Metz.JamKit;`,
+  quietly winning over the kit's. An asmdef makes the boundary structural rather than a habit.
+- **Two `JamKit > Doctor` checks.** One flags game scripts with no `.asmdef`; the other detects that
+  JamKit itself is an *embedded* package and names the `-fork.N` convention. That second warning
+  appearing on day 3 is what turns a silent divergence into a decision.
+
+### Removed — dead weight
+
+Five types, none of them referenced by the package, its samples, or the first real jam project.
+Each was verified by resolving its `.meta` GUID against every prefab and scene, not by name.
+
+- **`Dasher`** (183 LOC). Zero component instances anywhere. Worse than unused: the jam wrote code
+  to *disable* it at runtime (`PlayerMovement.cs`, "the legacy JamKit Dasher hard-overwrites
+  velocity (exec order 50, i.e. after us)"). It claimed a hardcoded script execution order and
+  stomped velocity, so it was incompatible with any custom controller — and a jam always writes a
+  custom controller. The ROADMAP row stays marked cut: dash/dodge is still 3-column-worthy, but a
+  replacement must *contribute* to velocity, not overwrite it.
+- **`HitscanShooter`** (106 LOC). Zero references in package, samples, and jam.
+- **`SaveServiceSO`** (130 LOC) + its tests. No code referenced it; the only trace was the asset the
+  wizard scaffolded. PILLARS already routed settings and high scores to Ripple persistent variables,
+  leaving only game-shaped JSON — rare in a jam, and better owned by the game. The pillar is
+  stronger for it: persistence now has exactly one mechanism with no exception clause. The
+  error-handling lessons (missing vs corrupt, key path-traversal validation) are preserved as
+  guidance in `Documentation~/architecture.md`.
+- **`HitHandler`** and **`GameObjectEvent`**. Game-specific code that leaked into the package via
+  the vendored fork; `HitHandler` was in the *global namespace*, and `GameObjectEvent` existed only
+  to serve it. A typed `GameObjectEvent` belongs upstream in Ripple beside `FloatEvent`/`IntEvent`,
+  not here.
+
+**Deferred, deliberately** — both would ship something broken today:
+`GameOverController` is wired into the wizard's GameOver scene and waits for its `MenuView`
+replacement; `GameTimer` is wired by GUID into `SurvivorArena.prefab`, so cutting it needs Sample 02
+re-authored in the editor first.
+
+### Changed — the package now uses its own utilities
+
+`MathX`, `ColorX`, `VectorX`, and `RandomBag` had **zero references anywhere** — not in the kit, its
+editor tooling, or its samples. An unused utility is untested and undiscoverable, and it gets
+rewritten by users who never find it: the jam shipped a 290-line `RangeRemapper` while `MathX.Remap`
+sat unused in the package. New rule — **the package consumes its own utilities, or drops them.**
+
+- `BarBinding` now normalizes through `MathX.Remap01`; `FadeOverlay` uses `ColorX.WithA`;
+  `ChaseMover` and `Mover3D` use `VectorX.OnGround`.
+- Dogfooding immediately found a real bug: `MathX.Remap`/`Remap01` divided by a zero-width input
+  range, returning NaN/Infinity. `BarBinding` had been guarding against it by hand. Both now return
+  a defined value (a HUD bar whose Max is still 0 on frame one reads empty, not NaN).
+- `RandomBag` is retained on the strength of a specific pending use — the `SpawnSource` strategy
+  that replaces `SpawnBurst`'s single-prefab field. If that does not land, it goes.
+
 ### Removed — pooling, in full
 
 `GameObjectPool`, `IPoolable`, `PoolServiceSO`, `PoolServiceRunner`, their two test files, and the

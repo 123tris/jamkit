@@ -1,0 +1,8 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements" editor-extension-mode="False">
+    <Style src="JamKitOverlays.uss" />
+    <ui:VisualElement picking-mode="Ignore" class="jk-overlay">
+        <ui:VisualElement picking-mode="Ignore" class="jk-toast">
+            <ui:Label name="toast-message" text="+100" picking-mode="Ignore" class="jk-toast__message" />
+        </ui:VisualElement>
+    </ui:VisualElement>
+</ui:UXML>

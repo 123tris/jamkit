@@ -1,0 +1,25 @@
+.jk-bar {
+    --jk-bar-thickness: 24px;
+    --jk-bar-track: rgba(255, 255, 255, 0.15);
+    --jk-bar-fill: rgb(120, 200, 120);
+
+    flex-direction: row;
+    height: var(--jk-bar-thickness);
+    background-color: var(--jk-bar-track);
+    border-radius: 4px;
+    overflow: hidden;
+}
+
+.jk-bar__fill {
+    background-color: var(--jk-bar-fill);
+}
+
+.jk-bar--vertical {
+    flex-direction: column-reverse;
+    width: var(--jk-bar-thickness);
+    height: auto;
+}
+
+.jk-value-label {
+    -unity-text-align: middle-left;
+}

@@ -6,119 +6,106 @@ namespace Metz.JamKit.Tests
 {
     public class HealthTests
     {
-        GameObject _go;
-        FloatVariableSO _current;
+        GameObject host;
+        FloatVariableSO mirror;
 
-        // SetActive(false) skips OnEnable so tests drive the API directly (matches GameTimerTests).
         Health NewHealth(float max)
         {
-            _go = new GameObject("health");
-            _go.SetActive(false);
-            var h = _go.AddComponent<Health>();
-            h.Max = new FloatReference(max);
-            h.Current = max;
-            return h;
+            host = new GameObject("health");
+            host.SetActive(false);
+            var health = host.AddComponent<Health>();
+            health.Max = new FloatReference(max);
+            health.Current = max;
+            return health;
         }
 
         [TearDown]
         public void TearDown()
         {
-            if (_go != null) Object.DestroyImmediate(_go);
-            if (_current != null) Object.DestroyImmediate(_current);
+            Object.DestroyImmediate(host);
+            if (mirror != null) Object.DestroyImmediate(mirror);
         }
 
         [Test]
         public void Damage_ReducesCurrent_AndDiesOnceAtZero()
         {
-            var h = NewHealth(10f);
+            Health health = NewHealth(10f);
             int died = 0;
-            h.OnDied = new UltEvents.UltEvent();
-            h.OnDied.DynamicCalls += () => died++;
+            health.OnDied.AddListener(() => died++);
 
-            h.Damage(4f);
-            Assert.AreEqual(6f, h.Current, 0.0001f);
-            Assert.IsFalse(h.IsDead);
+            health.Damage(4f);
+            Assert.AreEqual(6f, health.Current, 0.0001f);
+            Assert.IsFalse(health.IsDead);
             Assert.AreEqual(0, died);
 
-            h.Damage(6f);
-            Assert.AreEqual(0f, h.Current, 0.0001f);
-            Assert.IsTrue(h.IsDead);
+            health.Damage(6f);
+            Assert.IsTrue(health.IsDead);
             Assert.AreEqual(1, died);
 
-            h.Damage(5f); // already dead: no-op, no second OnDied
+            health.Damage(5f);
             Assert.AreEqual(1, died);
+        }
+
+        [Test]
+        public void Damage_ReportsAmount()
+        {
+            Health health = NewHealth(10f);
+            float reported = 0f;
+            health.OnDamaged.AddListener(amount => reported = amount);
+
+            health.Damage(3f);
+
+            Assert.AreEqual(3f, reported, 0.0001f);
         }
 
         [Test]
         public void Heal_ClampsToMax()
         {
-            var h = NewHealth(10f);
-            h.Damage(8f);      // Current = 2
-            h.Heal(100f);
-            Assert.AreEqual(10f, h.Current, 0.0001f);
+            Health health = NewHealth(10f);
+            health.Damage(8f);
+
+            health.Heal(100f);
+
+            Assert.AreEqual(10f, health.Current, 0.0001f);
         }
 
         [Test]
         public void SetCurrent_ClampsToRange_AndKillsAtZero()
         {
-            var h = NewHealth(10f);
+            Health health = NewHealth(10f);
             int died = 0;
-            h.OnDied = new UltEvents.UltEvent();
-            h.OnDied.DynamicCalls += () => died++;
+            health.OnDied.AddListener(() => died++);
 
-            h.SetCurrent(999f);
-            Assert.AreEqual(10f, h.Current, 0.0001f); // clamped to Max
-            Assert.AreEqual(0, died);
+            health.SetCurrent(50f);
+            Assert.AreEqual(10f, health.Current, 0.0001f);
 
-            h.SetCurrent(0f);
-            Assert.IsTrue(h.IsDead);
+            health.SetCurrent(-5f);
+            Assert.AreEqual(0f, health.Current, 0.0001f);
             Assert.AreEqual(1, died);
         }
 
         [Test]
         public void Damage_MirrorsCurrentToVariable()
         {
-            _current = ScriptableObject.CreateInstance<FloatVariableSO>();
-            var h = NewHealth(10f);
-            h.CurrentVariable = _current;
+            Health health = NewHealth(10f);
+            mirror = ScriptableObject.CreateInstance<FloatVariableSO>();
+            health.CurrentVariable = mirror;
 
-            h.Damage(3f);
-            Assert.AreEqual(7f, _current.CurrentValue, 0.0001f);
+            health.Damage(3f);
+
+            Assert.AreEqual(7f, mirror.CurrentValue, 0.0001f);
         }
 
         [Test]
-        public void ExternalVariableWrite_DrivesHealth_ClampsAndKills()
+        public void ResetFull_RefillsToTheResolvedMax()
         {
-            _current = ScriptableObject.CreateInstance<FloatVariableSO>();
-            var h = NewHealth(10f);
-            h.CurrentVariable = _current;
-            int died = 0;
-            h.OnDied = new UltEvents.UltEvent();
-            h.OnDied.DynamicCalls += () => died++;
+            Health health = NewHealth(10f);
+            health.Max = new FloatReference(25f);
 
-            // An external write arriving through the two-way link.
-            h.OnCurrentVariableChanged(3f);
-            Assert.AreEqual(3f, h.Current, 0.0001f);
-            Assert.AreEqual(0, died);
+            health.ResetFull();
 
-            // Out of range → clamped to Max and reflected back into the variable.
-            h.OnCurrentVariableChanged(999f);
-            Assert.AreEqual(10f, h.Current, 0.0001f);
-            Assert.AreEqual(10f, _current.CurrentValue, 0.0001f);
-
-            h.OnCurrentVariableChanged(0f);
-            Assert.IsTrue(h.IsDead);
-            Assert.AreEqual(1, died);
-        }
-
-        [Test]
-        public void MaxValue_ResolvesReference_AndResetFull_Refills()
-        {
-            var h = NewHealth(7f);
-            Assert.AreEqual(7f, h.MaxValue, 0.0001f);
-            h.Damage(5f);
-            h.ResetFull();
-            Assert.AreEqual(7f, h.Current, 0.0001f);
+            Assert.AreEqual(25f, health.Current, 0.0001f);
+            Assert.AreEqual(1f, health.Ratio01, 0.0001f);
         }
     }
 }

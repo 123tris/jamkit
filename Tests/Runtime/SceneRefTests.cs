@@ -4,10 +4,6 @@ using UnityEngine;
 
 namespace Metz.JamKit.Tests
 {
-    /// <summary>
-    /// Pins <see cref="SceneRef"/>'s value semantics and Unity serialization round-trip — the
-    /// contract the loaders and the sample migration depend on.
-    /// </summary>
     public class SceneRefTests
     {
         [Serializable]
@@ -19,7 +15,7 @@ namespace Metz.JamKit.Tests
             var r = new SceneRef("Level1");
             Assert.AreEqual("Level1", r.Name);
             Assert.IsTrue(r.HasValue);
-            Assert.AreEqual("Level1", (string)r);   // implicit conversion for the loaders
+            Assert.AreEqual("Level1", (string)r);
             Assert.AreEqual("Level1", r.ToString());
         }
 

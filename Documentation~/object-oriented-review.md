@@ -53,7 +53,7 @@ is a `[Serializable] struct` (name + asset GUID) with an editor drawer
 time (§10.3 bijection: the type's values now map to real scenes). It converts implicitly to the
 scene-name string the loaders take, so `SceneServiceSO.LoadAsync(string)` is unchanged.
 
-Replaced in `MenuController`, `GameOverController`, `TriggerZone`, `SurvivorLoop`; the sample prefabs
+Replaced in `MenuController`, `TriggerZone`, `SurvivorLoop`; the sample prefabs
 were migrated to the nested serialized shape.
 
 ### 4. Close the silent-failure paths (§10.5 fail fast)
@@ -131,6 +131,55 @@ Recording these matters as much as the changes: several are refactor-bait the bo
   refactor took four of the five sites, not five.)
 
 ---
+
+---
+
+## Amended by the 1.0 post-mortem (GMTK 2026)
+
+The first real jam re-tested several of the calls above. Three changed, one was reaffirmed, and one
+prior "validated" entry survives on narrower grounds.
+
+### Pooling was **removed**, not abstracted (overturns "Rejected: abstraction+injection for services")
+
+The rejected entry argued an `IFoo` seam over a service "would buy nothing a designer can act on."
+For pooling that was half right. Nine components held a concrete `PoolServiceSO` field behind an
+identical `pool != null ? … : …` branch, so "don't pool" was not expressible as data — and the jam
+expressed it as `git rm -r Runtime/Pool/`. An abstract `SpawnServiceSO` **was** drafted, and would
+have worked. It was rejected in favour of deleting pooling outright, for a reason the abstraction
+couldn't answer: `UnityEngine.Pool` already exists (PILLAR 4), and a jam-scale game shipped fine
+without it. Removing the feature deleted nine fields and nine conditionals; abstracting it would have
+kept all eighteen and added a type.
+
+**The refined rule, which is the durable part:** abstract a service only where the alternatives are
+honestly substitutable — the Liskov test. `AudioServiceSO` and `FmodAudioServiceSO` differ in payload
+*and* return type, so no honest shared contract exists and that rejection **still stands, unchanged**.
+Pooling and `Instantiate` were substitutable, which is exactly why the conditional could be written
+nine times — but "substitutable" only made abstraction *possible*, not *worth it*. Ask whether the
+feature earns its place before asking what shape it should be.
+
+### The service Template Method survives, on narrower grounds
+
+`ServiceSO` / `ServiceSO<TRunner>` / `ServiceRunner<TService,TRunner>` was validated when five
+services had runners. Deleting pooling and the FMOD backend took that to three (Audio, Scene, Time),
+and a collapse to a single non-generic base was drafted. Three users of a genuinely hierarchical
+Template Method is still enough, and `Awaitable` was *not* adopted to eliminate the coroutine hosts —
+so the chain stays as-is. Worth revisiting only if it drops to one.
+
+### The `View` enum → `MenuView`: §11.5 applied to a screen set
+
+`MenuController.View` was the same closed-conditional smell the review already fixed in
+`PatrolMover`, one level up: a fixed enum meant a new screen was a package edit, not a new object.
+Screens are now `MenuView` components with their own policy and buttons. Note this is *not* the
+`[SerializeReference]` strategy pattern from PILLAR 2 — screens differ in **data** (element name,
+gate, buttons), not algorithm, so they are one class parameterized by inspector fields, exactly the
+§11.7 variation-as-data rule. A `MenuView` subclass hierarchy would have been the wrong tool.
+
+### Fail-fast held up
+
+The one-shot warnings added for unresolvable inspector strings (§10.5) proved their worth and were
+extended to `MenuView`'s root-element and button names, scoped per view so two screens can each own
+a `restart-button` without colliding — a collision GMTK's `HUD.uxml` actually had, safe only by
+accident.
 
 ## Closing note
 

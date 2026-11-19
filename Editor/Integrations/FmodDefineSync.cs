@@ -4,14 +4,6 @@ using UnityEditor.Build;
 
 namespace Metz.JamKit.Editor
 {
-    /// <summary>
-    /// Keeps the JAMKIT_FMOD scripting define in sync with whether FMOD for Unity is installed.
-    /// FMOD ships as loose assets (not a UPM package), so asmdef versionDefines can't detect it —
-    /// instead this probes for the FMODUnity assembly after every domain reload and toggles the
-    /// define on the jam target groups. The define lets JamKit compile FMOD-aware code paths
-    /// (e.g. the scaffold skips the Unity-mixer audio service when FMOD is present) without
-    /// breaking projects that don't have FMOD installed.
-    /// </summary>
     [InitializeOnLoad]
     static class FmodDefineSync
     {
@@ -24,7 +16,6 @@ namespace Metz.JamKit.Editor
 
         static FmodDefineSync()
         {
-            // PlayerSettings writes are unreliable while InitializeOnLoad is still running.
             EditorApplication.delayCall += Sync;
         }
 
@@ -39,7 +30,7 @@ namespace Metz.JamKit.Editor
             {
                 string current;
                 try { current = PlayerSettings.GetScriptingDefineSymbols(target); }
-                catch { continue; } // platform support not installed
+                catch { continue; }
 
                 var defines = new System.Collections.Generic.List<string>(
                     current.Split(new[] { ';' }, StringSplitOptions.RemoveEmptyEntries));
